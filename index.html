@@ -36,8 +36,6 @@
     .badge-Exchange { background: #dbeafe; color: #2563eb; }
 
     .box-info { font-size: 0.82rem; color: #4b5563; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 10px; }
-    .box-info div { margin-bottom: 2px; }
-
     .card-actions { display: flex; gap: 6px; border-top: 1px solid #f3f4f6; padding-top: 8px; }
 
     /* Modals */
@@ -50,26 +48,243 @@
     .modal-btns { display: flex; gap: 8px; margin-top: 6px; }
     .modal-btns button { flex: 1; padding: 10px; }
   </style>
+
+  <!-- Firebase SDK Modules -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9EKxFCUfV0Zv3va0l4sIvUFrA4liaJ1k",
+      authDomain: "test-c8d17.firebaseapp.com",
+      projectId: "test-c8d17",
+      storageBucket: "test-c8d17.firebasestorage.app",
+      messagingSenderId: "595934730594",
+      appId: "1:595934730594:web:a3b9b24fcaff346811b43b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let boxesData = [];
+    let customersData = [];
+    let driversData = [];
+    let currentRole = 'Driver';
+    let activeEditBoxId = null;
+
+    // Attach UI actions directly to window scope immediately
+    window.openModal = function(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('active');
+    };
+
+    window.closeModal = function(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    };
+
+    window.switchRole = function(val) { 
+      currentRole = val; 
+      renderApp(); 
+    };
+
+    window.saveCustomer = async function() {
+      const input = document.getElementById('newCustName');
+      const name = input ? input.value.trim() : '';
+      if (!name) return alert('Customer name required');
+      try {
+        await addDoc(collection(db, "customers"), { name, createdAt: serverTimestamp() });
+        window.closeModal('addCustomerModal');
+        input.value = '';
+      } catch (e) {
+        alert("Error saving customer: " + e.message);
+      }
+    };
+
+    window.saveDriver = async function() {
+      const input = document.getElementById('newDriverName');
+      const name = input ? input.value.trim() : '';
+      if (!name) return alert('Driver name required');
+      try {
+        await addDoc(collection(db, "drivers"), { name, createdAt: serverTimestamp() });
+        window.closeModal('addDriverModal');
+        input.value = '';
+      } catch (e) {
+        alert("Error saving driver: " + e.message);
+      }
+    };
+
+    window.saveBox = async function() {
+      const boxNum = document.getElementById('newBoxNum').value.trim();
+      if (!boxNum) return alert('Box number is required.');
+
+      try {
+        await addDoc(collection(db, "boxes"), {
+          boxNum: boxNum,
+          size: document.getElementById('newBoxSize').value,
+          customer: document.getElementById('newBoxCustomer').value,
+          driver: document.getElementById('newBoxDriver').value,
+          address: document.getElementById('newBoxAddress').value.trim() || 'Yard',
+          status: document.getElementById('newBoxStatus').value,
+          notes: document.getElementById('newBoxNotes').value.trim() || 'None',
+          createdAt: serverTimestamp()
+        });
+
+        window.closeModal('addBoxModal');
+        document.getElementById('newBoxNum').value = '';
+        document.getElementById('newBoxAddress').value = '';
+        document.getElementById('newBoxNotes').value = '';
+      } catch (e) {
+        alert("Error saving box: " + e.message);
+      }
+    };
+
+    window.openEditStatus = function(id) {
+      activeEditBoxId = id;
+      const box = boxesData.find(b => b.id === id);
+      if (box) {
+        document.getElementById('editStatusVal').value = box.status || 'Available';
+        document.getElementById('editAddressVal').value = box.address || 'Yard';
+        window.openModal('editStatusModal');
+      }
+    };
+
+    window.commitStatusUpdate = async function() {
+      if (!activeEditBoxId) return;
+      const newStatus = document.getElementById('editStatusVal').value;
+      const newAddress = document.getElementById('editAddressVal').value.trim() || 'Yard';
+
+      try {
+        await updateDoc(doc(db, "boxes", activeEditBoxId), {
+          status: newStatus,
+          address: newAddress
+        });
+        window.closeModal('editStatusModal');
+      } catch (e) {
+        alert("Error updating status: " + e.message);
+      }
+    };
+
+    window.deleteBox = async function(id) {
+      if (confirm('Are you sure you want to delete this box?')) {
+        try {
+          await deleteDoc(doc(db, "boxes", id));
+        } catch (e) {
+          alert("Error deleting box: " + e.message);
+        }
+      }
+    };
+
+    function updateDropdowns() {
+      const cSel = document.getElementById('newBoxCustomer');
+      if (cSel) {
+        cSel.innerHTML = '<option value="Yard / Stock">Yard / Stock</option>';
+        customersData.forEach(c => cSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+      }
+
+      const dSel = document.getElementById('newBoxDriver');
+      if (dSel) {
+        dSel.innerHTML = '<option value="Unassigned">Unassigned</option>';
+        driversData.forEach(d => dSel.innerHTML += `<option value="${d.name}">${d.name}</option>`);
+      }
+    }
+
+    function renderApp() {
+      const filterEl = document.getElementById('statusFilter');
+      const filter = filterEl ? filterEl.value : 'ALL';
+      const container = document.getElementById('contentList');
+      if (!container) return;
+      
+      container.innerHTML = '';
+
+      const filtered = boxesData.filter(b => filter === 'ALL' || b.status === filter);
+      const countEl = document.getElementById('boxCount');
+      if (countEl) countEl.innerText = `BOXES (${filtered.length})`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-msg">No boxes found.<br>Tap <b>+ Add Box</b> above to create your first container.</div>`;
+        return;
+      }
+
+      filtered.forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'box-card';
+        card.innerHTML = `
+          <div class="box-header">
+            <span>Box ${b.boxNum || ''} (${b.size || '30'}Y)</span>
+            <span class="badge badge-${b.status}">${b.status || 'Available'}</span>
+          </div>
+          <div class="box-info">
+            <div>👤 <b>Cust:</b> ${b.customer || 'Yard'}</div>
+            <div>🚚 <b>Driver:</b> ${b.driver || 'Unassigned'}</div>
+            <div style="grid-column: span 2;">📍 <b>Location:</b> ${b.address || 'Yard'}</div>
+            <div style="grid-column: span 2;">📝 <b>Notes:</b> ${b.notes || 'None'}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-green" style="flex:1;" onclick="window.openEditStatus('${b.id}')">🔄 Update Status / Location</button>
+            ${currentRole === 'Admin' ? `<button class="btn btn-danger" onclick="window.deleteBox('${b.id}')">🗑️ Delete</button>` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function initApp() {
+      // Listen to Boxes collection
+      onSnapshot(query(collection(db, "boxes")), (snapshot) => {
+        boxesData = [];
+        snapshot.forEach((doc) => boxesData.push({ id: doc.id, ...doc.data() }));
+        renderApp();
+      }, (err) => console.error("Boxes sync error:", err));
+
+      // Listen to Customers collection
+      onSnapshot(query(collection(db, "customers")), (snapshot) => {
+        customersData = [];
+        snapshot.forEach((doc) => customersData.push({ id: doc.id, ...doc.data() }));
+        updateDropdowns();
+      }, (err) => console.error("Customers sync error:", err));
+
+      // Listen to Drivers collection
+      onSnapshot(query(collection(db, "drivers")), (snapshot) => {
+        driversData = [];
+        snapshot.forEach((doc) => driversData.push({ id: doc.id, ...doc.data() }));
+        updateDropdowns();
+      }, (err) => console.error("Drivers sync error:", err));
+    }
+
+    function start() {
+      const filterEl = document.getElementById('statusFilter');
+      if (filterEl) filterEl.addEventListener('change', renderApp);
+      initApp();
+    }
+
+    // Fail-safe initialization to prevent missing DOMContentLoaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start);
+    } else {
+      start();
+    }
+  </script>
 </head>
 <body>
 
   <header>
     <h1>🚚 ROLL-OFF TRACKER</h1>
-    <select id="roleToggle" class="role-sel" onchange="switchRole(this.value)">
+    <select id="roleToggle" class="role-sel" onchange="window.switchRole(this.value)">
       <option value="Driver">Role: Driver</option>
       <option value="Admin">Role: Admin</option>
     </select>
   </header>
 
   <div class="toolbar">
-    <button class="btn btn-green" onclick="openModal('addBoxModal')">+ Add Box</button>
-    <button class="btn" onclick="openModal('addCustomerModal')">+ Add Customer</button>
-    <button class="btn" onclick="openModal('addDriverModal')">+ Add Driver</button>
+    <button class="btn btn-green" onclick="window.openModal('addBoxModal')">+ Add Box</button>
+    <button class="btn" onclick="window.openModal('addCustomerModal')">+ Add Customer</button>
+    <button class="btn" onclick="window.openModal('addDriverModal')">+ Add Driver</button>
   </div>
 
   <div class="filter-bar">
     <span id="boxCount">BOXES (0)</span>
-    <select id="statusFilter" onchange="renderApp()">
+    <select id="statusFilter">
       <option value="ALL">All Statuses</option>
       <option value="Available">Available (Yard)</option>
       <option value="Customer">At Customer</option>
@@ -109,8 +324,8 @@
       <label>Notes</label>
       <input type="text" id="newBoxNotes" placeholder="Gate codes, waste type, etc." />
       <div class="modal-btns">
-        <button class="btn btn-green" onclick="saveBox()">Save Box</button>
-        <button class="btn" onclick="closeModal('addBoxModal')">Cancel</button>
+        <button class="btn btn-green" onclick="window.saveBox()">Save Box</button>
+        <button class="btn" onclick="window.closeModal('addBoxModal')">Cancel</button>
       </div>
     </div>
   </div>
@@ -122,8 +337,8 @@
       <label>Customer / Company Name</label>
       <input type="text" id="newCustName" placeholder="e.g. Acme Construction" />
       <div class="modal-btns">
-        <button class="btn btn-green" onclick="saveCustomer()">Save Customer</button>
-        <button class="btn" onclick="closeModal('addCustomerModal')">Cancel</button>
+        <button class="btn btn-green" onclick="window.saveCustomer()">Save Customer</button>
+        <button class="btn" onclick="window.closeModal('addCustomerModal')">Cancel</button>
       </div>
     </div>
   </div>
@@ -135,8 +350,8 @@
       <label>Driver Name</label>
       <input type="text" id="newDriverName" placeholder="Driver Name" />
       <div class="modal-btns">
-        <button class="btn btn-green" onclick="saveDriver()">Save Driver</button>
-        <button class="btn" onclick="closeModal('addDriverModal')">Cancel</button>
+        <button class="btn btn-green" onclick="window.saveDriver()">Save Driver</button>
+        <button class="btn" onclick="window.closeModal('addDriverModal')">Cancel</button>
       </div>
     </div>
   </div>
@@ -155,142 +370,11 @@
       <label>Update Location / Address</label>
       <input type="text" id="editAddressVal" placeholder="New address..." />
       <div class="modal-btns">
-        <button class="btn btn-green" onclick="commitStatusUpdate()">Update</button>
-        <button class="btn" onclick="closeModal('editStatusModal')">Cancel</button>
+        <button class="btn btn-green" onclick="window.commitStatusUpdate()">Update</button>
+        <button class="btn" onclick="window.closeModal('editStatusModal')">Cancel</button>
       </div>
     </div>
   </div>
 
-  <script>
-    // State initialization
-    let db = {
-      boxes: JSON.parse(localStorage.getItem('ro_boxes') || '[]'),
-      customers: JSON.parse(localStorage.getItem('ro_customers') || '[]'),
-      drivers: JSON.parse(localStorage.getItem('ro_drivers') || '[]')
-    };
-    let currentRole = 'Driver';
-    let activeEditBoxId = null;
-
-    function saveDB() {
-      localStorage.setItem('ro_boxes', JSON.stringify(db.boxes));
-      localStorage.setItem('ro_customers', JSON.stringify(db.customers));
-      localStorage.setItem('ro_drivers', JSON.stringify(db.drivers));
-    }
-
-    function switchRole(val) { currentRole = val; renderApp(); }
-    function openModal(id) { document.getElementById(id).classList.add('active'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-    function updateDropdowns() {
-      const cSel = document.getElementById('newBoxCustomer');
-      cSel.innerHTML = '<option value="Yard / Stock">Yard / Stock</option>';
-      db.customers.forEach(c => cSel.innerHTML += `<option value="${c}">${c}</option>`);
-
-      const dSel = document.getElementById('newBoxDriver');
-      dSel.innerHTML = '<option value="Unassigned">Unassigned</option>';
-      db.drivers.forEach(d => dSel.innerHTML += `<option value="${d}">${d}</option>`);
-    }
-
-    function saveCustomer() {
-      const name = document.getElementById('newCustName').value.trim();
-      if(name) { db.customers.push(name); saveDB(); updateDropdowns(); closeModal('addCustomerModal'); document.getElementById('newCustName').value = ''; }
-    }
-
-    function saveDriver() {
-      const name = document.getElementById('newDriverName').value.trim();
-      if(name) { db.drivers.push(name); saveDB(); updateDropdowns(); closeModal('addDriverModal'); document.getElementById('newDriverName').value = ''; }
-    }
-
-    function saveBox() {
-      const boxNum = document.getElementById('newBoxNum').value.trim();
-      if(!boxNum) return alert('Box number is required.');
-
-      db.boxes.push({
-        id: Date.now().toString(),
-        boxNum: boxNum,
-        size: document.getElementById('newBoxSize').value,
-        customer: document.getElementById('newBoxCustomer').value,
-        driver: document.getElementById('newBoxDriver').value,
-        address: document.getElementById('newBoxAddress').value.trim() || 'Yard',
-        status: document.getElementById('newBoxStatus').value,
-        notes: document.getElementById('newBoxNotes').value.trim() || 'None'
-      });
-
-      saveDB();
-      renderApp();
-      closeModal('addBoxModal');
-      document.getElementById('newBoxNum').value = '';
-      document.getElementById('newBoxAddress').value = '';
-    }
-
-    function openEditStatus(id) {
-      activeEditBoxId = id;
-      const box = db.boxes.find(b => b.id === id);
-      if(box) {
-        document.getElementById('editStatusVal').value = box.status;
-        document.getElementById('editAddressVal').value = box.address;
-        openModal('editStatusModal');
-      }
-    }
-
-    function commitStatusUpdate() {
-      const box = db.boxes.find(b => b.id === activeEditBoxId);
-      if(box) {
-        box.status = document.getElementById('editStatusVal').value;
-        box.address = document.getElementById('editAddressVal').value.trim() || 'Yard';
-        saveDB();
-        renderApp();
-        closeModal('editStatusModal');
-      }
-    }
-
-    function deleteBox(id) {
-      if(confirm('Are you sure you want to delete this box?')) {
-        db.boxes = db.boxes.filter(b => b.id !== id);
-        saveDB();
-        renderApp();
-      }
-    }
-
-    function renderApp() {
-      updateDropdowns();
-      const filter = document.getElementById('statusFilter').value;
-      const container = document.getElementById('contentList');
-      container.innerHTML = '';
-
-      const filtered = db.boxes.filter(b => filter === 'ALL' || b.status === filter);
-      document.getElementById('boxCount').innerText = `BOXES (${filtered.length})`;
-
-      if(filtered.length === 0) {
-        container.innerHTML = `<div class="empty-msg">No boxes found.<br>Tap <b>+ Add Box</b> above to create your first container.</div>`;
-        return;
-      }
-
-      filtered.forEach(b => {
-        const card = document.createElement('div');
-        card.className = 'box-card';
-        card.innerHTML = `
-          <div class="box-header">
-            <span>Box ${b.boxNum} (${b.size}Y)</span>
-            <span class="badge badge-${b.status}">${b.status}</span>
-          </div>
-          <div class="box-info">
-            <div>👤 <b>Cust:</b> ${b.customer}</div>
-            <div>🚚 <b>Driver:</b> ${b.driver}</div>
-            <div style="grid-column: span 2;">📍 <b>Location:</b> ${b.address}</div>
-            <div style="grid-column: span 2;">📝 <b>Notes:</b> ${b.notes}</div>
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-green" style="flex:1;" onclick="openEditStatus('${b.id}')">🔄 Update Status / Location</button>
-            ${currentRole === 'Admin' ? `<button class="btn btn-danger" onclick="deleteBox('${b.id}')">🗑️ Delete</button>` : ''}
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    // Initial launch
-    renderApp();
-  </script>
 </body>
 </html>
