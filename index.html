@@ -9,85 +9,80 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body, html { height: 100%; width: 100%; background: #f3f4f6; color: #1f2937; overflow: hidden; }
 
-    /* Main App Layout */
     #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
-    /* Top Navigation Bar */
+    /* Top Navigation */
     header { background: #ffffff; height: 56px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 20; }
     .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.1rem; color: #15803d; letter-spacing: -0.5px; }
-    .search-bar { flex: 1; max-width: 400px; margin: 0 16px; position: relative; }
-    .search-bar input { width: 100%; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px 8px 36px; font-size: 0.85rem; color: #374151; }
-    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 0.85rem; }
+    .search-bar { flex: 1; max-width: 300px; margin: 0 16px; position: relative; }
+    .search-bar input { width: 100%; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; }
     .user-profile { display: flex; align-items: center; gap: 10px; }
-    .avatar { width: 32px; height: 32px; background: #2563eb; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; }
+    .avatar { width: 32px; height: 32px; background: #15803d; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; }
     
-    /* Content Split (Map + Sidebar/Panels) */
     .main-content { flex: 1; display: flex; overflow: hidden; position: relative; }
 
-    /* Side Navigation (Desktop/Tablet) */
-    nav.sidebar { width: 110px; background: #1e293b; color: #94a3b8; display: flex; flex-direction: column; padding-top: 12px; gap: 4px; }
-    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 0; gap: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; color: #94a3b8; text-decoration: none; }
-    .nav-item.active { background: #15803d; color: #ffffff; border-radius: 0; }
+    /* Desktop Sidebar Nav */
+    nav.sidebar { width: 100px; background: #1e293b; color: #94a3b8; display: flex; flex-direction: column; padding-top: 12px; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; color: #94a3b8; text-decoration: none; }
+    .nav-item.active { background: #15803d; color: #ffffff; }
 
-    /* Box List Drawer Panel */
-    .boxes-panel { width: 280px; background: #ffffff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; z-index: 10; }
-    .panel-header { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 0.9rem; color: #374151; }
+    /* Left Panel for Boxes / Entity Lists */
+    .boxes-panel { width: 300px; background: #ffffff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; z-index: 10; }
+    .panel-header { padding: 12px; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 8px; background: #fafafa; }
+    .panel-title-row { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 0.9rem; }
+    .filter-select { width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.8rem; background: #fff; }
+
     .box-list { flex: 1; overflow-y: auto; }
-    .box-card { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; }
+    .box-card { padding: 12px; border-bottom: 1px solid #f3f4f6; cursor: pointer; }
     .box-card:hover, .box-card.active { background: #f8fafc; }
-    .box-title { font-size: 0.9rem; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 8px; }
+    .box-title { font-size: 0.9rem; font-weight: 700; color: #111827; display: flex; align-items: center; justify-content: space-between; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .status-dot.customer { background: #22c55e; }
-    .status-dot.pickup { background: #f59e0b; }
-    .status-dot.exchange { background: #3b82f6; }
+    .status-dot.Customer { background: #22c55e; }
+    .status-dot.Pickup { background: #f59e0b; }
+    .status-dot.Exchange { background: #3b82f6; }
+    .status-dot.Available { background: #6b7280; }
     .box-address { font-size: 0.8rem; color: #4b5563; margin-top: 2px; }
-    .box-status-text { font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
-    .box-status-text.customer { color: #15803d; }
-    .box-status-text.pickup { color: #d97706; }
-    .box-status-text.exchange { color: #2563eb; }
 
-    /* Map Area */
+    /* Map */
     #map-container { flex: 1; position: relative; }
     #map { width: 100%; height: 100%; }
 
-    /* Floating Action Button */
-    .fab-add { position: absolute; bottom: 20px; right: 20px; width: 52px; height: 52px; background: #15803d; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; z-index: 15; border: none; }
+    /* Active Details Card Footer */
+    .detail-card { background: #ffffff; border-top: 1px solid #e5e7eb; padding: 14px; display: flex; flex-direction: column; gap: 10px; z-index: 15; max-height: 45vh; overflow-y: auto; }
+    .detail-header { display: flex; justify-content: space-between; align-items: center; }
+    .detail-title { font-size: 1rem; font-weight: 800; color: #111827; }
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #e5e7eb; }
 
-    /* Detail Card Overlay at Bottom */
-    .detail-card { background: #ffffff; border-top: 1px solid #e5e7eb; padding: 16px; display: flex; flex-direction: column; gap: 12px; z-index: 15; max-height: 40vh; overflow-y: auto; }
-    .detail-header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .detail-title { font-size: 1.1rem; font-weight: 800; color: #111827; display: flex; align-items: center; gap: 8px; }
-    .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-    .badge.customer { background: #dcfce7; color: #15803d; }
-
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.82rem; color: #4b5563; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem; color: #4b5563; }
     .detail-item strong { display: block; color: #111827; font-size: 0.85rem; }
 
-    .action-buttons { display: flex; gap: 8px; overflow-x: auto; padding-top: 4px; }
-    .btn { flex: 1; min-width: 110px; padding: 10px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; border: 1px solid #e5e7eb; background: #ffffff; color: #374151; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; text-align: center; }
+    .action-buttons { display: flex; gap: 6px; overflow-x: auto; padding-top: 4px; }
+    .btn { padding: 8px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: 1px solid #d1d5db; background: #ffffff; color: #374151; cursor: pointer; white-space: nowrap; }
     .btn-primary { background: #15803d; color: white; border: none; }
-    .btn-danger-outline { border-color: #fca5a5; color: #dc2626; }
-    .btn-blue-outline { border-color: #93c5fd; color: #2563eb; }
+    .btn-danger { background: #dc2626; color: white; border: none; }
 
-    /* Mobile Bottom Navigation Bar */
+    /* Modals */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; }
+    .modal h3 { font-size: 1.1rem; }
+    .modal input, .modal select { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; }
+
+    /* Mobile Bottom Nav */
     .bottom-nav { display: none; background: #ffffff; border-top: 1px solid #e5e7eb; height: 56px; justify-content: space-around; align-items: center; z-index: 20; }
-    .bottom-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.7rem; color: #6b7280; text-decoration: none; font-weight: 500; }
-    .bottom-nav-item.active { color: #15803d; font-weight: 700; }
+    .bottom-nav-item { display: flex; flex-direction: column; align-items: center; font-size: 0.7rem; color: #6b7280; text-decoration: none; }
 
-    /* Responsive Adjustments for Mobile Screens */
     @media (max-width: 768px) {
       nav.sidebar { display: none; }
       .boxes-panel { display: none; }
       .bottom-nav { display: flex; }
-      .search-bar { max-width: 180px; }
     }
   </style>
 
-  <!-- Firebase Modular SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyD9EKxFCUfV0Zv3va0l4sIvUFrA4liaJ1k",
@@ -104,242 +99,355 @@
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
-    let map;
-    let geocoder;
-    let activeMarkers = [];
-    let user = null;
+    let map, geocoder, activeMarkers = [], boxesData = [], selectedBoxId = null;
+    let currentUser = null, userRole = 'Driver'; // Default Role (Driver or Admin)
 
-    const authBtn = document.getElementById('authBtn');
-    if (authBtn) {
-      authBtn.addEventListener('click', () => {
-        if (user) {
-          signOut(auth);
-        } else {
-          signInWithPopup(auth, provider).catch((err) => console.error(err));
-        }
-      });
-    }
+    // Auth setup
+    document.getElementById('authBtn').addEventListener('click', () => {
+      if (currentUser) signOut(auth);
+      else signInWithPopup(auth, provider);
+    });
 
-    onAuthStateChanged(auth, (currentUser) => {
-      user = currentUser;
-      const avatarEl = document.getElementById('userAvatar');
-      if (user && avatarEl) {
-        avatarEl.innerText = user.displayName ? user.displayName.split(' ').map(n=>n[0]).join('') : 'U';
-      }
+    document.getElementById('roleToggle').addEventListener('change', (e) => {
+      userRole = e.target.value;
+      renderActiveBoxDetails();
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      document.getElementById('userAvatar').innerText = user ? (user.displayName ? user.displayName[0] : 'U') : '?';
+      document.getElementById('authBtn').innerText = user ? 'Sign Out' : 'Sign In';
     });
 
     window.initMap = function() {
       map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 29.8349, lng: -95.8244 },
-        zoom: 11,
+        zoom: 10,
         disableDefaultUI: true,
         zoomControl: true
       });
-
       geocoder = new google.maps.Geocoder();
-      listenToDatabase();
+      listenToCollections();
     };
 
-    function listenToDatabase() {
-      const q = query(collection(db, "can_locations"));
-      onSnapshot(q, (snapshot) => {
-        const boxListEl = document.getElementById('boxList');
-        if (boxListEl) boxListEl.innerHTML = '';
+    // Database Listeners
+    function listenToCollections() {
+      // Listen to Boxes
+      onSnapshot(query(collection(db, "boxes")), (snapshot) => {
+        boxesData = [];
+        snapshot.forEach((doc) => boxesData.push({ id: doc.id, ...doc.data() }));
+        renderBoxesList();
+        renderMapMarkers();
+      });
 
-        activeMarkers.forEach(m => m.setMap(null));
-        activeMarkers = [];
-
-        let boxCount = 0;
-
-        snapshot.forEach((docSnap) => {
-          boxCount++;
-          const data = docSnap.data();
-          const boxNum = data.boxNum || `#${246 + boxCount}`;
-          const status = data.status || 'At Customer';
-          const statusClass = status === 'Ready for Pickup' ? 'pickup' : (status === 'Ready for Exchange' ? 'exchange' : 'customer');
-
-          // Render Sidebar Item
-          if (boxListEl) {
-            const card = document.createElement('div');
-            card.className = 'box-card';
-            card.innerHTML = `
-              <div class="box-title">
-                <span class="status-dot ${statusClass}"></span>
-                ${boxNum}
-              </div>
-              <div class="box-address">${data.address}</div>
-              <div class="box-status-text ${statusClass}">${status}</div>
-            `;
-            card.onclick = () => {
-              if (data.lat && data.lng) {
-                map.setCenter({ lat: data.lat, lng: data.lng });
-                map.setZoom(14);
-                updateDetailPanel(boxNum, data);
-              }
-            };
-            boxListEl.appendChild(card);
-          }
-
-          // Render Map Marker Pin
-          if (data.lat && data.lng) {
-            const pinColor = statusClass === 'pickup' ? '#f59e0b' : (statusClass === 'exchange' ? '#3b82f6' : '#22c55e');
-            const marker = new google.maps.Marker({
-              position: { lat: data.lat, lng: data.lng },
-              map: map,
-              title: `${boxNum} - ${data.address}`,
-              label: { text: boxNum.replace('#',''), color: "#ffffff", fontWeight: "bold", fontSize: "11px" },
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 14,
-                fillColor: pinColor,
-                fillOpacity: 1,
-                strokeWeight: 2,
-                strokeColor: '#ffffff'
-              }
-            });
-
-            marker.addListener("click", () => updateDetailPanel(boxNum, data));
-            activeMarkers.push(marker);
-          }
+      // Listen to Customers for dropdowns
+      onSnapshot(query(collection(db, "customers")), (snapshot) => {
+        const select = document.getElementById('newBoxCustomer');
+        select.innerHTML = '<option value="Yard/Available">Yard/Available</option>';
+        snapshot.forEach((doc) => {
+          const d = doc.data();
+          select.innerHTML += `<option value="${d.name}">${d.name}</option>`;
         });
+      });
 
-        const countHeader = document.getElementById('boxCountHeader');
-        if (countHeader) countHeader.innerText = `BOXES (${boxCount})`;
+      // Listen to Drivers for dropdowns
+      onSnapshot(query(collection(db, "drivers")), (snapshot) => {
+        const select = document.getElementById('newBoxDriver');
+        select.innerHTML = '<option value="Unassigned">Unassigned</option>';
+        snapshot.forEach((doc) => {
+          const d = doc.data();
+          select.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+        });
       });
     }
 
-    function updateDetailPanel(boxNum, data) {
-      document.getElementById('activeBoxTitle').innerText = `BOX ${boxNum}`;
-      document.getElementById('activeBoxAddress').innerText = data.address || 'N/A';
-      document.getElementById('activeBoxSize').innerText = `${data.size || '30'} Yard`;
-      document.getElementById('activeBoxNotes').innerText = data.notes || 'None';
-      document.getElementById('activeBoxCustomer').innerText = data.customer || 'ABC Construction';
-    }
+    // Render Box List with Filters
+    window.renderBoxesList = function() {
+      const filter = document.getElementById('statusFilter').value;
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const listEl = document.getElementById('boxList');
+      listEl.innerHTML = '';
 
-    // Add New Drop-Off Location Prompt
-    window.promptAddLocation = function() {
-      const address = prompt("Enter Drop Address:");
-      if (!address) return;
-      const size = prompt("Enter Yard Size (10, 20, 30, 40):", "30");
-      const notes = prompt("Notes (Gate codes, materials):", "Concrete and dirt only");
+      const filtered = boxesData.filter(b => {
+        const matchesStatus = filter === 'ALL' || b.status === filter;
+        const matchesSearch = (b.boxNum || '').toLowerCase().includes(search) || (b.address || '').toLowerCase().includes(search);
+        return matchesStatus && matchesSearch;
+      });
 
-      geocoder.geocode({ address: address }, async (results, status) => {
-        if (status === "OK" && results[0]) {
-          const loc = results[0].geometry.location;
-          await addDoc(collection(db, "can_locations"), {
-            address: address,
-            size: size || '30',
-            notes: notes || '',
-            status: 'At Customer',
-            customer: 'ABC Construction',
-            lat: loc.lat(),
-            lng: loc.lng(),
-            createdAt: serverTimestamp()
+      document.getElementById('boxCountHeader').innerText = `BOXES (${filtered.length})`;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div style="padding:16px; font-size:0.8rem; color:#9ca3af;">No boxes found. Click + to add one.</div>';
+        return;
+      }
+
+      filtered.forEach(box => {
+        const card = document.createElement('div');
+        card.className = `box-card ${selectedBoxId === box.id ? 'active' : ''}`;
+        card.innerHTML = `
+          <div class="box-title">
+            <span><span class="status-dot ${box.status || 'Available'}"></span> ${box.boxNum}</span>
+            <span style="font-size:0.75rem; color:#6b7280;">${box.size}Y</span>
+          </div>
+          <div class="box-address">${box.address || 'Yard'}</div>
+          <div style="font-size:0.75rem; font-weight:600; margin-top:2px; color:#15803d;">${box.status}</div>
+        `;
+        card.onclick = () => selectBox(box.id);
+        listEl.appendChild(card);
+      });
+    };
+
+    function renderMapMarkers() {
+      activeMarkers.forEach(m => m.setMap(null));
+      activeMarkers = [];
+
+      boxesData.forEach(box => {
+        if (box.lat && box.lng) {
+          const pinColor = box.status === 'Pickup' ? '#f59e0b' : (box.status === 'Exchange' ? '#3b82f6' : (box.status === 'Customer' ? '#22c55e' : '#6b7280'));
+          const marker = new google.maps.Marker({
+            position: { lat: box.lat, lng: box.lng },
+            map: map,
+            title: box.boxNum,
+            label: { text: box.boxNum.replace('#',''), color: '#fff', fontWeight: 'bold', fontSize: '11px' },
+            icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: pinColor, fillOpacity: 1, strokeWeight: 2, strokeColor: '#ffffff' }
           });
-          map.setCenter(loc);
-          map.setZoom(13);
-        } else {
-          alert("Could not locate address.");
+          marker.addListener('click', () => selectBox(box.id));
+          activeMarkers.push(marker);
         }
       });
+    }
+
+    function selectBox(id) {
+      selectedBoxId = id;
+      const box = boxesData.find(b => b.id === id);
+      if (box && box.lat && box.lng) {
+        map.setCenter({ lat: box.lat, lng: box.lng });
+        map.setZoom(14);
+      }
+      renderBoxesList();
+      renderActiveBoxDetails();
+    }
+
+    function renderActiveBoxDetails() {
+      const box = boxesData.find(b => b.id === selectedBoxId);
+      const detailEl = document.getElementById('detailCard');
+
+      if (!box) {
+        detailEl.innerHTML = '<div style="font-size:0.85rem; color:#6b7280;">Select a box from the list or map to view details and change status.</div>';
+        return;
+      }
+
+      detailEl.innerHTML = `
+        <div class="detail-header">
+          <div class="detail-title">BOX ${box.boxNum}</div>
+          <span class="badge">${box.status}</span>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item">👤 Customer: <strong>${box.customer || 'N/A'}</strong></div>
+          <div class="detail-item">🚚 Driver: <strong>${box.driver || 'Unassigned'}</strong></div>
+          <div class="detail-item">📍 Address: <strong>${box.address || 'Yard'}</strong></div>
+          <div class="detail-item">📏 Size: <strong>${box.size} Yard</strong></div>
+        </div>
+        <div style="font-size:0.8rem; color:#4b5563;">📝 Notes: <strong>${box.notes || 'None'}</strong></div>
+
+        <div class="action-buttons">
+          <button class="btn btn-primary" onclick="window.updateStatusPrompt('${box.id}')">🔄 Change Status</button>
+          <button class="btn" onclick="window.updateLocationPrompt('${box.id}')">📍 Update Location</button>
+          ${userRole === 'Admin' ? `<button class="btn btn-danger" onclick="window.deleteBox('${box.id}')">🗑️ Delete Box</button>` : ''}
+        </div>
+      `;
+    }
+
+    // Modal Actions
+    window.openModal = (id) => document.getElementById(id).classList.add('active');
+    window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+
+    // Add Box
+    document.getElementById('saveBoxBtn').addEventListener('click', () => {
+      const boxNum = document.getElementById('newBoxNum').value;
+      const size = document.getElementById('newBoxSize').value;
+      const address = document.getElementById('newBoxAddress').value;
+      const customer = document.getElementById('newBoxCustomer').value;
+      const driver = document.getElementById('newBoxDriver').value;
+      const status = document.getElementById('newBoxStatus').value;
+      const notes = document.getElementById('newBoxNotes').value;
+
+      if (!boxNum) return alert('Enter Box #');
+
+      if (address) {
+        geocoder.geocode({ address }, async (results, resStatus) => {
+          let lat = 29.8349, lng = -95.8244;
+          if (resStatus === 'OK' && results[0]) {
+            lat = results[0].geometry.location.lat();
+            lng = results[0].geometry.location.lng();
+          }
+          await addDoc(collection(db, "boxes"), { boxNum, size, address, customer, driver, status, notes, lat, lng, createdAt: serverTimestamp() });
+          closeModal('addBoxModal');
+        });
+      } else {
+        addDoc(collection(db, "boxes"), { boxNum, size, address: 'Yard', customer, driver, status, notes, lat: 29.8349, lng: -95.8244, createdAt: serverTimestamp() });
+        closeModal('addBoxModal');
+      }
+    });
+
+    // Add Customer
+    document.getElementById('saveCustomerBtn').addEventListener('click', async () => {
+      const name = document.getElementById('newCustomerName').value;
+      if (name) {
+        await addDoc(collection(db, "customers"), { name, createdAt: serverTimestamp() });
+        closeModal('addCustomerModal');
+      }
+    });
+
+    // Add Driver
+    document.getElementById('saveDriverBtn').addEventListener('click', async () => {
+      const name = document.getElementById('newDriverName').value;
+      if (name) {
+        await addDoc(collection(db, "drivers"), { name, createdAt: serverTimestamp() });
+        closeModal('addDriverModal');
+      }
+    });
+
+    // Box Operations
+    window.updateStatusPrompt = async (id) => {
+      const newStatus = prompt("Enter new status (Available, Customer, Pickup, Exchange):");
+      if (['Available', 'Customer', 'Pickup', 'Exchange'].includes(newStatus)) {
+        await updateDoc(doc(db, "boxes", id), { status: newStatus });
+      }
+    };
+
+    window.updateLocationPrompt = async (id) => {
+      const newAddr = prompt("Enter new drop address:");
+      if (newAddr) {
+        geocoder.geocode({ address: newAddr }, async (results, resStatus) => {
+          if (resStatus === 'OK' && results[0]) {
+            const loc = results[0].geometry.location;
+            await updateDoc(doc(db, "boxes", id), { address: newAddr, lat: loc.lat(), lng: loc.lng() });
+          }
+        });
+      }
+    };
+
+    window.deleteBox = async (id) => {
+      if (confirm("Are you sure you want to delete this box?")) {
+        await deleteDoc(doc(db, "boxes", id));
+        selectedBoxId = null;
+        renderActiveBoxDetails();
+      }
     };
   </script>
 
-  <!-- Load Google Maps API -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpJR485BlVu3luTb-zf_q1JyV9wrSaBkk&callback=initMap" async defer></script>
 </head>
 <body>
   <div id="app">
-    <!-- Header -->
     <header>
-      <div class="brand">
-        <span style="font-size: 1.3rem;">🚚</span> ROLL-OFF TRACKER
-      </div>
-
+      <div class="brand">🚚 ROLL-OFF TRACKER</div>
       <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Search box #, customer, or address" />
+        <input type="text" id="searchInput" placeholder="Search box # or address" oninput="window.renderBoxesList()" />
       </div>
-
       <div class="user-profile">
-        <div id="userAvatar" class="avatar">JS</div>
-        <button id="authBtn" style="border:none; background:none; font-size:0.8rem; color:#6b7280; cursor:pointer;">Account</button>
+        <select id="roleToggle" style="font-size:0.75rem; padding:2px;">
+          <option value="Driver">Role: Driver</option>
+          <option value="Admin">Role: Admin</option>
+        </select>
+        <div id="userAvatar" class="avatar">?</div>
+        <button id="authBtn" style="border:none; background:none; font-size:0.8rem; cursor:pointer;">Sign In</button>
       </div>
     </header>
 
-    <!-- Main Workspace -->
     <div class="main-content">
-      <!-- Desktop Side Menu -->
       <nav class="sidebar">
         <a href="#" class="nav-item active"><span>📍</span>Map</a>
-        <a href="#" class="nav-item"><span>📦</span>Boxes</a>
-        <a href="#" class="nav-item"><span>👥</span>Customers</a>
-        <a href="#" class="nav-item"><span>📋</span>Requests</a>
-        <a href="#" class="nav-item"><span>⚙️</span>Settings</a>
+        <a href="#" class="nav-item" onclick="window.openModal('addBoxModal')"><span>➕</span>Add Box</a>
+        <a href="#" class="nav-item" onclick="window.openModal('addCustomerModal')"><span>👤</span>Add Cust</a>
+        <a href="#" class="nav-item" onclick="window.openModal('addDriverModal')"><span>🚚</span>Add Driver</a>
       </nav>
 
-      <!-- Boxes Sidebar List -->
       <div class="boxes-panel">
         <div class="panel-header">
-          <span id="boxCountHeader">BOXES (0)</span>
-          <span>⚡</span>
+          <div class="panel-title-row">
+            <span id="boxCountHeader">BOXES (0)</span>
+            <button onclick="window.openModal('addBoxModal')" style="border:none; background:#15803d; color:#fff; border-radius:4px; padding:2px 8px; cursor:pointer;">+ Add</button>
+          </div>
+          <select id="statusFilter" class="filter-select" onchange="window.renderBoxesList()">
+            <option value="ALL">All Statuses</option>
+            <option value="Available">Available (Yard)</option>
+            <option value="Customer">At Customer</option>
+            <option value="Pickup">Ready for Pickup</option>
+            <option value="Exchange">Ready for Exchange</option>
+          </select>
         </div>
-        <div id="boxList" class="box-list">
-          <!-- Dynamic Items Injected Here -->
-        </div>
+        <div id="boxList" class="box-list"></div>
       </div>
 
-      <!-- Map Display Window -->
       <div id="map-container">
         <div id="map"></div>
-        <button class="fab-add" onclick="promptAddLocation()">+</button>
       </div>
     </div>
 
-    <!-- Active Box Detail Card Footer -->
-    <div class="detail-card">
-      <div class="detail-header">
-        <div class="detail-title">
-          <span class="status-dot customer"></span>
-          <span id="activeBoxTitle">BOX #247</span>
-        </div>
-        <span class="badge customer">At Customer</span>
-      </div>
-
-      <div class="detail-grid">
-        <div class="detail-item">
-          👤 Customer
-          <strong id="activeBoxCustomer">ABC Construction</strong>
-        </div>
-        <div class="detail-item">
-          📍 Address
-          <strong id="activeBoxAddress">1234 Main St, Houston, TX 77002</strong>
-        </div>
-        <div class="detail-item">
-          📏 Size
-          <strong id="activeBoxSize">30 Yard</strong>
-        </div>
-        <div class="detail-item">
-          📝 Notes
-          <strong id="activeBoxNotes">Concrete and dirt only. Gate code: 1234</strong>
-        </div>
-      </div>
-
-      <div class="action-buttons">
-        <button class="btn btn-primary" onclick="promptAddLocation()">📍 Update Location</button>
-        <button class="btn">📷 Take Photo</button>
-        <button class="btn btn-danger-outline">🚚 Request Pickup</button>
-        <button class="btn btn-blue-outline">🔄 Request Exchange</button>
-      </div>
+    <!-- Details Box Footer -->
+    <div id="detailCard" class="detail-card">
+      <div style="font-size:0.85rem; color:#6b7280;">Select a box from the list or map to view details and change status.</div>
     </div>
 
-    <!-- Mobile Bottom Navigation -->
+    <!-- Mobile Navigation -->
     <div class="bottom-nav">
-      <a href="#" class="bottom-nav-item active"><span>📍</span>Map</a>
-      <a href="#" class="bottom-nav-item"><span>📦</span>Boxes</a>
-      <a href="#" class="bottom-nav-item"><span>📋</span>Requests</a>
-      <a href="#" class="bottom-nav-item"><span>👥</span>Customers</a>
-      <a href="#" class="bottom-nav-item"><span>•••</span>More</a>
+      <a href="#" class="bottom-nav-item" onclick="window.openModal('addBoxModal')"><span>➕</span>Box</a>
+      <a href="#" class="bottom-nav-item" onclick="window.openModal('addCustomerModal')"><span>👤</span>Customer</a>
+      <a href="#" class="bottom-nav-item" onclick="window.openModal('addDriverModal')"><span>🚚</span>Driver</a>
+    </div>
+  </div>
+
+  <!-- Add Box Modal -->
+  <div id="addBoxModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add New Box</h3>
+      <input type="text" id="newBoxNum" placeholder="Box # (e.g. #247)" />
+      <select id="newBoxSize">
+        <option value="10">10 Yard</option>
+        <option value="20">20 Yard</option>
+        <option value="30" selected>30 Yard</option>
+        <option value="40">40 Yard</option>
+      </select>
+      <input type="text" id="newBoxAddress" placeholder="Address (Leave blank if in Yard)" />
+      <select id="newBoxCustomer"><option value="Yard/Available">Yard/Available</option></select>
+      <select id="newBoxDriver"><option value="Unassigned">Unassigned</option></select>
+      <select id="newBoxStatus">
+        <option value="Available">Available</option>
+        <option value="Customer">At Customer</option>
+        <option value="Pickup">Ready for Pickup</option>
+        <option value="Exchange">Ready for Exchange</option>
+      </select>
+      <input type="text" id="newBoxNotes" placeholder="Notes (Gate codes, materials)" />
+      <div style="display:flex; gap:8px;">
+        <button id="saveBoxBtn" class="btn btn-primary" style="flex:1;">Save Box</button>
+        <button onclick="window.closeModal('addBoxModal')" class="btn" style="flex:1;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Customer Modal -->
+  <div id="addCustomerModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add New Customer</h3>
+      <input type="text" id="newCustomerName" placeholder="Customer / Company Name" />
+      <div style="display:flex; gap:8px;">
+        <button id="saveCustomerBtn" class="btn btn-primary" style="flex:1;">Save Customer</button>
+        <button onclick="window.closeModal('addCustomerModal')" class="btn" style="flex:1;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Driver Modal -->
+  <div id="addDriverModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add New Driver</h3>
+      <input type="text" id="newDriverName" placeholder="Driver Name" />
+      <div style="display:flex; gap:8px;">
+        <button id="saveDriverBtn" class="btn btn-primary" style="flex:1;">Save Driver</button>
+        <button onclick="window.closeModal('addDriverModal')" class="btn" style="flex:1;">Cancel</button>
+      </div>
     </div>
   </div>
 </body>
