@@ -239,8 +239,7 @@
       <select id="newBoxSize"><option value="10">10 Yard</option><option value="20">20 Yard</option><option value="30" selected>30 Yard</option><option value="40">40 Yard</option></select>
       
       <label>Customer</label>
-      <input type="text" id="newBoxCustomer" placeholder="Type or select customer" list="customersDatalist" />
-      <datalist id="customersDatalist"></datalist>
+      <select id="newBoxCustomer"><option value="">— No Customer —</option></select>
 
       <label>Driver</label>
       <select id="newBoxDriver"><option value="">— Unassigned —</option></select>
@@ -270,8 +269,7 @@
       <select id="editBoxStatus"><option value="Customer">At Customer</option><option value="Pickup">Ready for Pickup</option><option value="Exchange">Ready for Exchange</option><option value="Available">Available</option></select>
       
       <label>Customer</label>
-      <input type="text" id="editBoxCustomer" placeholder="Type or select customer" list="customersDatalist" />
-      <datalist id="customersDatalist"></datalist>
+      <select id="editBoxCustomer"><option value="">— No Customer —</option></select>
 
       <label>Driver</label>
       <select id="editBoxDriver"><option value="">— Unassigned —</option></select>
@@ -520,17 +518,18 @@
       db.collection("customers").onSnapshot(snap => {
         customersData = [];
         snap.forEach(d => customersData.push({ id: d.id, ...d.data() }));
-        populateCustomerDatalist();
+        populateCustomerSelects();
         if (currentView === "customers") renderCustomers();
       });
 
       document.getElementById("cameraInput").addEventListener("change", handlePhotoUpload);
     }
 
-    // NEW: Populate both datalists with customer names
-    function populateCustomerDatalist() {
-      const opts = customersData.map(c => `<option value="${c.name}">`).join("");
-      document.getElementById("customersDatalist").innerHTML = opts;
+    // NEW: Populate both Customer Dropdowns
+    function populateCustomerSelects() {
+      const opts = '<option value="">— No Customer —</option>' + customersData.map(c => `<option value="${c.name}">${c.name}</option>`).join("");
+      document.getElementById("newBoxCustomer").innerHTML = opts;
+      document.getElementById("editBoxCustomer").innerHTML = opts;
     }
 
     function renderApp() {
@@ -690,7 +689,7 @@
 
     function openAddBoxModal() {
       populateDriverSelects();
-      populateCustomerDatalist();
+      populateCustomerSelects();
       document.getElementById("newBoxNum").value = "";
       document.getElementById("newBoxCustomer").value = "";
       document.getElementById("newBoxAddress").value = "";
@@ -722,7 +721,7 @@
         await db.collection("boxes").add({
           boxNum: boxNum,
           size: document.getElementById("newBoxSize").value,
-          customer: document.getElementById("newBoxCustomer").value.trim() || "Yard",
+          customer: document.getElementById("newBoxCustomer").value || "Yard",
           driver: document.getElementById("newBoxDriver").value || "Unassigned",
           address: address || "Yard",
           lat: pendingLatLng ? pendingLatLng.lat : null,
@@ -745,7 +744,7 @@
       const box = boxesData.find(b => b.id === activeBoxId);
       if (!box) return;
       populateDriverSelects();
-      populateCustomerDatalist();
+      populateCustomerSelects();
       document.getElementById("editBoxStatus").value = box.status || "Available";
       document.getElementById("editBoxCustomer").value = box.customer || "";
       document.getElementById("editBoxDriver").value = box.driver || "";
@@ -773,7 +772,7 @@
 
       const updateData = {
         status: newStatus,
-        customer: document.getElementById("editBoxCustomer").value.trim(),
+        customer: document.getElementById("editBoxCustomer").value || "Yard",
         driver: document.getElementById("editBoxDriver").value || "Unassigned",
         address: address || "Yard",
         notes: document.getElementById("editBoxNotes").value.trim(),
