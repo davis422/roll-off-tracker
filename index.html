@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Roll-Off Tracker</title>
+
+  <!-- PWA & Mobile Styles -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body, html { height: 100%; width: 100%; overflow: hidden; background: #121212; color: #fff; }
+    #app { display: flex; flex-direction: column; height: 100vh; }
+    
+    /* Header Bar */
+    header { background: #1f1f1f; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; z-index: 10; }
+    h1 { font-size: 1.1rem; font-weight: 600; color: #e0e0e0; }
+    button.auth-btn { background: #3b82f6; border: none; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 500; font-size: 0.85rem; cursor: pointer; }
+    button.auth-btn.logged-in { background: #374151; }
+
+    /* Map Area */
+    #map { flex: 1; width: 100%; }
+
+    /* Bottom Control Panel */
+    .panel { background: #1f1f1f; border-top: 1px solid #333; padding: 12px; z-index: 10; max-height: 45vh; overflow-y: auto; }
+    .inventory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+    .inv-card { background: #2a2a2a; border: 1px solid #3f3f46; border-radius: 8px; padding: 8px 4px; text-align: center; }
+    .inv-card h3 { font-size: 0.75rem; color: #a1a1aa; text-transform: uppercase; }
+    .inv-card .count { font-size: 1.2rem; font-weight: 700; color: #38bdf8; margin-top: 2px; }
+
+    /* Form Controls */
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    input, select { background: #2a2a2a; border: 1px solid #3f3f46; color: #fff; padding: 10px; border-radius: 6px; font-size: 0.9rem; }
+    input:focus, select:focus { outline: none; border-color: #3b82f6; }
+    .btn-submit { background: #22c55e; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; font-size: 0.95rem; cursor: pointer; }
+    .btn-submit:active { background: #16a34a; }
+  </style>
+
+  <!-- Firebase Modular SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9EKxFCUfV0Zv3va0l4sIvUFrA4liaJ1k",
+      authDomain: "test-c8d17.firebaseapp.com",
+      projectId: "test-c8d17",
+      storageBucket: "test-c8d17.firebasestorage.app",
+      messagingSenderId: "595934730594",
+      appId: "1:595934730594:web:a3b9b24fcaff346811b43b",
+      measurementId: "G-8BRY66YWHM"
+    };
+
+    // Initialize Firebase Services
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    // Global state
+    let map;
+    let geocoder;
+    let activeMarkers = [];
+    let user = null;
+
+    // Authentication Setup
+    const authBtn = document.getElementById('authBtn');
+    if (authBtn) {
+      authBtn.addEventListener('click', () => {
+        if (user) {
+          signOut(auth);
+        } else {
+          signInWithPopup(auth, provider).catch((authErr) => console.error("Auth Error:", authErr));
+        }
+      });
+    }
+
+    onAuthStateChanged(auth, (currentUser) => {
+      user = currentUser;
+      if (authBtn) {
+        if (user) {
+          authBtn.innerText = "Sign Out";
+          authBtn.classList.add('logged-in');
+        } else {
+          authBtn.innerText = "Sign In";
+          authBtn.classList.remove('logged-in');
+        }
+      }
+    });
+
+    // Initialize Google Maps
+    window.initMap = function() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 29.8349, lng: -95.8244 },
+        zoom: 10,
+        disableDefaultUI: true,
+        zoomControl: true,
+        styles: [
+          { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+          { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+          { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+          { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+          { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+          { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] }
+        ]
+      });
+
+      geocoder = new google.maps.Geocoder();
+      listenToDatabase();
+    };
+
+    // Real-time Database Listener
+    function listenToDatabase() {
+      const q = query(collection(db, "can_locations"));
+      onSnapshot(q, (snapshotData) => {
+        const counts = { "10": 0, "20": 0, "30": 0, "40": 0 };
+        
+        activeMarkers.forEach((m) => m.setMap(null));
+        activeMarkers = [];
+
+        snapshotData.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (counts[data.size] !== undefined) {
+            counts[data.size]++;
+          }
+
+          if (data.lat && data.lng) {
+            const marker = new google.maps.Marker({
+              position: { lat: data.lat, lng: data.lng },
+              map: map,
+              title: `${data.size} Yd - ${data.address}`,
+              label: { text: `${data.size}Y`, color: "#ffffff", fontWeight: "bold", fontSize: "12px" }
+            });
+
+            const infoWindow = new google.maps.InfoWindow({
+              content: `<div style="color:#000; padding:4px;">
+                          <strong>${data.size} Yard Can</strong><br/>
+                          ${data.address}<br/>
+                          <small>Notes: ${data.notes || 'None'}</small>
+                        </div>`
+            });
+
+            marker.addListener("click", () => infoWindow.open(map, marker));
+            activeMarkers.push(marker);
+          }
+        });
+
+        const c10 = document.getElementById('count-10');
+        const c20 = document.getElementById('count-20');
+        const c30 = document.getElementById('count-30');
+        const c40 = document.getElementById('count-40');
+
+        if (c10) c10.innerText = String(counts["10"]);
+        if (c20) c20.innerText = String(counts["20"]);
+        if (c30) c30.innerText = String(counts["30"]);
+        if (c40) c40.innerText = String(counts["40"]);
+      });
+    }
+
+    // Add New Can Entry
+    const dropForm = document.getElementById('dropForm');
+    if (dropForm) {
+      dropForm.addEventListener('submit', async (evt) => {
+        evt.preventDefault();
+        const addressEl = document.getElementById('addressInput');
+        const sizeEl = document.getElementById('sizeSelect');
+        const notesEl = document.getElementById('notesInput');
+
+        const address = addressEl ? addressEl.value : '';
+        const size = sizeEl ? sizeEl.value : '10';
+        const notes = notesEl ? notesEl.value : '';
+
+        if (!address) return;
+
+        geocoder.geocode({ address: address }, async (resultsList, geoStatus) => {
+          if (geoStatus === "OK" && resultsList && resultsList[0]) {
+            const loc = resultsList[0].geometry.location;
+            try {
+              await addDoc(collection(db, "can_locations"), {
+                address: address,
+                size: size,
+                notes: notes,
+                lat: loc.lat(),
+                lng: loc.lng(),
+                createdAt: serverTimestamp()
+              });
+
+              map.setCenter(loc);
+              map.setZoom(13);
+              if (addressEl) addressEl.value = '';
+              if (notesEl) notesEl.value = '';
+            } catch (saveErr) {
+              alert("Error saving location: " + saveErr.message);
+            }
+          } else {
+            alert("Could not locate address. Please check spelling.");
+          }
+        });
+      });
+    }
+  </script>
+
+  <!-- Load Google Maps API -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpJR485BlVu3luTb-zf_q1JyV9wrSaBkk&callback=initMap" async defer></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Roll-Off Tracker</h1>
+      <button id="authBtn" class="auth-btn">Sign In</button>
+    </header>
+
+    <div id="map"></div>
+
+    <div class="panel">
+      <!-- Active Inventory Counts -->
+      <div class="inventory-grid">
+        <div class="inv-card"><h3>10 Yd</h3><div id="count-10" class="count">0</div></div>
+        <div class="inv-card"><h3>20 Yd</h3><div id="count-20" class="count">0</div></div>
+        <div class="inv-card"><h3>30 Yd</h3><div id="count-30" class="count">0</div></div>
+        <div class="inv-card"><h3>40 Yd</h3><div id="count-40" class="count">0</div></div>
+      </div>
+
+      <!-- Add Location Form -->
+      <form id="dropForm" class="form-group">
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="addressInput" placeholder="Drop Address / Location" required style="flex: 2;" />
+          <select id="sizeSelect" style="flex: 1;">
+            <option value="10">10 Yd</option>
+            <option value="20">20 Yd</option>
+            <option value="30">30 Yd</option>
+            <option value="40">40 Yd</option>
+          </select>
+        </div>
+        <input type="text" id="notesInput" placeholder="Optional notes (customer name, gate code...)" />
+        <button type="submit" class="btn-submit">Log Drop-Off</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
