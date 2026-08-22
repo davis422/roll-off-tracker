@@ -6,7 +6,6 @@
   <title>Roll-Off Tracker</title>
   
   <style>
-    /* === CSS EXACTLY MATCHING THE SCREENSHOT === */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     body { background: #f3f4f6; color: #111827; height: 100vh; overflow: hidden; display: flex; }
 
@@ -18,18 +17,20 @@
     .btn-google { background: white; color: #334155; border: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
     .btn-google:hover { background: #f8fafc; }
 
-    /* Sidebar */
-    aside { width: 220px; background: #0f172a; color: #94a3b8; display: flex; flex-direction: column; flex-shrink: 0; }
-    .brand { padding: 18px 16px; font-weight: 900; font-size: 1.05rem; color: #22c55e; border-bottom: 1px solid #1e293b; }
+    /* Sidebar (Desktop) */
+    aside { width: 220px; background: #0f172a; color: #94a3b8; display: flex; flex-direction: column; flex-shrink: 0; z-index: 3000; }
+    .brand { padding: 18px 16px; font-weight: 900; font-size: 1.05rem; color: #22c55e; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
     .nav-list { list-style: none; padding: 12px 8px; flex: 1; }
     .nav-item { padding: 10px 12px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; margin-bottom: 4px; }
     .nav-item:hover { background: #1e293b; color: #fff; }
     .nav-item.active { background: #16a34a; color: #fff; }
     .sidebar-footer { padding: 16px; border-top: 1px solid #1e293b; font-size: 0.75rem; color: #64748b; }
+    .close-drawer { display: none; cursor: pointer; color: white; font-size: 1.2rem; }
 
     /* Main Layout */
     .main-wrapper { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
     header { height: 56px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; gap: 12px; }
+    .menu-btn { display: none; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #334155; }
     .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; flex: 1; max-width: 360px; }
     .search-box input { border: none; background: transparent; width: 100%; outline: none; font-size: 0.85rem; margin-left: 8px; }
     .user-area { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; }
@@ -37,7 +38,7 @@
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
     .btn-logout { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; color: #475569; }
 
-    /* Dashboard Grid (Top Split + Bottom Panel) */
+    /* Dashboard Grid */
     .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr 320px; overflow: hidden; }
     .top-split { display: grid; grid-template-columns: 320px 1fr; border-bottom: 1px solid #cbd5e1; overflow: hidden; }
 
@@ -58,7 +59,7 @@
     #placeModeBanner { display: none; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: #1e40af; color: white; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; z-index: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3); white-space: nowrap; }
     #placeModeBanner.active { display: block; }
 
-    /* Bottom Detail Panel (Matches Screenshot) */
+    /* Detail Panel */
     .detail-panel { background: #fff; padding: 20px 24px; overflow-y: auto; border-top: 2px solid #e2e8f0; }
     .detail-title { font-size: 1.2rem; font-weight: 900; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
     .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; }
@@ -66,32 +67,26 @@
     .badge-Pickup { background: #fef3c7; color: #d97706; }
     .badge-Exchange { background: #dbeafe; color: #2563eb; }
     .badge-Available { background: #f1f5f9; color: #475569; }
-
     .detail-layout { display: flex; gap: 24px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.85rem; flex: 1; }
     .info-label { color: #64748b; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
     .info-val { font-weight: 700; margin-top: 2px; word-break: break-word; }
-    
-    /* Image Placeholder */
     .box-photo { width: 220px; height: 140px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; font-weight: 600; }
-
     .actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
     .btn-act { padding: 8px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: 1px solid #cbd5e1; background: #fff; }
     .btn-act-primary { background: #16a34a; color: white; border: none; }
     .btn-act-danger { color: #dc2626; border-color: #fca5a5; }
     .btn-act-blue { background: #2563eb; color: white; border: none; }
-
     .activity-section { border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 8px; }
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
 
-    /* Drivers */
-    .drivers-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
-    .drivers-view.active { display: block; }
-    .driver-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    /* Customers Tab */
+    .customers-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
+    .customers-view.active { display: block; }
 
     /* Modals */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
     .modal-overlay.active { display: flex; }
     .modal { background: white; border-radius: 12px; padding: 22px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
     .modal h3 { font-size: 1.15rem; font-weight: 800; }
@@ -104,7 +99,6 @@
     .btn-save:disabled { background: #86efac; cursor: wait; }
     .address-row-3 { display: grid; grid-template-columns: 1fr 70px 90px; gap: 8px; }
     .geo-status { font-size: 0.75rem; color: #64748b; min-height: 18px; }
-
     .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
     .dot-Customer { background: #16a34a; }
     .dot-Pickup { background: #d97706; }
@@ -112,20 +106,28 @@
     .dot-Available { background: #94a3b8; }
     .empty-msg { text-align: center; color: #94a3b8; padding: 40px 20px; }
     #loading { position: fixed; inset: 0; background: #f3f4f6; display: flex; align-items: center; justify-content: center; z-index: 9999; font-size: 1.1rem; color: #64748b; }
-
-    /* Custom Google Map Pills */
     .custom-pill-marker { color: white; font-weight: 800; font-size: 0.75rem; padding: 3px 9px; border-radius: 12px; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align: center; white-space: nowrap; }
     .pill-Customer { background: #16a34a; }
     .pill-Pickup { background: #d97706; }
     .pill-Exchange { background: #2563eb; }
     .pill-Available { background: #64748b; }
 
+    /* Mobile Drawer Overlay */
+    .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2999; }
+    .mobile-overlay.active { display: block; }
+
+    /* Mobile Media Query */
     @media (max-width: 900px) {
-      aside { display: none; }
+      .menu-btn { display: block; }
+      aside { position: fixed; left: -250px; top: 0; bottom: 0; transition: left 0.3s; }
+      aside.open { left: 0; }
+      .close-drawer { display: block; }
       .top-split { grid-template-columns: 1fr; }
       .boxes-panel { display: none; }
       .detail-layout { flex-direction: column; }
       .box-photo { width: 100%; }
+      .search-box { max-width: 150px; }
+      .user-area span { display: none; }
     }
   </style>
 </head>
@@ -142,11 +144,13 @@
   </div>
 
   <div id="loading" style="display:none;">Loading Roll-Off Tracker...</div>
+  <div id="mobileOverlay" class="mobile-overlay" onclick="toggleDrawer(false)"></div>
 
-  <aside>
-    <div class="brand">🚚 ROLL-OFF TRACKER</div>
+  <aside id="sidebar">
+    <div class="brand">🚚 ROLL-OFF TRACKER <span class="close-drawer" onclick="toggleDrawer(false)">✕</span></div>
     <ul class="nav-list">
       <li class="nav-item active" data-view="map" onclick="switchView('map')">🗺️ Map</li>
+      <li class="nav-item" data-view="customers" onclick="switchView('customers')">👥 Customers</li>
       <li class="nav-item" data-view="drivers" onclick="switchView('drivers')">🚛 Drivers</li>
     </ul>
     <div class="sidebar-footer">
@@ -157,6 +161,7 @@
 
   <div class="main-wrapper">
     <header>
+      <button class="menu-btn" onclick="toggleDrawer(true)">☰</button>
       <div class="search-box">
         🔍 <input type="text" id="searchInput" placeholder="Search box #, customer, address..." oninput="renderApp()" />
       </div>
@@ -189,6 +194,14 @@
         </div>
       </div>
 
+      <div class="customers-view" id="customersView">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2 style="font-size:1.2rem; font-weight:900;">Customers</h2>
+          <button class="btn-act btn-act-primary" onclick="openAddCustomerModal()">+ Add Customer</button>
+        </div>
+        <div id="customersList"></div>
+      </div>
+
       <div class="drivers-view" id="driversView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <h2 style="font-size:1.2rem; font-weight:900;">Drivers</h2>
@@ -212,21 +225,20 @@
       <label>Size</label>
       <select id="newBoxSize"><option value="10">10 Yard</option><option value="20">20 Yard</option><option value="30" selected>30 Yard</option><option value="40">40 Yard</option></select>
       <label>Customer</label>
-      <input type="text" id="newBoxCustomer" placeholder="ABC Construction" />
+      <input type="text" id="newBoxCustomer" placeholder="ABC Construction" list="customersDatalist" />
+      <datalist id="customersDatalist"></datalist>
       <label>Driver</label>
       <select id="newBoxDriver"><option value="">— Unassigned —</option></select>
-      <label>Street Address</label>
-      <input type="text" id="newBoxStreet" placeholder="421 West Fisher Street" />
-      <div class="address-row-3">
-        <div><label>City</label><input type="text" id="newBoxCity" placeholder="Bellville" /></div>
-        <div><label>State</label><input type="text" id="newBoxState" placeholder="TX" maxlength="2" /></div>
-        <div><label>ZIP</label><input type="text" id="newBoxZip" placeholder="77418" /></div>
-      </div>
+      
+      <label>Address (Start typing for real address suggestions)</label>
+      <input type="text" id="newBoxAddress" placeholder="4014 Katy Hockley Rd..." autocomplete="off" />
+      <div class="geo-status" id="newGeoStatus"></div>
+
       <label>Status</label>
       <select id="newBoxStatus"><option value="Available">Available</option><option value="Customer">At Customer</option><option value="Pickup">Ready for Pickup</option><option value="Exchange">Ready for Exchange</option></select>
       <label>Notes</label>
       <textarea id="newBoxNotes" rows="2" placeholder="Gate code, waste type, etc."></textarea>
-      <div class="geo-status" id="newGeoStatus"></div>
+      
       <div class="modal-btns">
         <button class="btn-save" id="saveBoxBtn" onclick="saveBox()">Save Box</button>
         <button class="btn-cancel" onclick="closeModal('addBoxModal')">Cancel</button>
@@ -246,20 +258,32 @@
       <label>Driver</label>
       <select id="editBoxDriver"><option value="">— Unassigned —</option></select>
       <label>Street Address</label>
-      <input type="text" id="editBoxStreet" />
-      <div class="address-row-3">
-        <div><label>City</label><input type="text" id="editBoxCity" /></div>
-        <div><label>State</label><input type="text" id="editBoxState" maxlength="2" /></div>
-        <div><label>ZIP</label><input type="text" id="editBoxZip" /></div>
-      </div>
+      <input type="text" id="editBoxAddress" autocomplete="off" />
+      <div class="geo-status" id="editGeoStatus"></div>
       <label>Notes</label>
       <textarea id="editBoxNotes" rows="2"></textarea>
-      <div class="geo-status" id="editGeoStatus"></div>
       <div class="modal-btns">
         <button class="btn-save" id="updateBoxBtn" onclick="commitBoxUpdate()">Update Box</button>
         <button class="btn-cancel" onclick="closeModal('editBoxModal')">Cancel</button>
       </div>
       <button class="btn-act btn-act-blue" style="width:100%;margin-top:4px;" onclick="startPlaceOnMap('edit')">📍 Set location by tapping the map</button>
+    </div>
+  </div>
+
+  <!-- ADD CUSTOMER MODAL -->
+  <div id="addCustomerModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add Customer</h3>
+      <label>Name *</label>
+      <input type="text" id="newCustomerName" placeholder="ABC Construction" />
+      <label>Phone</label>
+      <input type="text" id="newCustomerPhone" placeholder="(713) 555-0198" />
+      <label>Default Address</label>
+      <input type="text" id="newCustomerAddress" placeholder="123 Main St, Houston, TX" />
+      <div class="modal-btns">
+        <button class="btn-save" onclick="saveCustomer()">Save Customer</button>
+        <button class="btn-cancel" onclick="closeModal('addCustomerModal')">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -278,13 +302,11 @@
     </div>
   </div>
 
-  <!-- Firebase & Google Maps Scripts -->
+  <!-- Firebase & Google Maps Scripts (Places API Added) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  
-  <!-- USING YOUR PROVIDED GOOGLE MAPS API KEY -->
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpJR485BlVu3luTb-zf_q1JyV9wrSaBkk&callback=initGoogleMap"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpJR485BlVu3luTb-zf_q1JyV9wrSaBkk&libraries=places&callback=initGoogleMap"></script>
 
   <script>
     const firebaseConfig = {
@@ -302,40 +324,35 @@
 
     let boxesData = [];
     let driversData = [];
+    let customersData = [];
     let activeBoxId = null;
     let currentView = "map";
     let currentUser = null;
     let placeMode = null;
     let pendingLatLng = null;
-
-    // Google Maps variables
     let gMap = null;
     let gMarkers = [];
     let tempGMarker = null;
+    let autocompleteNew = null;
+    let autocompleteEdit = null;
+
+    function toggleDrawer(open) {
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("mobileOverlay");
+      if (open) {
+        sidebar.classList.add("open");
+        overlay.classList.add("active");
+      } else {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("active");
+      }
+    }
 
     function openModal(id) { document.getElementById(id).classList.add("active"); }
     function closeModal(id) { document.getElementById(id).classList.remove("active"); }
 
     function statusLabel(s) {
       return { Customer: "At Customer", Pickup: "Ready for Pickup", Exchange: "Ready for Exchange", Available: "Available" }[s] || s;
-    }
-
-    function buildAddress(street, city, state, zip) {
-      return [street, city, state, zip].filter(p => p && p.trim()).join(", ");
-    }
-
-    // Geocoding with Nominatim (free)
-    async function geocodeAddress(street, city, state, zip) {
-      const full = buildAddress(street, city, state, zip);
-      if (!full || full.length < 5) return { lat: null, lng: null };
-      try {
-        const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(full);
-        const res = await fetch(url, { headers: { "User-Agent": "RollOffTracker/1.0 (davis422.github.io)" } });
-        if (!res.ok) return { lat: null, lng: null };
-        const data = await res.json();
-        if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      } catch (e) { console.warn("Geocode error", e); }
-      return { lat: null, lng: null };
     }
 
     function signInWithGoogle() {
@@ -377,19 +394,34 @@
         if (!placeMode) return;
         pendingLatLng = { lat: e.latLng.lat(), lng: e.latLng.lng() };
         if (tempGMarker) tempGMarker.setMap(null);
-        tempGMarker = new google.maps.Marker({
-          position: e.latLng,
-          map: gMap,
-          animation: google.maps.Animation.DROP
-        });
-
-        document.getElementById("placeModeBanner").textContent = "Location set! Returning to form...";
+        tempGMarker = new google.maps.Marker({ position: e.latLng, map: gMap });
+        document.getElementById("placeModeBanner").textContent = "Location set!";
         setTimeout(() => {
           document.getElementById("placeModeBanner").classList.remove("active");
           if (tempGMarker) { tempGMarker.setMap(null); tempGMarker = null; }
           if (placeMode === "new") openModal("addBoxModal");
           else if (placeMode === "edit") openModal("editBoxModal");
         }, 700);
+      });
+
+      // Initialize Google Places Autocomplete for New Box form
+      autocompleteNew = new google.maps.places.Autocomplete(document.getElementById("newBoxAddress"));
+      autocompleteNew.addListener("place_changed", () => {
+        const place = autocompleteNew.getPlace();
+        if (place.geometry) {
+          pendingLatLng = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+          document.getElementById("newGeoStatus").textContent = "✓ Address found! Pin set precisely.";
+        }
+      });
+
+      // Initialize Google Places Autocomplete for Edit Box form
+      autocompleteEdit = new google.maps.places.Autocomplete(document.getElementById("editBoxAddress"));
+      autocompleteEdit.addListener("place_changed", () => {
+        const place = autocompleteEdit.getPlace();
+        if (place.geometry) {
+          pendingLatLng = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+          document.getElementById("editGeoStatus").textContent = "✓ Address found! Pin set precisely.";
+        }
       });
     }
 
@@ -406,30 +438,19 @@
       if (!gMap) return;
       gMarkers.forEach(m => m.setMap(null));
       gMarkers = [];
-
       boxesData.forEach(b => {
         if (b.lat == null || b.lng == null) return;
-        
-        // Create pill style marker using DivIcon (Google Maps Equivalent)
         const marker = new google.maps.Marker({
           position: { lat: b.lat, lng: b.lng },
           map: gMap,
-          label: {
-            text: "#" + b.boxNum,
-            color: "white",
-            fontWeight: "800",
-            fontSize: "12px"
-          },
+          label: { text: "#" + b.boxNum, color: "white", fontWeight: "800", fontSize: "12px" },
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
             scale: 12,
             fillColor: (b.status === "Customer") ? "#16a34a" : (b.status === "Pickup") ? "#d97706" : (b.status === "Exchange") ? "#2563eb" : "#64748b",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 2
+            fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2
           }
         });
-
         marker.addListener("click", () => selectBox(b.id));
         gMarkers.push(marker);
       });
@@ -437,296 +458,5 @@
 
     function startApp() {
       initGoogleMap();
-      db.collection("boxes").onSnapshot(snap => {
-        boxesData = [];
-        snap.forEach(d => boxesData.push({ id: d.id, ...d.data() }));
-        document.getElementById("syncTime").textContent = "Last sync: " + new Date().toLocaleTimeString();
-        renderApp();
-        document.getElementById("loading").style.display = "none";
-      }, err => {
-        document.getElementById("loading").innerHTML = "Firestore error:<br>" + err.message;
-      });
 
-      db.collection("drivers").onSnapshot(snap => {
-        driversData = [];
-        snap.forEach(d => driversData.push({ id: d.id, ...d.data() }));
-        populateDriverSelects();
-        if (currentView === "drivers") renderDrivers();
-      });
-    }
-
-    function renderApp() {
-      const search = (document.getElementById("searchInput").value || "").toLowerCase().trim();
-      const filter = document.getElementById("statusFilter").value;
-      const filtered = boxesData.filter(b => {
-        if (filter !== "ALL" && b.status !== filter) return false;
-        if (!search) return true;
-        const hay = [b.boxNum, b.customer, b.address, b.street, b.city, b.state, b.zip, b.driver, b.notes].join(" ").toLowerCase();
-        return hay.includes(search);
-      });
-      document.getElementById("boxCountTitle").textContent = "BOXES (" + filtered.length + ")";
-      const listEl = document.getElementById("boxList");
-      
-      if (filtered.length === 0) {
-        listEl.innerHTML = '<div class="empty-msg"><h3>No boxes found</h3><p>Click + to add one</p></div>';
-      } else {
-        listEl.innerHTML = filtered.map(b =>
-          '<div class="box-item ' + (b.id === activeBoxId ? "active" : "") + '" onclick="selectBox(\'' + b.id + '\')">' +
-          '<div class="box-item-title"><span class="dot dot-' + (b.status || "Available") + '"></span> #' + b.boxNum + '</div>' +
-          '<div class="box-item-addr">' + (b.address || "No address") + '</div>' +
-          '<div class="box-item-status">' + statusLabel(b.status) + '</div></div>'
-        ).join("");
-      }
-      refreshMarkers();
-      renderDetail();
-    }
-
-    function renderDetail() {
-      const panel = document.getElementById("detailPanel");
-      if (!activeBoxId) {
-        panel.innerHTML = '<div class="empty-msg">Select a box to view details</div>';
-        return;
-      }
-      const box = boxesData.find(b => b.id === activeBoxId);
-      if (!box) return;
-      const activities = (box.activity || []).slice().reverse().slice(0, 6);
-      const hasCoords = box.lat != null && box.lng != null;
-
-      // Exact layout from the screenshot
-      panel.innerHTML =
-        '<div class="detail-title"><span class="dot dot-' + (box.status || "Available") + '"></span> BOX #' + box.boxNum +
-        ' <span class="badge badge-' + (box.status || "Available") + '">' + statusLabel(box.status) + '</span></div>' +
-        '<div class="detail-layout">' +
-          '<div class="info-grid">' +
-            '<div><div class="info-label">Customer</div><div class="info-val">' + (box.customer || "—") + '</div></div>' +
-            '<div><div class="info-label">Driver</div><div class="info-val">' + (box.driver || "Unassigned") + '</div></div>' +
-            '<div><div class="info-label">Address</div><div class="info-val">' + (box.address || "—") + '</div></div>' +
-            '<div><div class="info-label">Size</div><div class="info-val">' + (box.size || "—") + ' Yard</div></div>' +
-            '<div><div class="info-label">Date Placed</div><div class="info-val">' + (box.datePlaced || "—") + '</div></div>' +
-            '<div><div class="info-label">Notes</div><div class="info-val">' + (box.notes || "None") + '</div></div>' +
-          '</div>' +
-          '<div class="box-photo">📷 Box Photo</div>' +
-        '</div>' +
-
-        '<div class="actions-row">' +
-          '<button class="btn-act btn-act-primary" onclick="openEditModal()">✏️ Edit</button>' +
-          '<button class="btn-act" onclick="quickStatus(\'Pickup\')">🚛 Request Pickup</button>' +
-          '<button class="btn-act" onclick="quickStatus(\'Exchange\')">🔄 Request Exchange</button>' +
-          '<button class="btn-act btn-act-danger" onclick="deleteBox()">🗑️ Delete</button>' +
-        '</div>' +
-
-        '<div class="activity-section"><div class="activity-title">Recent Activity</div>' +
-        (activities.length === 0 ? '<div style="font-size:0.8rem;color:#94a3b8">No activity yet</div>' :
-          activities.map(a => '<div class="activity-row"><span>' + a.time + ' — ' + a.text + '</span><span>' + (a.by||"") + '</span></div>').join("")) +
-        '</div>';
-    }
-
-    function renderDrivers() {
-      const el = document.getElementById("driversList");
-      if (driversData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No drivers yet</h3></div>'; return; }
-      el.innerHTML = driversData.map(d =>
-        '<div class="driver-card"><div><strong>' + d.name + '</strong><br><span style="font-size:0.8rem;color:#64748b">' + (d.phone || "") + '</span></div><button class="btn-act btn-act-danger" onclick="deleteDriver(\'' + d.id + '\')">Delete</button></div>'
-      ).join("");
-    }
-
-    function populateDriverSelects() {
-      const opts = '<option value="">— Unassigned —</option>' + driversData.map(d => '<option value="' + d.name + '">' + d.name + '</option>').join("");
-      document.getElementById("newBoxDriver").innerHTML = opts;
-      document.getElementById("editBoxDriver").innerHTML = opts;
-    }
-
-    function selectBox(id) {
-      activeBoxId = id;
-      renderApp();
-      const box = boxesData.find(b => b.id === id);
-      if (box && gMap && box.lat != null && box.lng != null) {
-        gMap.panTo({ lat: box.lat, lng: box.lng });
-        gMap.setZoom(15);
-      }
-    }
-
-    function openAddBoxModal() {
-      populateDriverSelects();
-      document.getElementById("newBoxNum").value = "";
-      document.getElementById("newBoxCustomer").value = "";
-      document.getElementById("newBoxStreet").value = "";
-      document.getElementById("newBoxCity").value = "";
-      document.getElementById("newBoxState").value = "TX";
-      document.getElementById("newBoxZip").value = "";
-      document.getElementById("newBoxNotes").value = "";
-      document.getElementById("newBoxStatus").value = "Available";
-      document.getElementById("newGeoStatus").textContent = "";
-      pendingLatLng = null;
-      placeMode = null;
-      openModal("addBoxModal");
-    }
-
-    async function saveBox() {
-      const boxNum = document.getElementById("newBoxNum").value.trim();
-      if (!boxNum) return alert("Box number is required");
-
-      const street = document.getElementById("newBoxStreet").value.trim();
-      const city = document.getElementById("newBoxCity").value.trim();
-      const state = document.getElementById("newBoxState").value.trim();
-      const zip = document.getElementById("newBoxZip").value.trim();
-      const fullAddress = buildAddress(street, city, state, zip);
-
-      const btn = document.getElementById("saveBoxBtn");
-      const statusEl = document.getElementById("newGeoStatus");
-      btn.disabled = true; btn.textContent = "Saving...";
-
-      let lat = null, lng = null;
-      if (pendingLatLng) {
-        lat = pendingLatLng.lat; lng = pendingLatLng.lng;
-        statusEl.textContent = "Using location you tapped on the map";
-      } else {
-        statusEl.textContent = "Looking up address...";
-        const geo = await geocodeAddress(street, city, state, zip);
-        lat = geo.lat; lng = geo.lng;
-        if (lat) statusEl.textContent = "✓ Address located on map";
-        else statusEl.textContent = "Could not auto-locate. Use the map button or save anyway.";
-      }
-
-      try {
-        const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        await db.collection("boxes").add({
-          boxNum: boxNum,
-          size: document.getElementById("newBoxSize").value,
-          customer: document.getElementById("newBoxCustomer").value.trim() || "Yard",
-          driver: document.getElementById("newBoxDriver").value || "Unassigned",
-          street: street, city: city, state: state, zip: zip,
-          address: fullAddress || "Yard",
-          lat: lat, lng: lng,
-          status: document.getElementById("newBoxStatus").value,
-          notes: document.getElementById("newBoxNotes").value.trim(),
-          datePlaced: today,
-          activity: [{ time: new Date().toLocaleString(), text: "Box created" + (lat ? " (located)" : ""), by: currentUser ? (currentUser.displayName || "User") : "Admin" }],
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          createdBy: currentUser ? currentUser.uid : null
-        });
-        pendingLatLng = null; placeMode = null;
-        closeModal("addBoxModal");
-      } catch (e) { alert("Error: " + e.message); }
-      finally { btn.disabled = false; btn.textContent = "Save Box"; }
-    }
-
-    function openEditModal() {
-      const box = boxesData.find(b => b.id === activeBoxId);
-      if (!box) return;
-      populateDriverSelects();
-      document.getElementById("editBoxStatus").value = box.status || "Available";
-      document.getElementById("editBoxCustomer").value = box.customer || "";
-      document.getElementById("editBoxDriver").value = box.driver || "";
-      document.getElementById("editBoxStreet").value = box.street || "";
-      document.getElementById("editBoxCity").value = box.city || "";
-      document.getElementById("editBoxState").value = box.state || "";
-      document.getElementById("editBoxZip").value = box.zip || "";
-      document.getElementById("editBoxNotes").value = box.notes || "";
-      document.getElementById("editGeoStatus").textContent = (box.lat != null) ? "Currently located on map" : "Location not set";
-      pendingLatLng = null; placeMode = null;
-      openModal("editBoxModal");
-    }
-
-    async function commitBoxUpdate() {
-      if (!activeBoxId) return;
-      const street = document.getElementById("editBoxStreet").value.trim();
-      const city = document.getElementById("editBoxCity").value.trim();
-      const state = document.getElementById("editBoxState").value.trim();
-      const zip = document.getElementById("editBoxZip").value.trim();
-      const fullAddress = buildAddress(street, city, state, zip);
-      const newStatus = document.getElementById("editBoxStatus").value;
-
-      const btn = document.getElementById("updateBoxBtn");
-      const statusEl = document.getElementById("editGeoStatus");
-      btn.disabled = true; btn.textContent = "Updating...";
-
-      let lat = null, lng = null;
-      const existing = boxesData.find(b => b.id === activeBoxId);
-
-      if (pendingLatLng) {
-        lat = pendingLatLng.lat; lng = pendingLatLng.lng;
-        statusEl.textContent = "Using location you tapped on the map";
-      } else {
-        statusEl.textContent = "Looking up address...";
-        const geo = await geocodeAddress(street, city, state, zip);
-        if (geo.lat) { lat = geo.lat; lng = geo.lng; statusEl.textContent = "✓ Address located"; }
-        else { lat = existing ? existing.lat : null; lng = existing ? existing.lng : null; statusEl.textContent = "Could not auto-locate – keeping previous location"; }
-      }
-
-      const updateData = {
-        status: newStatus,
-        customer: document.getElementById("editBoxCustomer").value.trim(),
-        driver: document.getElementById("editBoxDriver").value || "Unassigned",
-        street: street, city: city, state: state, zip: zip,
-        address: fullAddress || "Yard",
-        notes: document.getElementById("editBoxNotes").value.trim(),
-        activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Updated to " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Admin" })
-      };
-      if (lat != null && lng != null) { updateData.lat = lat; updateData.lng = lng; }
-
-      try {
-        await db.collection("boxes").doc(activeBoxId).update(updateData);
-        pendingLatLng = null; placeMode = null;
-        closeModal("editBoxModal");
-      } catch (e) { alert("Error: " + e.message); }
-      finally { btn.disabled = false; btn.textContent = "Update Box"; }
-    }
-
-    function quickStatus(newStatus) {
-      if (!activeBoxId) return;
-      db.collection("boxes").doc(activeBoxId).update({
-        status: newStatus,
-        activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Status → " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Driver/Admin" })
-      }).catch(e => alert("Error: " + e.message));
-    }
-
-    function deleteBox() {
-      if (!activeBoxId || !confirm("Delete this box permanently?")) return;
-      db.collection("boxes").doc(activeBoxId).delete()
-        .then(() => { activeBoxId = null; renderApp(); })
-        .catch(e => alert("Error: " + e.message));
-    }
-
-    function openAddDriverModal() {
-      document.getElementById("newDriverName").value = "";
-      document.getElementById("newDriverPhone").value = "";
-      openModal("addDriverModal");
-    }
-
-    function saveDriver() {
-      const name = document.getElementById("newDriverName").value.trim();
-      if (!name) return alert("Name required");
-      db.collection("drivers").add({
-        name: name,
-        phone: document.getElementById("newDriverPhone").value.trim(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => closeModal("addDriverModal"))
-        .catch(e => alert("Error: " + e.message));
-    }
-
-    function deleteDriver(id) {
-      if (!confirm("Delete this driver?")) return;
-      db.collection("drivers").doc(id).delete().catch(e => alert(e.message));
-    }
-
-    function switchView(view) {
-      currentView = view;
-      document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-      const nav = document.querySelector('[data-view="' + view + '"]');
-      if (nav) nav.classList.add("active");
-      if (view === "drivers") {
-        document.getElementById("mapView").style.display = "none";
-        document.getElementById("driversView").classList.add("active");
-        document.getElementById("detailPanel").style.display = "none";
-        renderDrivers();
-      } else {
-        document.getElementById("mapView").style.display = "grid";
-        document.getElementById("driversView").classList.remove("active");
-        document.getElementById("detailPanel").style.display = "block";
-        if (gMap) setTimeout(() => google.maps.event.trigger(gMap, "resize"), 200);
-        renderApp();
-      }
-    }
-  </script>
-</body>
-</html>
+      db.col
