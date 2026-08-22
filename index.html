@@ -39,8 +39,8 @@
     .btn-logout { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; color: #475569; }
 
     /* Dashboard Grid */
-    .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr 320px; overflow: hidden; }
-    .top-split { display: grid; grid-template-columns: 320px 1fr; border-bottom: 1px solid #cbd5e1; overflow: hidden; }
+    .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr; overflow: hidden; }
+    .top-split { display: grid; grid-template-columns: 320px 1fr; overflow: hidden; position: relative; }
 
     /* Box List Panel */
     .boxes-panel { background: #fff; border-right: 1px solid #cbd5e1; display: flex; flex-direction: column; overflow: hidden; }
@@ -55,12 +55,20 @@
     /* Map */
     .map-panel { position: relative; width: 100%; height: 100%; background: #e2e8f0; }
     #map { width: 100%; height: 100%; }
-    .fab-add { position: absolute; bottom: 20px; right: 20px; width: 52px; height: 52px; background: #16a34a; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; z-index: 500; border: none; }
+    
+    /* FAB Menu */
+    .fab-menu { position: absolute; bottom: 20px; right: 20px; z-index: 550; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+    .fab-btn { display: flex; align-items: center; gap: 8px; background: white; border: none; padding: 10px 16px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-weight: 700; cursor: pointer; font-size: 0.85rem; color: #111827; }
+    .fab-btn:hover { background: #f8fafc; }
+    .fab-btn.hidden { display: none; }
+    .fab-add { width: 52px; height: 52px; background: #16a34a; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; border: none; }
+
     #placeModeBanner { display: none; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: #1e40af; color: white; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; z-index: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3); white-space: nowrap; }
     #placeModeBanner.active { display: block; }
 
-    /* Detail Panel */
-    .detail-panel { background: #fff; padding: 20px 24px; overflow-y: auto; border-top: 2px solid #e2e8f0; }
+    /* Detail Panel (Bottom Sheet) */
+    .detail-panel { background: #fff; padding: 20px 24px; overflow-y: auto; border-top: 2px solid #e2e8f0; position: relative; }
+    .close-sheet { position: absolute; top: 15px; right: 15px; background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: 800; cursor: pointer; color: #475569; font-size: 1rem; display: none; z-index: 10; }
     .detail-title { font-size: 1.2rem; font-weight: 900; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
     .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; }
     .badge-Customer { background: #dcfce7; color: #15803d; }
@@ -71,7 +79,12 @@
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.85rem; flex: 1; }
     .info-label { color: #64748b; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
     .info-val { font-weight: 700; margin-top: 2px; word-break: break-word; }
-    .box-photo { width: 220px; height: 140px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; font-weight: 600; }
+    
+    /* Photo Section */
+    .photo-section { margin-top: 16px; }
+    .box-photo { width: 100%; max-width: 300px; height: 200px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; font-weight: 600; overflow: hidden; }
+    .box-photo img { width: 100%; height: 100%; object-fit: cover; }
+
     .actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
     .btn-act { padding: 8px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: 1px solid #cbd5e1; background: #fff; }
     .btn-act-primary { background: #16a34a; color: white; border: none; }
@@ -81,9 +94,9 @@
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
 
-    /* Customers Tab */
-    .customers-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
-    .customers-view.active { display: block; }
+    /* Tab Views */
+    .customers-view, .drivers-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
+    .customers-view.active, .drivers-view.active { display: block; }
 
     /* Modals */
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
@@ -106,13 +119,14 @@
     .dot-Available { background: #94a3b8; }
     .empty-msg { text-align: center; color: #94a3b8; padding: 40px 20px; }
     #loading { position: fixed; inset: 0; background: #f3f4f6; display: flex; align-items: center; justify-content: center; z-index: 9999; font-size: 1.1rem; color: #64748b; }
+    
     .custom-pill-marker { color: white; font-weight: 800; font-size: 0.75rem; padding: 3px 9px; border-radius: 12px; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align: center; white-space: nowrap; }
     .pill-Customer { background: #16a34a; }
     .pill-Pickup { background: #d97706; }
     .pill-Exchange { background: #2563eb; }
     .pill-Available { background: #64748b; }
 
-    /* Mobile Drawer Overlay */
+    /* Mobile Overlay */
     .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2999; }
     .mobile-overlay.active { display: block; }
 
@@ -125,9 +139,14 @@
       .top-split { grid-template-columns: 1fr; }
       .boxes-panel { display: none; }
       .detail-layout { flex-direction: column; }
-      .box-photo { width: 100%; }
       .search-box { max-width: 150px; }
       .user-area span { display: none; }
+      
+      /* Bottom Sheet on Mobile */
+      .detail-panel { position: absolute; bottom: 0; left: 0; right: 0; height: 85vh; border-top-left-radius: 16px; border-top-right-radius: 16px; z-index: 800; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease; }
+      .detail-panel.show { transform: translateY(0); }
+      .close-sheet { display: block; }
+      .fab-menu { bottom: 20px; }
     }
   </style>
 </head>
@@ -163,7 +182,7 @@
     <header>
       <button class="menu-btn" onclick="toggleDrawer(true)">☰</button>
       <div class="search-box">
-        🔍 <input type="text" id="searchInput" placeholder="Search box #, customer, address..." oninput="renderApp()" />
+        🔍 <input type="text" id="searchInput" placeholder="Search box #..." oninput="renderApp()" />
       </div>
       <div class="user-area">
         <div class="avatar" id="userAvatar">?</div>
@@ -190,7 +209,13 @@
         <div class="map-panel">
           <div id="map"></div>
           <div id="placeModeBanner">Tap the map to set the box location</div>
-          <button class="fab-add" onclick="openAddBoxModal()">+</button>
+          
+          <div class="fab-menu" id="fabMenu">
+            <button class="fab-btn hidden" id="btnAddBox" onclick="openAddBoxModal()">➕ Add Box</button>
+            <button class="fab-btn hidden" id="btnCustomers" onclick="switchView('customers')">👥 Customers</button>
+            <button class="fab-btn hidden" id="btnDrivers" onclick="switchView('drivers')">🚛 Drivers</button>
+            <button class="fab-add" onclick="toggleFabMenu()">+</button>
+          </div>
         </div>
       </div>
 
@@ -210,8 +235,11 @@
         <div id="driversList"></div>
       </div>
 
+      <!-- Detail Panel -->
       <div class="detail-panel" id="detailPanel">
-        <div class="empty-msg">Select a box to view details</div>
+        <button class="close-sheet" onclick="closeDetailPanel()">✕</button>
+        <div class="empty-msg" id="detailEmpty">Select a box to view details</div>
+        <div id="detailContent" style="display: none;"></div>
       </div>
     </div>
   </div>
@@ -302,10 +330,14 @@
     </div>
   </div>
 
-  <!-- Firebase & Google Maps Scripts (Places API Added) -->
+  <!-- Hidden Camera Input -->
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" />
+
+  <!-- Firebase & Google Maps Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpJR485BlVu3luTb-zf_q1JyV9wrSaBkk&libraries=places&callback=initGoogleMap"></script>
 
   <script>
@@ -321,6 +353,7 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    const storage = firebase.storage();
 
     let boxesData = [];
     let driversData = [];
@@ -335,6 +368,7 @@
     let tempGMarker = null;
     let autocompleteNew = null;
     let autocompleteEdit = null;
+    let currentPhotoURL = null;
 
     function toggleDrawer(open) {
       const sidebar = document.getElementById("sidebar");
@@ -346,6 +380,15 @@
         sidebar.classList.remove("open");
         overlay.classList.remove("active");
       }
+    }
+
+    function toggleFabMenu() {
+      const addBox = document.getElementById("btnAddBox");
+      const customers = document.getElementById("btnCustomers");
+      const drivers = document.getElementById("btnDrivers");
+      addBox.classList.toggle("hidden");
+      customers.classList.toggle("hidden");
+      drivers.classList.toggle("hidden");
     }
 
     function openModal(id) { document.getElementById(id).classList.add("active"); }
@@ -404,7 +447,6 @@
         }, 700);
       });
 
-      // Initialize Google Places Autocomplete for New Box form
       autocompleteNew = new google.maps.places.Autocomplete(document.getElementById("newBoxAddress"));
       autocompleteNew.addListener("place_changed", () => {
         const place = autocompleteNew.getPlace();
@@ -414,7 +456,6 @@
         }
       });
 
-      // Initialize Google Places Autocomplete for Edit Box form
       autocompleteEdit = new google.maps.places.Autocomplete(document.getElementById("editBoxAddress"));
       autocompleteEdit.addListener("place_changed", () => {
         const place = autocompleteEdit.getPlace();
@@ -481,6 +522,8 @@
         datalist.innerHTML = customersData.map(c => `<option value="${c.name}">`).join("");
         if (currentView === "customers") renderCustomers();
       });
+
+      document.getElementById("cameraInput").addEventListener("change", handlePhotoUpload);
     }
 
     function renderApp() {
@@ -511,13 +554,23 @@
     }
 
     function renderDetail() {
-      const panel = document.getElementById("detailPanel");
-      if (!activeBoxId) { panel.innerHTML = '<div class="empty-msg">Select a box to view details</div>'; return; }
+      const empty = document.getElementById("detailEmpty");
+      const content = document.getElementById("detailContent");
+
+      if (!activeBoxId) {
+        empty.style.display = "block";
+        content.style.display = "none";
+        return;
+      }
       const box = boxesData.find(b => b.id === activeBoxId);
       if (!box) return;
+
+      empty.style.display = "none";
+      content.style.display = "block";
       const activities = (box.activity || []).slice().reverse().slice(0, 6);
-      
-      panel.innerHTML = `
+      currentPhotoURL = box.photoURL || null;
+
+      content.innerHTML = `
         <div class="detail-title"><span class="dot dot-${box.status || "Available"}"></span> BOX #${box.boxNum} <span class="badge badge-${box.status || "Available"}">${statusLabel(box.status)}</span></div>
         <div class="detail-layout">
           <div class="info-grid">
@@ -527,17 +580,63 @@
             <div><div class="info-label">Size</div><div class="info-val">${box.size || "—"} Yard</div></div>
             <div><div class="info-label">Notes</div><div class="info-val">${box.notes || "None"}</div></div>
           </div>
-          <div class="box-photo">📷 Box Photo</div>
+          <div class="photo-section">
+            <div class="box-photo" id="photoDisplay">
+              ${currentPhotoURL ? `<img src="${currentPhotoURL}" alt="Box Photo">` : "📷 No Photo Yet"}
+            </div>
+          </div>
         </div>
         <div class="actions-row">
+          <button class="btn-act btn-act-primary" onclick="takePhoto()">📸 Take Photo</button>
           <button class="btn-act btn-act-primary" onclick="openEditModal()">✏️ Edit</button>
-          <button class="btn-act" onclick="quickStatus('Pickup')">🚛 Request Pickup</button>
-          <button class="btn-act" onclick="quickStatus('Exchange')">🔄 Request Exchange</button>
+          <button class="btn-act" onclick="quickStatus('Pickup')">🚛 Pickup</button>
+          <button class="btn-act" onclick="quickStatus('Exchange')">🔄 Exchange</button>
           <button class="btn-act btn-act-danger" onclick="deleteBox()">🗑️ Delete</button>
         </div>
         <div class="activity-section"><div class="activity-title">Recent Activity</div>
         ${activities.length === 0 ? '<div style="font-size:0.8rem;color:#94a3b8">No activity yet</div>' : activities.map(a => `<div class="activity-row"><span>${a.time} — ${a.text}</span><span>${a.by||""}</span></div>`).join("")}
         </div>`;
+
+      if (window.innerWidth <= 900) {
+        document.getElementById("detailPanel").classList.add("show");
+      }
+    }
+
+    function takePhoto() {
+      if (!activeBoxId) return;
+      document.getElementById("cameraInput").click();
+    }
+
+    async function handlePhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file || !activeBoxId) return;
+
+      try {
+        const storageRef = storage.ref(`box_photos/${activeBoxId}/${Date.now()}.jpg`);
+        const uploadTask = await storageRef.put(file);
+        const downloadURL = await uploadTask.ref.getDownloadURL();
+
+        await db.collection("boxes").doc(activeBoxId).update({
+          photoURL: downloadURL,
+          activity: firebase.firestore.FieldValue.arrayUnion({
+            time: new Date().toLocaleString(),
+            text: "📸 Photo uploaded",
+            by: currentUser ? (currentUser.displayName || "User") : "Driver"
+          })
+        });
+
+        event.target.value = "";
+        alert("Photo uploaded successfully!");
+      } catch (e) {
+        console.error("Photo upload error:", e);
+        alert("Error uploading photo. Make sure Firebase Storage is enabled in your console.");
+      }
+    }
+
+    function closeDetailPanel() {
+      document.getElementById("detailPanel").classList.remove("show");
+      activeBoxId = null;
+      renderDetail();
     }
 
     function renderCustomers() {
@@ -570,13 +669,16 @@
 
     function selectBox(id) {
       activeBoxId = id;
+      if (window.innerWidth <= 900) {
+        document.getElementById("detailPanel").classList.add("show");
+      }
       renderApp();
       const box = boxesData.find(b => b.id === id);
       if (box && gMap && box.lat != null && box.lng != null) {
         gMap.panTo({ lat: box.lat, lng: box.lng });
         gMap.setZoom(15);
       }
-      if (window.innerWidth <= 900) toggleDrawer(false);
+      toggleDrawer(false);
     }
 
     function openAddBoxModal() {
@@ -595,7 +697,6 @@
     async function saveBox() {
       const boxNum = document.getElementById("newBoxNum").value.trim();
       if (!boxNum) return alert("Box number is required");
-
       const address = document.getElementById("newBoxAddress").value.trim();
       const btn = document.getElementById("saveBoxBtn");
       btn.disabled = true; btn.textContent = "Saving...";
@@ -619,6 +720,7 @@
         });
         pendingLatLng = null; placeMode = null;
         closeModal("addBoxModal");
+        toggleFabMenu();
       } catch (e) { alert("Error: " + e.message); }
       finally { btn.disabled = false; btn.textContent = "Save Box"; }
     }
@@ -672,7 +774,7 @@
 
     function deleteBox() {
       if (!activeBoxId || !confirm("Delete this box permanently?")) return;
-      db.collection("boxes").doc(activeBoxId).delete().then(() => { activeBoxId = null; renderApp(); }).catch(e => alert("Error: " + e.message));
+      db.collection("boxes").doc(activeBoxId).delete().then(() => { activeBoxId = null; renderDetail(); }).catch(e => alert("Error: " + e.message));
     }
 
     function openAddCustomerModal() {
@@ -728,6 +830,7 @@
       document.getElementById("mapView").style.display = "none";
       document.getElementById("driversView").classList.remove("active");
       document.getElementById("customersView").classList.remove("active");
+      document.getElementById("detailPanel").classList.remove("show");
       document.getElementById("detailPanel").style.display = "none";
 
       if (view === "map") {
@@ -743,6 +846,7 @@
         renderDrivers();
       }
       toggleDrawer(false);
+      toggleFabMenu();
     }
   </script>
 </body>
