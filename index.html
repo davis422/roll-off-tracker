@@ -459,4 +459,291 @@
     function startApp() {
       initGoogleMap();
 
-      db.col
+      db.collection("boxes").onSnapshot(snap => {
+        boxesData = [];
+        snap.forEach(d => boxesData.push({ id: d.id, ...d.data() }));
+        document.getElementById("syncTime").textContent = "Last sync: " + new Date().toLocaleTimeString();
+        renderApp();
+        document.getElementById("loading").style.display = "none";
+      });
+
+      db.collection("drivers").onSnapshot(snap => {
+        driversData = [];
+        snap.forEach(d => driversData.push({ id: d.id, ...d.data() }));
+        populateDriverSelects();
+        if (currentView === "drivers") renderDrivers();
+      });
+
+      db.collection("customers").onSnapshot(snap => {
+        customersData = [];
+        snap.forEach(d => customersData.push({ id: d.id, ...d.data() }));
+        const datalist = document.getElementById("customersDatalist");
+        datalist.innerHTML = customersData.map(c => `<option value="${c.name}">`).join("");
+        if (currentView === "customers") renderCustomers();
+      });
+    }
+
+    function renderApp() {
+      const search = (document.getElementById("searchInput").value || "").toLowerCase().trim();
+      const filter = document.getElementById("statusFilter").value;
+      const filtered = boxesData.filter(b => {
+        if (filter !== "ALL" && b.status !== filter) return false;
+        if (!search) return true;
+        const hay = [b.boxNum, b.customer, b.address, b.driver, b.notes].join(" ").toLowerCase();
+        return hay.includes(search);
+      });
+      document.getElementById("boxCountTitle").textContent = "BOXES (" + filtered.length + ")";
+      const listEl = document.getElementById("boxList");
+      
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="empty-msg"><h3>No boxes found</h3></div>';
+      } else {
+        listEl.innerHTML = filtered.map(b =>
+          `<div class="box-item ${b.id === activeBoxId ? "active" : ""}" onclick="selectBox('${b.id}')">
+            <div class="box-item-title"><span class="dot dot-${b.status || "Available"}"></span> #${b.boxNum}</div>
+            <div class="box-item-addr">${b.address || "No address"}</div>
+            <div class="box-item-status">${statusLabel(b.status)}</div>
+          </div>`
+        ).join("");
+      }
+      refreshMarkers();
+      renderDetail();
+    }
+
+    function renderDetail() {
+      const panel = document.getElementById("detailPanel");
+      if (!activeBoxId) { panel.innerHTML = '<div class="empty-msg">Select a box to view details</div>'; return; }
+      const box = boxesData.find(b => b.id === activeBoxId);
+      if (!box) return;
+      const activities = (box.activity || []).slice().reverse().slice(0, 6);
+      
+      panel.innerHTML = `
+        <div class="detail-title"><span class="dot dot-${box.status || "Available"}"></span> BOX #${box.boxNum} <span class="badge badge-${box.status || "Available"}">${statusLabel(box.status)}</span></div>
+        <div class="detail-layout">
+          <div class="info-grid">
+            <div><div class="info-label">Customer</div><div class="info-val">${box.customer || "—"}</div></div>
+            <div><div class="info-label">Driver</div><div class="info-val">${box.driver || "Unassigned"}</div></div>
+            <div><div class="info-label">Address</div><div class="info-val">${box.address || "—"}</div></div>
+            <div><div class="info-label">Size</div><div class="info-val">${box.size || "—"} Yard</div></div>
+            <div><div class="info-label">Notes</div><div class="info-val">${box.notes || "None"}</div></div>
+          </div>
+          <div class="box-photo">📷 Box Photo</div>
+        </div>
+        <div class="actions-row">
+          <button class="btn-act btn-act-primary" onclick="openEditModal()">✏️ Edit</button>
+          <button class="btn-act" onclick="quickStatus('Pickup')">🚛 Request Pickup</button>
+          <button class="btn-act" onclick="quickStatus('Exchange')">🔄 Request Exchange</button>
+          <button class="btn-act btn-act-danger" onclick="deleteBox()">🗑️ Delete</button>
+        </div>
+        <div class="activity-section"><div class="activity-title">Recent Activity</div>
+        ${activities.length === 0 ? '<div style="font-size:0.8rem;color:#94a3b8">No activity yet</div>' : activities.map(a => `<div class="activity-row"><span>${a.time} — ${a.text}</span><span>${a.by||""}</span></div>`).join("")}
+        </div>`;
+    }
+
+    function renderCustomers() {
+      const el = document.getElementById("customersList");
+      if (customersData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No customers yet</h3></div>'; return; }
+      el.innerHTML = customersData.map(c =>
+        `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+          <div><strong>${c.name}</strong><br><span style="font-size:0.8rem;color:#64748b">${c.phone || ""}</span><br><span style="font-size:0.8rem;color:#64748b">${c.address || ""}</span></div>
+          <button class="btn-act btn-act-danger" onclick="deleteCustomer('${c.id}')">Delete</button>
+        </div>`
+      ).join("");
+    }
+
+    function renderDrivers() {
+      const el = document.getElementById("driversList");
+      if (driversData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No drivers yet</h3></div>'; return; }
+      el.innerHTML = driversData.map(d =>
+        `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+          <div><strong>${d.name}</strong><br><span style="font-size:0.8rem;color:#64748b">${d.phone || ""}</span></div>
+          <button class="btn-act btn-act-danger" onclick="deleteDriver('${d.id}')">Delete</button>
+        </div>`
+      ).join("");
+    }
+
+    function populateDriverSelects() {
+      const opts = '<option value="">— Unassigned —</option>' + driversData.map(d => `<option value="${d.name}">${d.name}</option>`).join("");
+      document.getElementById("newBoxDriver").innerHTML = opts;
+      document.getElementById("editBoxDriver").innerHTML = opts;
+    }
+
+    function selectBox(id) {
+      activeBoxId = id;
+      renderApp();
+      const box = boxesData.find(b => b.id === id);
+      if (box && gMap && box.lat != null && box.lng != null) {
+        gMap.panTo({ lat: box.lat, lng: box.lng });
+        gMap.setZoom(15);
+      }
+      if (window.innerWidth <= 900) toggleDrawer(false);
+    }
+
+    function openAddBoxModal() {
+      populateDriverSelects();
+      document.getElementById("newBoxNum").value = "";
+      document.getElementById("newBoxCustomer").value = "";
+      document.getElementById("newBoxAddress").value = "";
+      document.getElementById("newBoxNotes").value = "";
+      document.getElementById("newBoxStatus").value = "Available";
+      document.getElementById("newGeoStatus").textContent = "";
+      pendingLatLng = null;
+      placeMode = null;
+      openModal("addBoxModal");
+    }
+
+    async function saveBox() {
+      const boxNum = document.getElementById("newBoxNum").value.trim();
+      if (!boxNum) return alert("Box number is required");
+
+      const address = document.getElementById("newBoxAddress").value.trim();
+      const btn = document.getElementById("saveBoxBtn");
+      btn.disabled = true; btn.textContent = "Saving...";
+
+      try {
+        const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        await db.collection("boxes").add({
+          boxNum: boxNum,
+          size: document.getElementById("newBoxSize").value,
+          customer: document.getElementById("newBoxCustomer").value.trim() || "Yard",
+          driver: document.getElementById("newBoxDriver").value || "Unassigned",
+          address: address || "Yard",
+          lat: pendingLatLng ? pendingLatLng.lat : null,
+          lng: pendingLatLng ? pendingLatLng.lng : null,
+          status: document.getElementById("newBoxStatus").value,
+          notes: document.getElementById("newBoxNotes").value.trim(),
+          datePlaced: today,
+          activity: [{ time: new Date().toLocaleString(), text: "Box created", by: currentUser ? (currentUser.displayName || "User") : "Admin" }],
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createdBy: currentUser ? currentUser.uid : null
+        });
+        pendingLatLng = null; placeMode = null;
+        closeModal("addBoxModal");
+      } catch (e) { alert("Error: " + e.message); }
+      finally { btn.disabled = false; btn.textContent = "Save Box"; }
+    }
+
+    function openEditModal() {
+      const box = boxesData.find(b => b.id === activeBoxId);
+      if (!box) return;
+      populateDriverSelects();
+      document.getElementById("editBoxStatus").value = box.status || "Available";
+      document.getElementById("editBoxCustomer").value = box.customer || "";
+      document.getElementById("editBoxDriver").value = box.driver || "";
+      document.getElementById("editBoxAddress").value = box.address || "";
+      document.getElementById("editBoxNotes").value = box.notes || "";
+      document.getElementById("editGeoStatus").textContent = (box.lat != null) ? "Currently located on map" : "Location not set";
+      pendingLatLng = null; placeMode = null;
+      openModal("editBoxModal");
+    }
+
+    async function commitBoxUpdate() {
+      if (!activeBoxId) return;
+      const address = document.getElementById("editBoxAddress").value.trim();
+      const newStatus = document.getElementById("editBoxStatus").value;
+      const btn = document.getElementById("updateBoxBtn");
+      btn.disabled = true; btn.textContent = "Updating...";
+
+      const updateData = {
+        status: newStatus,
+        customer: document.getElementById("editBoxCustomer").value.trim(),
+        driver: document.getElementById("editBoxDriver").value || "Unassigned",
+        address: address || "Yard",
+        notes: document.getElementById("editBoxNotes").value.trim(),
+        activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Updated to " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Admin" })
+      };
+      if (pendingLatLng) { updateData.lat = pendingLatLng.lat; updateData.lng = pendingLatLng.lng; }
+
+      try {
+        await db.collection("boxes").doc(activeBoxId).update(updateData);
+        pendingLatLng = null; placeMode = null;
+        closeModal("editBoxModal");
+      } catch (e) { alert("Error: " + e.message); }
+      finally { btn.disabled = false; btn.textContent = "Update Box"; }
+    }
+
+    function quickStatus(newStatus) {
+      if (!activeBoxId) return;
+      db.collection("boxes").doc(activeBoxId).update({
+        status: newStatus,
+        activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Status → " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Driver/Admin" })
+      }).catch(e => alert("Error: " + e.message));
+    }
+
+    function deleteBox() {
+      if (!activeBoxId || !confirm("Delete this box permanently?")) return;
+      db.collection("boxes").doc(activeBoxId).delete().then(() => { activeBoxId = null; renderApp(); }).catch(e => alert("Error: " + e.message));
+    }
+
+    function openAddCustomerModal() {
+      document.getElementById("newCustomerName").value = "";
+      document.getElementById("newCustomerPhone").value = "";
+      document.getElementById("newCustomerAddress").value = "";
+      openModal("addCustomerModal");
+    }
+
+    function saveCustomer() {
+      const name = document.getElementById("newCustomerName").value.trim();
+      if (!name) return alert("Name required");
+      db.collection("customers").add({
+        name: name,
+        phone: document.getElementById("newCustomerPhone").value.trim(),
+        address: document.getElementById("newCustomerAddress").value.trim(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => closeModal("addCustomerModal")).catch(e => alert("Error: " + e.message));
+    }
+
+    function deleteCustomer(id) {
+      if (!confirm("Delete this customer?")) return;
+      db.collection("customers").doc(id).delete().catch(e => alert(e.message));
+    }
+
+    function openAddDriverModal() {
+      document.getElementById("newDriverName").value = "";
+      document.getElementById("newDriverPhone").value = "";
+      openModal("addDriverModal");
+    }
+
+    function saveDriver() {
+      const name = document.getElementById("newDriverName").value.trim();
+      if (!name) return alert("Name required");
+      db.collection("drivers").add({
+        name: name,
+        phone: document.getElementById("newDriverPhone").value.trim(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => closeModal("addDriverModal")).catch(e => alert("Error: " + e.message));
+    }
+
+    function deleteDriver(id) {
+      if (!confirm("Delete this driver?")) return;
+      db.collection("drivers").doc(id).delete().catch(e => alert(e.message));
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+      const nav = document.querySelector(`[data-view="${view}"]`);
+      if (nav) nav.classList.add("active");
+      
+      document.getElementById("mapView").style.display = "none";
+      document.getElementById("driversView").classList.remove("active");
+      document.getElementById("customersView").classList.remove("active");
+      document.getElementById("detailPanel").style.display = "none";
+
+      if (view === "map") {
+        document.getElementById("mapView").style.display = "grid";
+        document.getElementById("detailPanel").style.display = "block";
+        if (gMap) setTimeout(() => google.maps.event.trigger(gMap, "resize"), 200);
+        renderApp();
+      } else if (view === "customers") {
+        document.getElementById("customersView").classList.add("active");
+        renderCustomers();
+      } else if (view === "drivers") {
+        document.getElementById("driversView").classList.add("active");
+        renderDrivers();
+      }
+      toggleDrawer(false);
+    }
+  </script>
+</body>
+</html>
