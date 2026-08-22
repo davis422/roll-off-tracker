@@ -5,55 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Roll-Off Tracker</title>
   
-  <!-- Leaflet CSS for Maps -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     body { background: #f3f4f6; color: #111827; height: 100vh; overflow: hidden; display: flex; }
 
-    /* --- SIDEBAR --- */
+    /* SIDEBAR */
     aside { width: 200px; background: #0f172a; color: #94a3b8; display: flex; flex-direction: column; flex-shrink: 0; }
-    .brand { padding: 18px 16px; font-weight: 900; font-size: 1.1rem; color: #22c55e; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #1e293b; }
+    .brand { padding: 18px 16px; font-weight: 900; font-size: 1.05rem; color: #22c55e; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #1e293b; }
     .nav-list { list-style: none; padding: 12px 8px; flex: 1; }
-    .nav-item { padding: 10px 12px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-    .nav-item.active, .nav-item:hover { background: #1e293b; color: #ffffff; }
-    .nav-item.active { background: #16a34a; }
+    .nav-item { padding: 10px 12px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; transition: all 0.15s; }
+    .nav-item:hover { background: #1e293b; color: #ffffff; }
+    .nav-item.active { background: #16a34a; color: #ffffff; }
     .sidebar-footer { padding: 16px; border-top: 1px solid #1e293b; font-size: 0.75rem; color: #64748b; }
 
-    /* --- MAIN WRAPPER --- */
+    /* MAIN */
     .main-wrapper { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-    /* --- TOPBAR --- */
+    /* TOPBAR */
     header { height: 56px; background: #ffffff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; }
     .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; width: 380px; }
     .search-box input { border: none; background: transparent; width: 100%; outline: none; font-size: 0.85rem; margin-left: 8px; }
     .header-right { display: flex; align-items: center; gap: 16px; }
-    .user-pill { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .user-pill { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; }
     .avatar { width: 32px; height: 32px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
 
-    /* --- DASHBOARD GRID --- */
-    .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr 340px; overflow: hidden; }
+    /* GRID */
+    .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr 320px; overflow: hidden; }
     .top-split { display: grid; grid-template-columns: 340px 1fr; border-bottom: 1px solid #cbd5e1; overflow: hidden; }
 
-    /* --- LEFT BOX LIST --- */
+    /* BOX LIST */
     .boxes-panel { background: #ffffff; border-right: 1px solid #cbd5e1; display: flex; flex-direction: column; overflow: hidden; }
     .panel-header { padding: 12px 16px; font-weight: 800; font-size: 0.9rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
     .box-list { flex: 1; overflow-y: auto; }
     .box-item { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.15s; }
-    .box-item:hover, .box-item.active { background: #f8fafc; }
+    .box-item:hover, .box-item.active { background: #f0fdf4; }
     .box-item-title { font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
     .box-item-addr { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
     .box-item-status { font-size: 0.75rem; font-weight: 700; margin-top: 4px; }
 
-    /* --- RIGHT MAP AREA --- */
+    /* MAP */
     .map-panel { position: relative; width: 100%; height: 100%; background: #e2e8f0; }
     #map { width: 100%; height: 100%; z-index: 1; }
 
-    /* Map Pill Markers */
     .custom-pill-marker {
-      background: #16a34a; color: white; font-weight: 800; font-size: 0.75rem;
-      padding: 3px 8px; border-radius: 12px; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      color: white; font-weight: 800; font-size: 0.75rem;
+      padding: 3px 9px; border-radius: 12px; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       text-align: center; white-space: nowrap;
     }
     .pill-Customer { background: #16a34a; }
@@ -61,7 +60,6 @@
     .pill-Exchange { background: #2563eb; }
     .pill-Available { background: #64748b; }
 
-    /* Floating Action Button (FAB) */
     .fab-add {
       position: absolute; bottom: 20px; right: 20px; width: 52px; height: 52px;
       background: #16a34a; color: white; border-radius: 50%; display: flex;
@@ -70,501 +68,88 @@
     }
     .fab-add:hover { background: #15803d; transform: scale(1.05); }
 
-    /* --- BOTTOM DETAIL PANEL --- */
+    /* DETAIL PANEL */
     .detail-panel { background: #ffffff; padding: 16px 24px; display: flex; flex-direction: column; overflow-y: auto; gap: 12px; }
     .detail-header { display: flex; justify-content: space-between; align-items: center; }
-    .detail-title { font-size: 1.3rem; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+    .detail-title { font-size: 1.25rem; font-weight: 900; display: flex; align-items: center; gap: 10px; }
     .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
     .badge-Customer { background: #dcfce7; color: #15803d; }
     .badge-Pickup { background: #fef3c7; color: #d97706; }
     .badge-Exchange { background: #dbeafe; color: #2563eb; }
     .badge-Available { background: #f1f5f9; color: #475569; }
 
-    .detail-body { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    .detail-body { display: grid; grid-template-columns: 1.8fr 1fr; gap: 20px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.85rem; }
-    .info-label { color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .info-label { color: #64748b; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
     .info-val { font-weight: 700; color: #0f172a; margin-top: 2px; }
 
-    .box-photo { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; }
-
-    /* Action Buttons Row */
     .actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
     .btn-act { padding: 8px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; display: flex; align-items: center; gap: 6px; }
+    .btn-act:hover { background: #f8fafc; }
     .btn-act-primary { background: #16a34a; color: white; border: none; }
+    .btn-act-primary:hover { background: #15803d; }
     .btn-act-danger { color: #dc2626; border-color: #fca5a5; }
+    .btn-act-danger:hover { background: #fef2f2; }
 
-    /* Activity Log */
     .activity-section { margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 6px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; color: #334155; }
 
-    /* --- MODALS --- */
+    /* DRIVERS VIEW */
+    .drivers-view, .empty-state { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
+    .drivers-view.active, .empty-state.active { display: block; }
+    .driver-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .driver-info h4 { font-size: 1rem; font-weight: 800; }
+    .driver-info p { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+
+    /* MODALS */
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
     .modal-overlay.active { display: flex; }
-    .modal { background: white; border-radius: 12px; padding: 20px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-    .modal h3 { font-size: 1.1rem; font-weight: 800; color: #0f172a; }
+    .modal { background: white; border-radius: 12px; padding: 22px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-size: 1.15rem; font-weight: 800; color: #0f172a; }
     .modal label { font-size: 0.75rem; font-weight: 700; color: #475569; margin-bottom: -6px; }
-    .modal input, .modal select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; }
+    .modal input, .modal select, .modal textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; }
+    .modal textarea { resize: vertical; min-height: 60px; }
     .modal-btns { display: flex; gap: 8px; margin-top: 8px; }
-    .modal-btns button { flex: 1; padding: 10px; font-weight: 700; border-radius: 6px; cursor: pointer; border: none; }
+    .modal-btns button { flex: 1; padding: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; border: none; }
     .btn-save { background: #16a34a; color: white; }
+    .btn-save:hover { background: #15803d; }
     .btn-cancel { background: #e2e8f0; color: #475569; }
 
-    /* Status Dot Colors */
-    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    /* DOTS */
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
     .dot-Customer { background: #16a34a; }
     .dot-Pickup { background: #d97706; }
     .dot-Exchange { background: #2563eb; }
     .dot-Available { background: #94a3b8; }
+
+    /* EMPTY STATE */
+    .empty-msg { text-align: center; color: #94a3b8; padding: 60px 20px; }
+    .empty-msg h3 { font-size: 1.1rem; margin-bottom: 8px; color: #64748b; }
+
+    @media (max-width: 900px) {
+      aside { display: none; }
+      .top-split { grid-template-columns: 1fr; }
+      .boxes-panel { display: none; }
+      .search-box { width: 200px; }
+      .dashboard-grid { grid-template-rows: 1fr 280px; }
+    }
   </style>
 </head>
 <body>
 
-  <!-- LEFT SIDEBAR -->
+  <!-- SIDEBAR -->
   <aside>
     <div class="brand">🚚 ROLL-OFF TRACKER</div>
     <ul class="nav-list">
-      <li class="nav-item active">🗺️ Map</li>
-      <li class="nav-item">📦 Boxes</li>
-      <li class="nav-item">👤 Customers</li>
-      <li class="nav-item">📋 Requests</li>
-      <li class="nav-item">🚛 Drivers</li>
-      <li class="nav-item">📊 Reports</li>
-      <li class="nav-item">⚙️ Settings</li>
+      <li class="nav-item active" data-view="map" onclick="switchView('map')">🗺️ Map</li>
+      <li class="nav-item" data-view="boxes" onclick="switchView('boxes')">📦 Boxes</li>
+      <li class="nav-item" data-view="drivers" onclick="switchView('drivers')">🚛 Drivers</li>
+      <li class="nav-item" style="opacity:0.5;cursor:default;">👤 Customers</li>
+      <li class="nav-item" style="opacity:0.5;cursor:default;">📋 Requests</li>
+      <li class="nav-item" style="opacity:0.5;cursor:default;">📊 Reports</li>
+      <li class="nav-item" style="opacity:0.5;cursor:default;">⚙️ Settings</li>
     </ul>
     <div class="sidebar-footer">
-      Sync Active<br><span style="color: #94a3b8;">Live Firebase Link</span>
-    </div>
-  </aside>
-
-  <!-- MAIN AREA -->
-  <div class="main-wrapper">
-    
-    <!-- TOPBAR -->
-    <header>
-      <div class="search-box">
-        🔍 <input type="text" id="searchInput" placeholder="Search box #, customer, or address..." />
-      </div>
-      <div class="header-right">
-        <div class="user-pill">
-          <div class="avatar">DS</div>
-          <span>Davis (Driver / Admin)</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- MAIN GRID CONTAINER -->
-    <div class="dashboard-grid">
-      
-      <!-- TOP SPLIT: LIST + MAP -->
-      <div class="top-split">
-        
-        <!-- LEFT LIST -->
-        <div class="boxes-panel">
-          <div class="panel-header">
-            <span id="boxCountTitle">BOXES (0)</span>
-            <select id="statusFilter" style="border:none; background:transparent; font-weight:700; font-size:0.8rem; cursor:pointer;">
-              <option value="ALL">All Statuses</option>
-              <option value="Customer">At Customer</option>
-              <option value="Pickup">Ready for Pickup</option>
-              <option value="Exchange">Ready for Exchange</option>
-              <option value="Available">Available</option>
-            </select>
-          </div>
-          <div class="box-list" id="boxList"></div>
-        </div>
-
-        <!-- RIGHT MAP -->
-        <div class="map-panel">
-          <div id="map"></div>
-          <button class="fab-add" onclick="window.openModal('addBoxModal')" title="Add New Box">+</button>
-        </div>
-
-      </div>
-
-      <!-- BOTTOM DETAIL PANEL -->
-      <div class="detail-panel" id="detailPanel">
-        <div style="text-align: center; color: #94a3b8; padding: 40px;">Select a box from the list or map to view details.</div>
-      </div>
-
-    </div>
-
-  </div>
-
-  <!-- ADD BOX MODAL -->
-  <div id="addBoxModal" class="modal-overlay">
-    <div class="modal">
-      <h3>Add New Box</h3>
-      <label>Box Number</label>
-      <input type="text" id="newBoxNum" placeholder="e.g. 247" />
-      <label>Size</label>
-      <select id="newBoxSize">
-        <option value="10">10 Yard</option>
-        <option value="20">20 Yard</option>
-        <option value="30" selected>30 Yard</option>
-        <option value="40">40 Yard</option>
-      </select>
-      <label>Customer Name</label>
-      <input type="text" id="newBoxCustomer" placeholder="e.g. ABC Construction" />
-      <label>Driver</label>
-      <input type="text" id="newBoxDriver" placeholder="e.g. Mike D." />
-      <label>Drop Address</label>
-      <input type="text" id="newBoxAddress" placeholder="1234 Main St, Houston, TX 77002" />
-      <label>Status</label>
-      <select id="newBoxStatus">
-        <option value="Customer">At Customer</option>
-        <option value="Pickup">Ready for Pickup</option>
-        <option value="Exchange">Ready for Exchange</option>
-        <option value="Available">Available (Yard)</option>
-      </select>
-      <label>Notes</label>
-      <input type="text" id="newBoxNotes" placeholder="Gate codes, waste type, etc." />
-      <div class="modal-btns">
-        <button class="btn-save" onclick="window.saveBox()">Save Box</button>
-        <button class="btn-cancel" onclick="window.closeModal('addBoxModal')">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- EDIT / UPDATE STATUS MODAL -->
-  <div id="editBoxModal" class="modal-overlay">
-    <div class="modal">
-      <h3>Update Box Details</h3>
-      <label>Status</label>
-      <select id="editBoxStatus">
-        <option value="Customer">At Customer</option>
-        <option value="Pickup">Ready for Pickup</option>
-        <option value="Exchange">Ready for Exchange</option>
-        <option value="Available">Available (Yard)</option>
-      </select>
-      <label>Address / Location</label>
-      <input type="text" id="editBoxAddress" placeholder="Address..." />
-      <label>Customer</label>
-      <input type="text" id="editBoxCustomer" />
-      <label>Driver</label>
-      <input type="text" id="editBoxDriver" />
-      <label>Notes</label>
-      <input type="text" id="editBoxNotes" />
-      <div class="modal-btns">
-        <button class="btn-save" onclick="window.commitBoxUpdate()">Update Box</button>
-        <button class="btn-cancel" onclick="window.closeModal('editBoxModal')">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyD9EKxFCUfV0Zv3va0l4sIvUFrA4liaJ1k",
-      authDomain: "test-c8d17.firebaseapp.com",
-      projectId: "test-c8d17",
-      storageBucket: "test-c8d17.firebasestorage.app",
-      messagingSenderId: "595934730594",
-      appId: "1:595934730594:web:a3b9b24fcaff346811b43b"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let boxesData = [];
-    let activeBoxId = null;
-    let map = null;
-    let mapMarkers = {};
-
-    // Modal Helpers
-    window.openModal = function(id) { document.getElementById(id).classList.add('active'); };
-    window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); };
-
-    // Initialize Map
-    function initMap() {
-      // Default centered on Houston area
-      map = L.map('map').setView([29.7604, -95.3698], 10);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(map);
-    }
-
-    // Coordinates fallback helper for map display
-    function getCoordsForBox(box) {
-      if (box.lat && box.lng) return [box.lat, box.lng];
-      // Generate randomized coordinates around Houston for visualization based on Box Number string hash
-      let hash = 0;
-      for (let i = 0; i < (box.boxNum || '').length; i++) hash = (hash << 5) - hash + box.boxNum.charCodeAt(i);
-      const latOffset = ((Math.abs(hash) % 100) - 50) / 400;
-      const lngOffset = ((Math.abs(hash * 3) % 100) - 50) / 400;
-      return [29.7604 + latOffset, -95.3698 + lngOffset];
-    }
-
-    // Update Map Pins
-    function refreshMapMarkers(boxes) {
-      if (!map) return;
-      
-      // Clear old markers
-      Object.values(mapMarkers).forEach(m => map.removeLayer(m));
-      mapMarkers = {};
-
-      boxes.forEach(b => {
-        const coords = getCoordsForBox(b);
-        const icon = L.divIcon({
-          className: 'custom-pill-wrapper',
-          html: `<div class="custom-pill-marker pill-${b.status || 'Available'}">#${b.boxNum}</div>`
-        });
-
-        const marker = L.marker(coords, { icon }).addTo(map);
-        marker.on('click', () => window.selectBox(b.id));
-        mapMarkers[b.id] = marker;
-      });
-    }
-
-    // Real-time Firebase Sync
-    function initFirebaseSync() {
-      onSnapshot(query(collection(db, "boxes")), (snapshot) => {
-        boxesData = [];
-        snapshot.forEach((doc) => boxesData.push({ id: doc.id, ...doc.data() }));
-        
-        // Auto-seed sample box if database is completely empty
-        if (boxesData.length === 0) {
-          seedInitialData();
-          return;
-        }
-
-        renderApp();
-      }, (err) => alert("Database connection error: " + err.message));
-    }
-
-    async function seedInitialData() {
-      await addDoc(collection(db, "boxes"), {
-        boxNum: "247",
-        size: "30",
-        customer: "ABC Construction",
-        driver: "Mike D.",
-        phone: "(713) 555-0198",
-        address: "1234 Main St, Houston, TX 77002",
-        status: "Customer",
-        notes: "Concrete and dirt only. Gate code: 1234",
-        createdAt: serverTimestamp()
-      });
-    }
-
-    // Save New Box
-    window.saveBox = async function() {
-      const boxNum = document.getElementById('newBoxNum').value.trim();
-      if (!boxNum) return alert('Box number is required.');
-
-      try {
-        await addDoc(collection(db, "boxes"), {
-          boxNum: boxNum,
-          size: document.getElementById('newBoxSize').value,
-          customer: document.getElementById('newBoxCustomer').value.trim() || 'Yard / Stock',
-          driver: document.getElementById('newBoxDriver').value.trim() || 'Unassigned',
-          address: document.getElementById('newBoxAddress').value.trim() || 'Yard',
-          status: document.getElementById('newBoxStatus').value,
-          notes: document.getElementById('newBoxNotes').value.trim() || 'None',
-          createdAt: serverTimestamp()
-        });
-
-        window.closeModal('addBoxModal');
-        // Clear fields
-        document.getElementById('newBoxNum').value = '';
-        document.getElementById('newBoxAddress').value = '';
-        document.getElementById('newBoxCustomer').value = '';
-        document.getElementById('newBoxNotes').value = '';
-      } catch (e) {
-        alert("Error saving box: " + e.message);
-      }
-    };
-
-    // Open Edit Modal
-    window.openEditModal = function() {
-      const box = boxesData.find(b => b.id === activeBoxId);
-      if (!box) return;
-
-      document.getElementById('editBoxStatus').value = box.status || 'Available';
-      document.getElementById('editBoxAddress').value = box.address || '';
-      document.getElementById('editBoxCustomer').value = box.customer || '';
-      document.getElementById('editBoxDriver').value = box.driver || '';
-      document.getElementById('editBoxNotes').value = box.notes || '';
-      window.openModal('editBoxModal');
-    };
-
-    // Commit Box Edit
-    window.commitBoxUpdate = async function() {
-      if (!activeBoxId) return;
-      try {
-        await updateDoc(doc(db, "boxes", activeBoxId), {
-          status: document.getElementById('editBoxStatus').value,
-          address: document.getElementById('editBoxAddress').value.trim(),
-          customer: document.getElementById('editBoxCustomer').value.trim(),
-          driver: document.getElementById('editBoxDriver').value.trim(),
-          notes: document.getElementById('editBoxNotes').value.trim()
-        });
-        window.closeModal('editBoxModal');
-      } catch (e) {
-        alert("Error updating box: " + e.message);
-      }
-    };
-
-    // Quick Status Changes
-    window.updateBoxStatusQuick = async function(newStatus) {
-      if (!activeBoxId) return;
-      await updateDoc(doc(db, "boxes", activeBoxId), { status: newStatus });
-    };
-
-    // Delete Box
-    window.deleteBox = async function() {
-      if (!activeBoxId) return;
-      if (confirm('Are you sure you want to delete this box?')) {
-        await deleteDoc(doc(db, "boxes", activeBoxId));
-        activeBoxId = null;
-        renderApp();
-      }
-    };
-
-    // Select Box from List/Map
-    window.selectBox = function(id) {
-      activeBoxId = id;
-      renderApp();
-      const box = boxesData.find(b => b.id === id);
-      if (box && map) {
-        const coords = getCoordsForBox(box);
-        map.panTo(coords);
-      }
-    };
-
-    // Render Box List & Detail Panel
-    function renderApp() {
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const filter = document.getElementById('statusFilter').value;
-
-      const filtered = boxesData.filter(b => {
-        const matchesFilter = filter === 'ALL' || b.status === filter;
-        const matchesSearch = (b.boxNum || '').toLowerCase().includes(search) ||
-                              (b.customer || '').toLowerCase().includes(search) ||
-                              (b.address || '').toLowerCase().includes(search);
-        return matchesFilter && matchesSearch;
-      });
-
-      // Update Header Title Count
-      document.getElementById('boxCountTitle').innerText = `BOXES (${filtered.length})`;
-
-      // Render Left List
-      const listEl = document.getElementById('boxList');
-      listEl.innerHTML = '';
-      
-      filtered.forEach(b => {
-        const item = document.createElement('div');
-        item.className = `box-item ${b.id === activeBoxId ? 'active' : ''}`;
-        item.onclick = () => window.selectBox(b.id);
-        item.innerHTML = `
-          <div class="box-item-title">
-            <span class="dot dot-${b.status || 'Available'}"></span>
-            #${b.boxNum}
-          </div>
-          <div class="box-item-addr">${b.address || 'Yard'}</div>
-          <div class="box-item-status" style="color: ${getStatusColor(b.status)}">${getStatusLabel(b.status)}</div>
-        `;
-        listEl.appendChild(item);
-      });
-
-      // Refresh Map Markers
-      refreshMapMarkers(filtered);
-
-      // Render Detail Panel
-      const detailEl = document.getElementById('detailPanel');
-      if (!activeBoxId && filtered.length > 0) activeBoxId = filtered[0].id;
-
-      const box = boxesData.find(b => b.id === activeBoxId);
-      if (!box) {
-        detailEl.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 40px;">Select a box to view details.</div>`;
-        return;
-      }
-
-      detailEl.innerHTML = `
-        <div class="detail-header">
-          <div class="detail-title">
-            <span class="dot dot-${box.status}" style="width:12px;height:12px;"></span>
-            BOX #${box.boxNum}
-            <span class="badge badge-${box.status}">${getStatusLabel(box.status)}</span>
-          </div>
-        </div>
-
-        <div class="detail-body">
-          <div class="info-grid">
-            <div>
-              <div class="info-label">Customer</div>
-              <div class="info-val">👤 ${box.customer || 'Yard'}</div>
-            </div>
-            <div>
-              <div class="info-label">Driver</div>
-              <div class="info-val">🚚 ${box.driver || 'Unassigned'}</div>
-            </div>
-            <div>
-              <div class="info-label">Address</div>
-              <div class="info-val">📍 ${box.address || 'Yard'}</div>
-            </div>
-            <div>
-              <div class="info-label">Phone</div>
-              <div class="info-val">📞 ${box.phone || '(713) 555-0198'}</div>
-            </div>
-            <div>
-              <div class="info-label">Size</div>
-              <div class="info-val">📐 ${box.size || '30'} Yard</div>
-            </div>
-            <div>
-              <div class="info-label">Notes</div>
-              <div class="info-val">📝 ${box.notes || 'None'}</div>
-            </div>
-          </div>
-
-          <div>
-            <img src="https://images.unsplash.com/photo-1590496793929-36417d3117de?auto=format&fit=crop&w=400&q=80" class="box-photo" alt="Box Container" />
-          </div>
-        </div>
-
-        <div class="actions-row">
-          <button class="btn-act btn-act-primary" onclick="window.openEditModal()">📍 Update Location / Edit</button>
-          <button class="btn-act" onclick="window.updateBoxStatusQuick('Pickup')">🚛 Request Pickup</button>
-          <button class="btn-act" onclick="window.updateBoxStatusQuick('Exchange')">🔄 Request Exchange</button>
-          <button class="btn-act btn-act-danger" onclick="window.deleteBox()">🗑️ Delete</button>
-        </div>
-
-        <div class="activity-section">
-          <div class="activity-title">RECENT ACTIVITY</div>
-          <div class="activity-row"><span>Location & Status Sync</span><span>Driver Assigned</span></div>
-          <div class="activity-row" style="color:#64748b;"><span>Container logged in yard</span><span>System</span></div>
-        </div>
-      `;
-    }
-
-    function getStatusColor(status) {
-      if (status === 'Customer') return '#16a34a';
-      if (status === 'Pickup') return '#d97706';
-      if (status === 'Exchange') return '#2563eb';
-      return '#64748b';
-    }
-
-    function getStatusLabel(status) {
-      if (status === 'Customer') return 'At Customer';
-      if (status === 'Pickup') return 'Ready for Pickup';
-      if (status === 'Exchange') return 'Ready for Exchange';
-      return 'Available';
-    }
-
-    // Startup Execution
-    window.addEventListener('DOMContentLoaded', () => {
-      initMap();
-      initFirebaseSync();
-
-      document.getElementById('searchInput').addEventListener('input', renderApp);
-      document.getElementById('statusFilter').addEventListener('change', renderApp);
-    });
-  </script>
-</body>
-</html>
+      Live Firebase Sync<br>
+      <span id="syncTime" style="color:#94
