@@ -34,6 +34,7 @@
     .avatar { width: 32px; height: 32px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; overflow: hidden; }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
     .btn-logout { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; color: #475569; }
+    .settings-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #475569; }
 
     .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr; overflow: hidden; }
     .top-split { display: grid; grid-template-columns: 320px 1fr; overflow: hidden; position: relative; }
@@ -84,8 +85,8 @@
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
 
-    .customers-view, .drivers-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
-    .customers-view.active, .drivers-view.active { display: block; }
+    .customers-view, .drivers-view, .users-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
+    .customers-view.active, .drivers-view.active, .users-view.active { display: block; }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
     .modal-overlay.active { display: flex; }
@@ -155,6 +156,7 @@
       <li class="nav-item active" data-view="map" onclick="switchView('map')">🗺️ Map</li>
       <li class="nav-item" data-view="customers" onclick="switchView('customers')">👥 Customers</li>
       <li class="nav-item" data-view="drivers" onclick="switchView('drivers')">🚛 Drivers</li>
+      <li class="nav-item" data-view="users" onclick="switchView('users')" id="usersTab" style="display:none;">👤 Manage Users</li>
     </ul>
     <div class="sidebar-footer">
       Live Firebase<br>
@@ -171,17 +173,16 @@
       <div class="user-area">
         <div class="avatar" id="userAvatar">?</div>
         <span id="userName">User</span>
+        <button class="settings-btn" onclick="switchView('users')" id="settingsGear">⚙️</button>
         <button class="btn-logout" onclick="signOut()">Sign Out</button>
       </div>
     </header>
 
     <div class="dashboard-grid">
       <div class="top-split" id="mapView">
-        
         <div class="map-panel">
           <div id="map"></div>
           <div id="placeModeBanner">Tap the map to set the box location</div>
-          
           <div class="fab-menu" id="fabMenu">
             <button class="fab-btn hidden" id="btnAddBox" onclick="openAddBoxModal()">➕ Add Box</button>
             <button class="fab-btn hidden" id="btnCustomers" onclick="switchView('customers')">👥 Customers</button>
@@ -189,7 +190,6 @@
             <button class="fab-add" onclick="toggleFabMenu()">+</button>
           </div>
         </div>
-
         <div class="boxes-panel">
           <div class="panel-header">
             <span id="boxCountTitle">BOXES (0)</span>
@@ -221,6 +221,14 @@
         <div id="driversList"></div>
       </div>
 
+      <div class="users-view" id="usersView">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2 style="font-size:1.2rem; font-weight:900;">Manage Users</h2>
+          <button class="btn-act btn-act-primary" onclick="openAddUserModal()">+ Add User</button>
+        </div>
+        <div id="usersList"></div>
+      </div>
+
       <div class="detail-panel" id="detailPanel">
         <button class="close-sheet" onclick="closeDetailPanel()">✕</button>
         <div class="empty-msg" id="detailEmpty">Select a box to view details</div>
@@ -229,7 +237,7 @@
     </div>
   </div>
 
-  <!-- ADD BOX MODAL -->
+  <!-- MODALS -->
   <div id="addBoxModal" class="modal-overlay">
     <div class="modal">
       <h3>Add New Box</h3>
@@ -237,22 +245,17 @@
       <input type="text" id="newBoxNum" placeholder="e.g. 247" />
       <label>Size</label>
       <select id="newBoxSize"><option value="10">10 Yard</option><option value="20">20 Yard</option><option value="30" selected>30 Yard</option><option value="40">40 Yard</option></select>
-      
       <label>Customer</label>
       <select id="newBoxCustomer"><option value="">— No Customer —</option></select>
-
       <label>Driver</label>
       <select id="newBoxDriver"><option value="">— Unassigned —</option></select>
-      
       <label>Address</label>
       <input type="text" id="newBoxAddress" placeholder="4014 Katy Hockley Rd..." autocomplete="off" />
       <div class="geo-status" id="newGeoStatus"></div>
-
       <label>Status</label>
       <select id="newBoxStatus"><option value="Available">Available</option><option value="Customer">At Customer</option><option value="Pickup">Ready for Pickup</option><option value="Exchange">Ready for Exchange</option></select>
       <label>Notes</label>
       <textarea id="newBoxNotes" rows="2" placeholder="Gate code, waste type, etc."></textarea>
-      
       <div class="modal-btns">
         <button class="btn-save" id="saveBoxBtn" onclick="saveBox()">Save Box</button>
         <button class="btn-cancel" onclick="closeModal('addBoxModal')">Cancel</button>
@@ -261,16 +264,13 @@
     </div>
   </div>
 
-  <!-- EDIT BOX MODAL -->
   <div id="editBoxModal" class="modal-overlay">
     <div class="modal">
       <h3>Update Box</h3>
       <label>Status</label>
       <select id="editBoxStatus"><option value="Customer">At Customer</option><option value="Pickup">Ready for Pickup</option><option value="Exchange">Ready for Exchange</option><option value="Available">Available</option></select>
-      
       <label>Customer</label>
       <select id="editBoxCustomer"><option value="">— No Customer —</option></select>
-
       <label>Driver</label>
       <select id="editBoxDriver"><option value="">— Unassigned —</option></select>
       <label>Address</label>
@@ -286,7 +286,6 @@
     </div>
   </div>
 
-  <!-- ADD CUSTOMER MODAL -->
   <div id="addCustomerModal" class="modal-overlay">
     <div class="modal">
       <h3>Add Customer</h3>
@@ -303,7 +302,6 @@
     </div>
   </div>
 
-  <!-- ADD DRIVER MODAL -->
   <div id="addDriverModal" class="modal-overlay">
     <div class="modal">
       <h3>Add Driver</h3>
@@ -314,6 +312,20 @@
       <div class="modal-btns">
         <button class="btn-save" onclick="saveDriver()">Save Driver</button>
         <button class="btn-cancel" onclick="closeModal('addDriverModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="addUserModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add User</h3>
+      <label>Email *</label>
+      <input type="email" id="newUserEmail" placeholder="driver@email.com" />
+      <label>Role</label>
+      <select id="newUserRole"><option value="admin">Administrator</option><option value="driver">Driver</option></select>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="saveUser()">Save User</button>
+        <button class="btn-cancel" onclick="closeModal('addUserModal')">Cancel</button>
       </div>
     </div>
   </div>
@@ -344,9 +356,11 @@
     let boxesData = [];
     let driversData = [];
     let customersData = [];
+    let usersData = [];
     let activeBoxId = null;
     let currentView = "map";
     let currentUser = null;
+    let currentUserData = null;
     let placeMode = null;
     let pendingLatLng = null;
     let gMap = null;
@@ -403,7 +417,24 @@
         const avatar = document.getElementById("userAvatar");
         if (user.photoURL) avatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
         else avatar.textContent = (user.displayName || "U").charAt(0).toUpperCase();
-        startApp();
+        
+        // Check if the user is authorized
+        db.collection("users").doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            currentUserData = doc.data();
+            if (currentUserData.role === 'admin') {
+              document.getElementById("usersTab").style.display = "block";
+              document.getElementById("settingsGear").style.display = "block";
+            }
+            startApp();
+          } else {
+            alert("You are not authorized to use this app. Please contact your administrator.");
+            auth.signOut();
+          }
+        }).catch(err => {
+          alert("Error checking user permissions: " + err.message);
+          auth.signOut();
+        });
       } else {
         document.getElementById("loginScreen").classList.remove("hidden");
         document.getElementById("loading").style.display = "none";
@@ -522,10 +553,15 @@
         if (currentView === "customers") renderCustomers();
       });
 
+      db.collection("users").onSnapshot(snap => {
+        usersData = [];
+        snap.forEach(d => usersData.push({ id: d.id, ...d.data() }));
+        if (currentView === "users") renderUsers();
+      });
+
       document.getElementById("cameraInput").addEventListener("change", handlePhotoUpload);
     }
 
-    // NEW: Populate both Customer Dropdowns
     function populateCustomerSelects() {
       const opts = '<option value="">— No Customer —</option>' + customersData.map(c => `<option value="${c.name}">${c.name}</option>`).join("");
       document.getElementById("newBoxCustomer").innerHTML = opts;
@@ -575,6 +611,7 @@
       content.style.display = "block";
       const activities = (box.activity || []).slice().reverse().slice(0, 6);
       currentPhotoURL = box.photoURL || null;
+      const isAdmin = currentUserData && currentUserData.role === 'admin';
 
       content.innerHTML = `
         <div class="detail-title"><span class="dot dot-${box.status || "Available"}"></span> BOX #${box.boxNum} <span class="badge badge-${box.status || "Available"}">${statusLabel(box.status)}</span></div>
@@ -594,10 +631,10 @@
         </div>
         <div class="actions-row">
           <button class="btn-act btn-act-primary" onclick="takePhoto()">📸 Take Photo</button>
-          <button class="btn-act btn-act-primary" onclick="openEditModal()">✏️ Edit</button>
           <button class="btn-act" onclick="quickStatus('Pickup')">🚛 Pickup</button>
           <button class="btn-act" onclick="quickStatus('Exchange')">🔄 Exchange</button>
-          <button class="btn-act btn-act-danger" onclick="deleteBox()">🗑️ Delete</button>
+          ${isAdmin ? `<button class="btn-act btn-act-primary" onclick="openEditModal()">✏️ Edit</button>
+          <button class="btn-act btn-act-danger" onclick="deleteBox()">🗑️ Delete</button>` : ''}
         </div>
         <div class="activity-section"><div class="activity-title">Recent Activity</div>
         ${activities.length === 0 ? '<div style="font-size:0.8rem;color:#94a3b8">No activity yet</div>' : activities.map(a => `<div class="activity-row"><span>${a.time} — ${a.text}</span><span>${a.by||""}</span></div>`).join("")}
@@ -651,7 +688,7 @@
       el.innerHTML = customersData.map(c =>
         `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
           <div><strong>${c.name}</strong><br><span style="font-size:0.8rem;color:#64748b">${c.phone || ""}</span><br><span style="font-size:0.8rem;color:#64748b">${c.address || ""}</span></div>
-          <button class="btn-act btn-act-danger" onclick="deleteCustomer('${c.id}')">Delete</button>
+          ${currentUserData && currentUserData.role === 'admin' ? `<button class="btn-act btn-act-danger" onclick="deleteCustomer('${c.id}')">Delete</button>` : ''}
         </div>`
       ).join("");
     }
@@ -662,7 +699,18 @@
       el.innerHTML = driversData.map(d =>
         `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
           <div><strong>${d.name}</strong><br><span style="font-size:0.8rem;color:#64748b">${d.phone || ""}</span></div>
-          <button class="btn-act btn-act-danger" onclick="deleteDriver('${d.id}')">Delete</button>
+          ${currentUserData && currentUserData.role === 'admin' ? `<button class="btn-act btn-act-danger" onclick="deleteDriver('${d.id}')">Delete</button>` : ''}
+        </div>`
+      ).join("");
+    }
+
+    function renderUsers() {
+      const el = document.getElementById("usersList");
+      if (usersData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No users yet</h3></div>'; return; }
+      el.innerHTML = usersData.map(u =>
+        `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+          <div><strong>${u.email}</strong><br><span style="font-size:0.8rem;color:#64748b">Role: ${u.role}</span></div>
+          <button class="btn-act btn-act-danger" onclick="deleteUser('${u.id}')">Delete</button>
         </div>`
       ).join("");
     }
@@ -845,6 +893,27 @@
       db.collection("drivers").doc(id).delete().catch(e => alert(e.message));
     }
 
+    function openAddUserModal() {
+      document.getElementById("newUserEmail").value = "";
+      document.getElementById("newUserRole").value = "driver";
+      openModal("addUserModal");
+    }
+
+    function saveUser() {
+      const email = document.getElementById("newUserEmail").value.trim();
+      if (!email) return alert("Email required");
+      db.collection("users").add({
+        email: email,
+        role: document.getElementById("newUserRole").value,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => closeModal("addUserModal")).catch(e => alert("Error: " + e.message));
+    }
+
+    function deleteUser(id) {
+      if (!confirm("Delete this user?")) return;
+      db.collection("users").doc(id).delete().catch(e => alert(e.message));
+    }
+
     function switchView(view) {
       currentView = view;
       document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
@@ -854,6 +923,7 @@
       document.getElementById("mapView").style.display = "none";
       document.getElementById("driversView").classList.remove("active");
       document.getElementById("customersView").classList.remove("active");
+      document.getElementById("usersView").classList.remove("active");
       document.getElementById("detailPanel").classList.remove("show");
       document.getElementById("detailPanel").style.display = "none";
 
@@ -868,6 +938,9 @@
       } else if (view === "drivers") {
         document.getElementById("driversView").classList.add("active");
         renderDrivers();
+      } else if (view === "users") {
+        document.getElementById("usersView").classList.add("active");
+        renderUsers();
       }
       toggleDrawer(false);
       toggleFabMenu();
