@@ -29,7 +29,7 @@
 
     /* Main Layout */
     .main-wrapper { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    header { height: 56px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; gap: 12px; }
+    header { height: 56px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; gap: 12px; z-index: 900; }
     .menu-btn { display: none; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #334155; }
     .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; flex: 1; max-width: 360px; }
     .search-box input { border: none; background: transparent; width: 100%; outline: none; font-size: 0.85rem; margin-left: 8px; }
@@ -66,7 +66,7 @@
     #placeModeBanner { display: none; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: #1e40af; color: white; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; z-index: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3); white-space: nowrap; }
     #placeModeBanner.active { display: block; }
 
-    /* Detail Panel (Bottom Sheet) */
+    /* Detail Panel */
     .detail-panel { background: #fff; padding: 20px 24px; overflow-y: auto; border-top: 2px solid #e2e8f0; position: relative; }
     .close-sheet { position: absolute; top: 15px; right: 15px; background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: 800; cursor: pointer; color: #475569; font-size: 1rem; display: none; z-index: 10; }
     .detail-title { font-size: 1.2rem; font-weight: 900; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -79,8 +79,6 @@
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.85rem; flex: 1; }
     .info-label { color: #64748b; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
     .info-val { font-weight: 700; margin-top: 2px; word-break: break-word; }
-    
-    /* Photo Section */
     .photo-section { margin-top: 16px; }
     .box-photo { width: 100%; max-width: 300px; height: 200px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; font-weight: 600; overflow: hidden; }
     .box-photo img { width: 100%; height: 100%; object-fit: cover; }
@@ -130,20 +128,24 @@
     .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2999; }
     .mobile-overlay.active { display: block; }
 
-    /* Mobile Media Query */
+    /* Mobile Media Query (TRUE MOBILE LAYOUT) */
     @media (max-width: 900px) {
       .menu-btn { display: block; }
-      aside { position: fixed; left: -250px; top: 0; bottom: 0; transition: left 0.3s; }
+      
+      /* Sidebar becomes Drawer */
+      aside { position: fixed; left: -250px; top: 0; bottom: 0; transition: left 0.3s; z-index: 3001; }
       aside.open { left: 0; }
       .close-drawer { display: block; }
-      .top-split { grid-template-columns: 1fr; }
-      .boxes-panel { display: none; }
+
+      /* Desktop split is overridden to stack Map on top, List on Bottom */
+      .top-split { grid-template-columns: 1fr; grid-template-rows: 55% 45%; }
+      .boxes-panel { border-right: none; border-top: 1px solid #cbd5e1; display: flex; }
       .detail-layout { flex-direction: column; }
       .search-box { max-width: 150px; }
       .user-area span { display: none; }
       
-      /* Bottom Sheet on Mobile */
-      .detail-panel { position: absolute; bottom: 0; left: 0; right: 0; height: 85vh; border-top-left-radius: 16px; border-top-right-radius: 16px; z-index: 800; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease; }
+      /* Detail Panel Slide Up */
+      .detail-panel { position: absolute; top: 56px; left: 0; right: 0; bottom: 0; height: auto; z-index: 800; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease; }
       .detail-panel.show { transform: translateY(0); }
       .close-sheet { display: block; }
       .fab-menu { bottom: 20px; }
@@ -193,6 +195,21 @@
 
     <div class="dashboard-grid">
       <div class="top-split" id="mapView">
+        
+        <!-- MAP ON TOP (Mobile) or RIGHT (Desktop) -->
+        <div class="map-panel">
+          <div id="map"></div>
+          <div id="placeModeBanner">Tap the map to set the box location</div>
+          
+          <div class="fab-menu" id="fabMenu">
+            <button class="fab-btn hidden" id="btnAddBox" onclick="openAddBoxModal()">➕ Add Box</button>
+            <button class="fab-btn hidden" id="btnCustomers" onclick="switchView('customers')">👥 Customers</button>
+            <button class="fab-btn hidden" id="btnDrivers" onclick="switchView('drivers')">🚛 Drivers</button>
+            <button class="fab-add" onclick="toggleFabMenu()">+</button>
+          </div>
+        </div>
+
+        <!-- BOX LIST UNDER MAP (Mobile) or LEFT (Desktop) -->
         <div class="boxes-panel">
           <div class="panel-header">
             <span id="boxCountTitle">BOXES (0)</span>
@@ -205,17 +222,6 @@
             </select>
           </div>
           <div class="box-list" id="boxList"></div>
-        </div>
-        <div class="map-panel">
-          <div id="map"></div>
-          <div id="placeModeBanner">Tap the map to set the box location</div>
-          
-          <div class="fab-menu" id="fabMenu">
-            <button class="fab-btn hidden" id="btnAddBox" onclick="openAddBoxModal()">➕ Add Box</button>
-            <button class="fab-btn hidden" id="btnCustomers" onclick="switchView('customers')">👥 Customers</button>
-            <button class="fab-btn hidden" id="btnDrivers" onclick="switchView('drivers')">🚛 Drivers</button>
-            <button class="fab-add" onclick="toggleFabMenu()">+</button>
-          </div>
         </div>
       </div>
 
