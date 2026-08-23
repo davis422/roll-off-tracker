@@ -594,7 +594,6 @@
       document.getElementById("updateBoxBtn").disabled = exists;
     }
 
-    // FIXED: This now ONLY blocks if the box is at a customer or already scheduled for a job. Yard boxes are allowed!
     function checkDuplicateDelivery() {
       const num = document.getElementById("deliveredBoxNum").value.trim();
       const exists = boxesData.some(b => b.boxNum === num && b.status !== "Available");
@@ -1049,6 +1048,24 @@
       }
     }
 
+    // UPDATED: Mark as Yard now clears the customer and address!
+    function quickStatus(newStatus) {
+      if (!activeBoxId) return;
+      
+      let updateData = {
+        status: newStatus,
+        activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Status → " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Driver/Admin" })
+      };
+      
+      if (newStatus === "Available") {
+        updateData.customer = "Yard";
+        updateData.address = "Yard";
+        updateData.driver = "Unassigned";
+      }
+      
+      db.collection("boxes").doc(activeBoxId).update(updateData).catch(e => alert("Error: " + e.message));
+    }
+
     function takePhoto() {
       if (!activeBoxId) return;
       document.getElementById("cameraInput").click();
@@ -1245,14 +1262,6 @@
         closeModal("editBoxModal");
       } catch (e) { alert("Error: " + e.message); }
       finally { btn.disabled = false; btn.textContent = "Update Box"; }
-    }
-
-    function quickStatus(newStatus) {
-      if (!activeBoxId) return;
-      db.collection("boxes").doc(activeBoxId).update({
-        status: newStatus,
-        activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Status → " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Driver/Admin" })
-      }).catch(e => alert("Error: " + e.message));
     }
 
     function deleteBox() {
