@@ -156,7 +156,7 @@
       <li class="nav-item active" data-view="map" onclick="switchView('map')">🗺️ Map</li>
       <li class="nav-item" data-view="customers" onclick="switchView('customers')">👥 Customers</li>
       <li class="nav-item" data-view="drivers" onclick="switchView('drivers')">🚛 Drivers</li>
-      <li class="nav-item" data-view="users" onclick="switchView('users')" id="usersTab">👤 Manage Users</li>
+      <li class="nav-item" data-view="users" onclick="switchView('users')" id="usersTab" style="display:none;">👤 Manage Users</li>
     </ul>
     <div class="sidebar-footer">
       Live Firebase<br>
@@ -360,6 +360,7 @@
     let activeBoxId = null;
     let currentView = "map";
     let currentUser = null;
+    let currentUserData = null;
     let placeMode = null;
     let pendingLatLng = null;
     let gMap = null;
@@ -416,7 +417,33 @@
         const avatar = document.getElementById("userAvatar");
         if (user.photoURL) avatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
         else avatar.textContent = (user.displayName || "U").charAt(0).toUpperCase();
-        startApp();
+
+        // FIRST: Check by email (safest way to find the user)
+        db.collection("users").where("email", "==", user.email).get().then(snapshot => {
+          if (!snapshot.empty) {
+            currentUserData = snapshot.docs[0].data();
+            if (currentUserData.role === 'admin') {
+              document.getElementById("usersTab").style.display = "block";
+              document.getElementById("settingsGear").style.display = "block";
+            }
+            startApp();
+          } else {
+            // If no email match, try looking up by UID
+            db.collection("users").doc(user.uid).get().then(doc => {
+              if (doc.exists) {
+                currentUserData = doc.data();
+                if (currentUserData.role === 'admin') {
+                  document.getElementById("usersTab").style.display = "block";
+                  document.getElementById("settingsGear").style.display = "block";
+                }
+                startApp();
+              } else {
+                alert("You are not authorized to use this app. Please contact your administrator.");
+                auth.signOut();
+              }
+            }).catch(err => { alert("Error checking user permissions: " + err.message); auth.signOut(); });
+          }
+        }).catch(err => { alert("Error checking user permissions: " + err.message); auth.signOut(); });
       } else {
         document.getElementById("loginScreen").classList.remove("hidden");
         document.getElementById("loading").style.display = "none";
@@ -593,6 +620,7 @@
       content.style.display = "block";
       const activities = (box.activity || []).slice().reverse().slice(0, 6);
       currentPhotoURL = box.photoURL || null;
+      const isAdmin = currentUserData && currentUserData.role === 'admin';
 
       content.innerHTML = `
         <div class="detail-title"><span class="dot dot-${box.status || "Available"}"></span> BOX #${box.boxNum} <span class="badge badge-${box.status || "Available"}">${statusLabel(box.status)}</span></div>
@@ -612,10 +640,10 @@
         </div>
         <div class="actions-row">
           <button class="btn-act btn-act-primary" onclick="takePhoto()">📸 Take Photo</button>
-          <button class="btn-act btn-act-primary" onclick="openEditModal()">✏️ Edit</button>
           <button class="btn-act" onclick="quickStatus('Pickup')">🚛 Pickup</button>
           <button class="btn-act" onclick="quickStatus('Exchange')">🔄 Exchange</button>
-          <button class="btn-act btn-act-danger" onclick="deleteBox()">🗑️ Delete</button>
+          ${isAdmin ? `<button class="btn-act btn-act-primary" onclick="openEditModal()">✏️ Edit</button>
+          <button class="btn-act btn-act-danger" onclick="deleteBox()">🗑️ Delete</button>` : ''}
         </div>
         <div class="activity-section"><div class="activity-title">Recent Activity</div>
         ${activities.length === 0 ? '<div style="font-size:0.8rem;color:#94a3b8">No activity yet</div>' : activities.map(a => `<div class="activity-row"><span>${a.time} — ${a.text}</span><span>${a.by||""}</span></div>`).join("")}
@@ -669,7 +697,7 @@
       el.innerHTML = customersData.map(c =>
         `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
           <div><strong>${c.name}</strong><br><span style="font-size:0.8rem;color:#64748b">${c.phone || ""}</span><br><span style="font-size:0.8rem;color:#64748b">${c.address || ""}</span></div>
-          <button class="btn-act btn-act-danger" onclick="deleteCustomer('${c.id}')">Delete</button>
+          ${currentUserData && currentUserData.role === 'admin' ? `<button class="btn-act btn-act-danger" onclick="deleteCustomer('${c.id}')">Delete</button>` : ''}
         </div>`
       ).join("");
     }
@@ -680,7 +708,7 @@
       el.innerHTML = driversData.map(d =>
         `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
           <div><strong>${d.name}</strong><br><span style="font-size:0.8rem;color:#64748b">${d.phone || ""}</span></div>
-          <button class="btn-act btn-act-danger" onclick="deleteDriver('${d.id}')">Delete</button>
+          ${currentUserData && currentUserData.role === 'admin' ? `<button class="btn-act btn-act-danger" onclick="deleteDriver('${d.id}')">Delete</button>` : ''}
         </div>`
       ).join("");
     }
