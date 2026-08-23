@@ -904,11 +904,22 @@
     function saveUser() {
       const email = document.getElementById("newUserEmail").value.trim();
       if (!email) return alert("Email required");
+      const role = document.getElementById("newUserRole").value;
       db.collection("users").add({
         email: email,
-        role: document.getElementById("newUserRole").value,
+        role: role,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => closeModal("addUserModal")).catch(e => alert("Error: " + e.message));
+      }).then(() => {
+        // If it's a driver, automatically add them to the Drivers list too
+        if (role === 'driver') {
+          db.collection("drivers").add({
+            name: email, // Use email as name so it shows up in the dropdown
+            phone: "",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(e => console.error("Error adding driver: ", e));
+        }
+        closeModal("addUserModal");
+      }).catch(e => alert("Error: " + e.message));
     }
 
     function deleteUser(id) {
