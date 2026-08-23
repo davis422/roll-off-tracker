@@ -100,6 +100,14 @@
     .box-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 10px; }
     .box-card p { font-size: 0.9rem; color: #475569; margin-bottom: 6px; }
 
+    /* Customer Cards */
+    .customer-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .customer-card h3 { font-size: 1.1rem; font-weight: 800; }
+    .customer-card p { font-size: 0.85rem; color: #64748b; }
+
+    /* Search Bar in Customers */
+    .customer-search { width: 100%; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; }
+
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
     .modal-overlay.active { display: flex; }
     .modal { background: white; border-radius: 12px; padding: 22px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
@@ -229,9 +237,10 @@
 
       <div class="customers-view" id="customersView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2 style="font-size:1.2rem; font-weight:900;">Customers</h2>
+          <h2 style="font-size:1.3rem; font-weight:900;">Customers</h2>
           <button class="btn-act btn-act-primary" onclick="openAddCustomerModal()">+ Add Customer</button>
         </div>
+        <input type="text" id="customerSearch" class="customer-search" placeholder="Search customers by name..." oninput="renderCustomers()" />
         <div id="customersList"></div>
       </div>
 
@@ -336,6 +345,22 @@
     </div>
   </div>
 
+  <div id="editCustomerModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Edit Customer</h3>
+      <label>Name *</label>
+      <input type="text" id="editCustomerName" />
+      <label>Phone</label>
+      <input type="text" id="editCustomerPhone" />
+      <label>Default Address</label>
+      <input type="text" id="editCustomerAddress" />
+      <div class="modal-btns">
+        <button class="btn-save" onclick="commitCustomerUpdate()">Save Changes</button>
+        <button class="btn-cancel" onclick="closeModal('editCustomerModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div id="addDriverModal" class="modal-overlay">
     <div class="modal">
       <h3>Add Driver</h3>
@@ -396,6 +421,7 @@
     let customersData = [];
     let usersData = [];
     let activeBoxId = null;
+    let activeCustomerId = null;
     let currentView = "map";
     let currentUser = null;
     let currentUserData = null;
@@ -577,6 +603,7 @@
         document.getElementById("syncTime").textContent = "Last sync: " + new Date().toLocaleTimeString();
         renderApp();
         renderBoxes();
+        renderCustomers();
         document.getElementById("loading").style.display = "none";
       });
 
@@ -628,7 +655,7 @@
           `<div class="box-item ${b.id === activeBoxId ? "active" : ""}" onclick="selectBox('${b.id}')">
             <div class="box-item-title"><span class="dot dot-${b.status || "Available"}"></span> #${b.boxNum}</div>
             <div class="box-item-addr">${b.address || "No address"}</div>
-            <div class="box-item-status">${statusLabel(b.status)}</div>
+            <div class="box-item-status">${statusLabel(b.status)} - ${b.customer || ""}</div>
           </div>`
         ).join("");
       }
@@ -640,7 +667,6 @@
       const el = document.getElementById("boxesList");
       if (boxesData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>'; return; }
       el.innerHTML = boxesData.map(b => {
-        // ONLY show action button if the box needs action!
         const isActionable = (b.status === "Pickup" || b.status === "Exchange" || b.status === "Delivery");
         const nextStatus = (b.status === "Pickup") ? "Available" : "Customer";
         const nextLabel = (b.status === "Pickup") ? "Mark as Available" : "Complete";
@@ -657,7 +683,56 @@
       }).join("");
     }
 
-    // Complete Task Logic
+    function renderCustomers() {
+      const el = document.getElementById("customersList");
+      const search = (document.getElementById("customerSearch").value || "").toLowerCase().trim();
+      
+      const filtered = customersData.filter(c => {
+        if (!search) return true;
+        return c.name.toLowerCase().includes(search);
+      });
+
+      if (filtered.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No customers found</h3></div>'; return; }
+      
+      el.innerHTML = filtered.map(c => {
+        const hasBox = boxesData.find(b => b.customer === c.name);
+        const statusText = hasBox ? `Current Status: ${statusLabel(hasBox.status)}` : "No box currently assigned.";
+        const isAdmin = currentUserData && currentUserData.role === 'admin';
+
+        return `
+          <div class="customer-card">
+            <h3>${c.name}</h3>
+            <p>${c.phone || "No phone"}</p>
+            <p>${c.address || "No address"}</p>
+            <p style="margin-top: 8px;"><strong>${statusText}</strong></p>
+            
+            <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+              ${hasBox ? `
+                <button class="btn-act" onclick="quickStatusForBox('${hasBox.id}', 'Exchange')">Request Exchange</button>
+                <button class="btn-act" onclick="quickStatusForBox('${hasBox.id}', 'Pickup')">Request Pickup</button>
+                <button class="btn-act btn-act-primary" onclick="selectBox('${hasBox.id}')">View Box</button>
+              ` : ''}
+              ${isAdmin ? `
+                <button class="btn-act btn-act-blue" onclick="openEditCustomerModal('${c.id}')">Edit</button>
+                <button class="btn-act btn-act-danger" onclick="deleteCustomer('${c.id}')">Delete</button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function quickStatusForBox(boxId, newStatus) {
+      db.collection("boxes").doc(boxId).update({
+        status: newStatus,
+        activity: firebase.firestore.FieldValue.arrayUnion({
+          time: new Date().toLocaleString(),
+          text: "Status → " + statusLabel(newStatus),
+          by: currentUser ? (currentUser.displayName || "User") : "Staff"
+        })
+      }).catch(e => alert("Error: " + e.message));
+    }
+
     function completeTask(id, newStatus, label) {
       if (!confirm(`Are you sure you want to mark this box as ${label}?`)) return;
       db.collection("boxes").doc(id).update({
@@ -755,17 +830,6 @@
       document.getElementById("detailPanel").classList.remove("show");
       activeBoxId = null;
       renderDetail();
-    }
-
-    function renderCustomers() {
-      const el = document.getElementById("customersList");
-      if (customersData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No customers yet</h3></div>'; return; }
-      el.innerHTML = customersData.map(c =>
-        `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-          <div><strong>${c.name}</strong><br><span style="font-size:0.8rem;color:#64748b">${c.phone || ""}</span><br><span style="font-size:0.8rem;color:#64748b">${c.address || ""}</span></div>
-          ${currentUserData && currentUserData.role === 'admin' ? `<button class="btn-act btn-act-danger" onclick="deleteCustomer('${c.id}')">Delete</button>` : ''}
-        </div>`
-      ).join("");
     }
 
     function renderDrivers() {
@@ -940,6 +1004,30 @@
         address: document.getElementById("newCustomerAddress").value.trim(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => closeModal("addCustomerModal")).catch(e => alert("Error: " + e.message));
+    }
+
+    function openEditCustomerModal(id) {
+      activeCustomerId = id;
+      const customer = customersData.find(c => c.id === id);
+      if (!customer) return;
+      document.getElementById("editCustomerName").value = customer.name || "";
+      document.getElementById("editCustomerPhone").value = customer.phone || "";
+      document.getElementById("editCustomerAddress").value = customer.address || "";
+      openModal("editCustomerModal");
+    }
+
+    function commitCustomerUpdate() {
+      if (!activeCustomerId) return;
+      const name = document.getElementById("editCustomerName").value.trim();
+      if (!name) return alert("Name required");
+      db.collection("customers").doc(activeCustomerId).update({
+        name: name,
+        phone: document.getElementById("editCustomerPhone").value.trim(),
+        address: document.getElementById("editCustomerAddress").value.trim()
+      }).then(() => {
+        closeModal("editCustomerModal");
+        activeCustomerId = null;
+      }).catch(e => alert("Error: " + e.message));
     }
 
     function deleteCustomer(id) {
