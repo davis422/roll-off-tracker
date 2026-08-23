@@ -86,18 +86,19 @@
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
 
-    .customers-view, .drivers-view, .users-view, .todo-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
-    .customers-view.active, .drivers-view.active, .users-view.active, .todo-view.active { display: block; }
+    .customers-view, .drivers-view, .users-view, .boxes-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
+    .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active { display: block; }
 
-    /* To-Do List Styles */
-    .todo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .todo-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid #ccc; }
-    .todo-card.Pickup { border-left-color: #d97706; }
-    .todo-card.Exchange { border-left-color: #2563eb; }
-    .todo-card.Delivery { border-left-color: #dc2626; }
-    .todo-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
-    .todo-card p { font-size: 0.85rem; color: #64748b; margin-bottom: 4px; }
-    .todo-actions { margin-top: 12px; display: flex; gap: 8px; }
+    /* Box Cards List */
+    .box-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid #ccc; cursor: pointer; }
+    .box-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .box-card.Customer { border-left-color: #16a34a; }
+    .box-card.Pickup { border-left-color: #d97706; }
+    .box-card.Exchange { border-left-color: #2563eb; }
+    .box-card.Available { border-left-color: #94a3b8; }
+    .box-card.Delivery { border-left-color: #dc2626; }
+    .box-card h3 { font-size: 1.05rem; font-weight: 800; }
+    .box-card p { font-size: 0.85rem; color: #64748b; }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
     .modal-overlay.active { display: flex; }
@@ -110,7 +111,6 @@
     .btn-save { background: #16a34a; color: white; }
     .btn-cancel { background: #e2e8f0; color: #475569; }
     .btn-save:disabled { background: #86efac; cursor: wait; }
-    .address-row-3 { display: grid; grid-template-columns: 1fr 70px 90px; gap: 8px; }
     .geo-status { font-size: 0.75rem; color: #64748b; min-height: 18px; }
     .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
     .dot-Customer { background: #16a34a; }
@@ -166,7 +166,7 @@
     <div class="brand">🚚 ROLL-OFF TRACKER <span class="close-drawer" onclick="toggleDrawer(false)">✕</span></div>
     <ul class="nav-list">
       <li class="nav-item active" data-view="map" onclick="switchView('map')">🗺️ Map</li>
-      <li class="nav-item" data-view="todo" onclick="switchView('todo')">📋 To-Do</li>
+      <li class="nav-item" data-view="boxes" onclick="switchView('boxes')">📦 Boxes</li>
       <li class="nav-item" data-view="customers" onclick="switchView('customers')">👥 Customers</li>
       <li class="nav-item" data-view="drivers" onclick="switchView('drivers')">🚛 Drivers</li>
       <li class="nav-item" data-view="users" onclick="switchView('users')" id="usersTab" style="display:none;">👤 Manage Users</li>
@@ -219,12 +219,12 @@
         </div>
       </div>
 
-      <!-- TO-DO View -->
-      <div class="todo-view" id="todoView">
-        <div class="todo-header">
-          <h2 style="font-size:1.3rem; font-weight:900;">Today's Tasks</h2>
+      <div class="boxes-view" id="boxesView">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2 style="font-size:1.3rem; font-weight:900;">All Boxes</h2>
+          <button class="btn-act btn-act-primary" onclick="openAddBoxModal()">+ Add Box</button>
         </div>
-        <div id="todoList"></div>
+        <div id="boxesList"></div>
       </div>
 
       <div class="customers-view" id="customersView">
@@ -576,7 +576,7 @@
         snap.forEach(d => boxesData.push({ id: d.id, ...d.data() }));
         document.getElementById("syncTime").textContent = "Last sync: " + new Date().toLocaleTimeString();
         renderApp();
-        renderToDo();
+        renderBoxes();
         document.getElementById("loading").style.display = "none";
       });
 
@@ -636,30 +636,17 @@
       renderDetail();
     }
 
-    function renderToDo() {
-      const el = document.getElementById("todoList");
-      const todoBoxes = boxesData.filter(b => b.status === "Delivery" || b.status === "Pickup" || b.status === "Exchange");
-      
-      if (todoBoxes.length === 0) {
-        el.innerHTML = '<div class="empty-msg"><h3>🎉 No tasks for today!</h3><p>Great job catching up!</p></div>';
-        return;
-      }
-
-      el.innerHTML = todoBoxes.map(b => {
-        const statusClass = b.status;
-        return `
-          <div class="todo-card ${statusClass}">
-            <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
-            <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
-            <p><strong>Address:</strong> ${b.address || "N/A"}</p>
-            <p><strong>Notes:</strong> ${b.notes || "None"}</p>
-            <div class="todo-actions">
-              <button class="btn-act btn-act-primary" onclick="selectBox('${b.id}')">View Details</button>
-              <button class="btn-act" onclick="quickStatus('Customer')">Mark as At Customer</button>
-            </div>
-          </div>
-        `;
-      }).join("");
+    function renderBoxes() {
+      const el = document.getElementById("boxesList");
+      if (boxesData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>'; return; }
+      el.innerHTML = boxesData.map(b =>
+        `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')">
+          <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
+          <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
+          <p><strong>Address:</strong> ${b.address || "N/A"}</p>
+          <p><strong>Driver:</strong> ${b.driver || "Unassigned"}</p>
+        </div>`
+      ).join("");
     }
 
     function renderDetail() {
@@ -739,7 +726,7 @@
         alert("Photo uploaded successfully!");
       } catch (e) {
         console.error("Photo upload error:", e);
-        alert("Error uploading photo. Make sure Firebase Storage is enabled in your console.");
+        alert("Error uploading photo.");
       }
     }
 
@@ -1008,7 +995,7 @@
       document.getElementById("driversView").classList.remove("active");
       document.getElementById("customersView").classList.remove("active");
       document.getElementById("usersView").classList.remove("active");
-      document.getElementById("todoView").classList.remove("active");
+      document.getElementById("boxesView").classList.remove("active");
       document.getElementById("detailPanel").classList.remove("show");
       document.getElementById("detailPanel").style.display = "none";
 
@@ -1017,9 +1004,9 @@
         document.getElementById("detailPanel").style.display = "block";
         if (gMap) setTimeout(() => google.maps.event.trigger(gMap, "resize"), 200);
         renderApp();
-      } else if (view === "todo") {
-        document.getElementById("todoView").classList.add("active");
-        renderToDo();
+      } else if (view === "boxes") {
+        document.getElementById("boxesView").classList.add("active");
+        renderBoxes();
       } else if (view === "customers") {
         document.getElementById("customersView").classList.add("active");
         renderCustomers();
