@@ -354,8 +354,22 @@
       <input type="text" id="newCustomerName" placeholder="ABC Construction" />
       <label>Phone</label>
       <input type="text" id="newCustomerPhone" placeholder="(713) 555-0198" />
-      <label>Default Address</label>
-      <input type="text" id="newCustomerAddress" placeholder="123 Main St, Houston, TX" />
+      <label>Street Address *</label>
+      <input type="text" id="newCustomerStreet" placeholder="4014 Katy Hockley Rd" autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="newCustomerCity" placeholder="Katy" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="newCustomerState" placeholder="TX" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="newCustomerZip" placeholder="77493" />
+        </div>
+      </div>
       <label>Box Size</label>
       <select id="newCustomerBoxSize"><option value="">— Not Specified —</option><option value="10">10 Yard</option><option value="20">20 Yard</option><option value="30" selected>30 Yard</option><option value="40">40 Yard</option></select>
       <div class="modal-btns">
@@ -372,8 +386,22 @@
       <input type="text" id="editCustomerName" />
       <label>Phone</label>
       <input type="text" id="editCustomerPhone" />
-      <label>Default Address</label>
-      <input type="text" id="editCustomerAddress" />
+      <label>Street Address *</label>
+      <input type="text" id="editCustomerStreet" autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="editCustomerCity" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="editCustomerState" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="editCustomerZip" />
+        </div>
+      </div>
       <label>Preferred Box Size</label>
       <select id="editCustomerBoxSize">
         <option value="">— Not Specified —</option>
@@ -475,6 +503,8 @@
     let tempGMarker = null;
     let autocompleteNew = null;
     let autocompleteEdit = null;
+    let autocompleteNewCustomer = null;
+    let autocompleteEditCustomer = null;
     let currentPhotoURL = null;
 
     function toggleDrawer(open) {
@@ -570,6 +600,10 @@
       document.getElementById("deliveryBoxError").style.display = exists ? "block" : "none";
     }
 
+    function buildAddress(street, city, state, zip) {
+      return [street, city, state, zip].filter(p => p && p.trim()).join(", ");
+    }
+
     function geocodeAddress(address) {
       return new Promise((resolve) => {
         if (!address || address.length < 5) return resolve(null);
@@ -622,6 +656,44 @@
         if (place.geometry) {
           pendingLatLng = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
           document.getElementById("editGeoStatus").textContent = "✓ Address found! Pin set precisely.";
+        }
+      });
+
+      autocompleteNewCustomer = new google.maps.places.Autocomplete(document.getElementById("newCustomerStreet"));
+      autocompleteNewCustomer.addListener("place_changed", () => {
+        const place = autocompleteNewCustomer.getPlace();
+        if (place && place.address_components) {
+          let street = "", city = "", state = "", zip = "";
+          for (const component of place.address_components) {
+            if (component.types.includes("street_number")) street = component.long_name + " " + street;
+            if (component.types.includes("route")) street += component.long_name;
+            if (component.types.includes("locality")) city = component.long_name;
+            if (component.types.includes("administrative_area_level_1")) state = component.short_name;
+            if (component.types.includes("postal_code")) zip = component.long_name;
+          }
+          document.getElementById("newCustomerStreet").value = street;
+          document.getElementById("newCustomerCity").value = city;
+          document.getElementById("newCustomerState").value = state;
+          document.getElementById("newCustomerZip").value = zip;
+        }
+      });
+
+      autocompleteEditCustomer = new google.maps.places.Autocomplete(document.getElementById("editCustomerStreet"));
+      autocompleteEditCustomer.addListener("place_changed", () => {
+        const place = autocompleteEditCustomer.getPlace();
+        if (place && place.address_components) {
+          let street = "", city = "", state = "", zip = "";
+          for (const component of place.address_components) {
+            if (component.types.includes("street_number")) street = component.long_name + " " + street;
+            if (component.types.includes("route")) street += component.long_name;
+            if (component.types.includes("locality")) city = component.long_name;
+            if (component.types.includes("administrative_area_level_1")) state = component.short_name;
+            if (component.types.includes("postal_code")) zip = component.long_name;
+          }
+          document.getElementById("editCustomerStreet").value = street;
+          document.getElementById("editCustomerCity").value = city;
+          document.getElementById("editCustomerState").value = state;
+          document.getElementById("editCustomerZip").value = zip;
         }
       });
     }
@@ -1190,7 +1262,10 @@
     function openAddCustomerModal() {
       document.getElementById("newCustomerName").value = "";
       document.getElementById("newCustomerPhone").value = "";
-      document.getElementById("newCustomerAddress").value = "";
+      document.getElementById("newCustomerStreet").value = "";
+      document.getElementById("newCustomerCity").value = "";
+      document.getElementById("newCustomerState").value = "TX";
+      document.getElementById("newCustomerZip").value = "";
       document.getElementById("newCustomerBoxSize").value = "";
       openModal("addCustomerModal");
     }
@@ -1198,10 +1273,19 @@
     function saveCustomer() {
       const name = document.getElementById("newCustomerName").value.trim();
       if (!name) return alert("Name required");
+      
+      const street = document.getElementById("newCustomerStreet").value.trim();
+      const city = document.getElementById("newCustomerCity").value.trim();
+      const state = document.getElementById("newCustomerState").value.trim();
+      const zip = document.getElementById("newCustomerZip").value.trim();
+      const fullAddress = buildAddress(street, city, state, zip);
+      
+      if (!street || !city || !state || !zip) return alert("Please complete the Street, City, State, and ZIP fields.");
+      
       db.collection("customers").add({
         name: name,
         phone: document.getElementById("newCustomerPhone").value.trim(),
-        address: document.getElementById("newCustomerAddress").value.trim(),
+        address: fullAddress,
         boxSize: document.getElementById("newCustomerBoxSize").value,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => closeModal("addCustomerModal")).catch(e => alert("Error: " + e.message));
@@ -1211,9 +1295,23 @@
       activeCustomerId = id;
       const customer = customersData.find(c => c.id === id);
       if (!customer) return;
+      
+      // Parse the address into parts
+      let street = "", city = "", state = "", zip = "";
+      if (customer.address) {
+        const parts = customer.address.split(", ").map(p => p.trim());
+        street = parts[0] || "";
+        city = parts[1] || "";
+        state = parts[2] || "";
+        zip = parts[3] || "";
+      }
+      
       document.getElementById("editCustomerName").value = customer.name || "";
       document.getElementById("editCustomerPhone").value = customer.phone || "";
-      document.getElementById("editCustomerAddress").value = customer.address || "";
+      document.getElementById("editCustomerStreet").value = street;
+      document.getElementById("editCustomerCity").value = city;
+      document.getElementById("editCustomerState").value = state;
+      document.getElementById("editCustomerZip").value = zip;
       document.getElementById("editCustomerBoxSize").value = customer.boxSize || "";
       openModal("editCustomerModal");
     }
@@ -1222,10 +1320,19 @@
       if (!activeCustomerId) return;
       const name = document.getElementById("editCustomerName").value.trim();
       if (!name) return alert("Name required");
+      
+      const street = document.getElementById("editCustomerStreet").value.trim();
+      const city = document.getElementById("editCustomerCity").value.trim();
+      const state = document.getElementById("editCustomerState").value.trim();
+      const zip = document.getElementById("editCustomerZip").value.trim();
+      const fullAddress = buildAddress(street, city, state, zip);
+      
+      if (!street || !city || !state || !zip) return alert("Please complete the Street, City, State, and ZIP fields.");
+      
       db.collection("customers").doc(activeCustomerId).update({
         name: name,
         phone: document.getElementById("editCustomerPhone").value.trim(),
-        address: document.getElementById("editCustomerAddress").value.trim(),
+        address: fullAddress,
         boxSize: document.getElementById("editCustomerBoxSize").value
       }).then(() => {
         closeModal("editCustomerModal");
