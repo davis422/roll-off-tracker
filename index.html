@@ -118,6 +118,10 @@
     /* Duplicate Error Message */
     .error-message { display: none; background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85rem; font-weight: 700; text-align: center; }
 
+    /* Toast Notification */
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #16a34a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; transition: transform 0.3s ease; opacity: 0; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
     .modal-overlay.active { display: flex; }
     .modal { background: white; border-radius: 12px; padding: 22px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
@@ -166,6 +170,8 @@
   </style>
 </head>
 <body>
+
+  <div id="toast" class="toast"></div>
 
   <div id="loginScreen">
     <div class="login-logo">🚚 ROLL-OFF TRACKER</div>
@@ -569,6 +575,16 @@
       return { Delivery: "To Be Delivered", Customer: "At Customer", Pickup: "Ready for Pickup", Exchange: "Ready for Exchange", Available: "Available" }[s] || s;
     }
 
+    // TOAST FUNCTION
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2500);
+    }
+
     function signInWithGoogle() {
       document.getElementById("loginError").textContent = "";
       const provider = new firebase.auth.GoogleAuthProvider();
@@ -816,7 +832,6 @@
         if (currentView === "users") renderUsers();
       });
 
-      // Load Yard Settings from the Admin User's document
       if (currentUser) {
         db.collection("users").where("email", "==", currentUser.email).get().then(snapshot => {
           if (!snapshot.empty && snapshot.docs[0].data().yard) {
@@ -942,8 +957,8 @@
             <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
               <button class="btn-act btn-act-red" onclick="sendForDelivery('${c.id}')">Send for Delivery</button>
               ${customerBoxes.map(b => `
-                <button class="btn-act" onclick="quickStatusForBox('${b.id}', 'Exchange')">Box #${b.boxNum}: Exchange</button>
-                <button class="btn-act" onclick="quickStatusForBox('${b.id}', 'Pickup')">Box #${b.boxNum}: Pickup</button>
+                <button class="btn-act" id="btn-${b.id}-Exchange" onclick="quickStatusForBox('${b.id}', 'Exchange', this)">Box #${b.boxNum}: Exchange</button>
+                <button class="btn-act" id="btn-${b.id}-Pickup" onclick="quickStatusForBox('${b.id}', 'Pickup', this)">Box #${b.boxNum}: Pickup</button>
               `).join('')}
               ${isAdmin ? `
                 <button class="btn-act btn-act-blue" onclick="openEditCustomerModal('${c.id}')">Edit</button>
@@ -980,11 +995,12 @@
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdBy: currentUser ? currentUser.uid : null
       }).then(() => {
-        alert(`Delivery job created for ${customer.name}! Check the Service tab.`);
+        showToast("✅ Delivery Scheduled!");
       }).catch(e => alert("Error: " + e.message));
     }
 
-    function quickStatusForBox(boxId, newStatus) {
+    // UPDATED: Shows visual feedback and toast
+    function quickStatusForBox(boxId, newStatus, btnElement) {
       db.collection("boxes").doc(boxId).update({
         status: newStatus,
         activity: firebase.firestore.FieldValue.arrayUnion({
@@ -992,6 +1008,21 @@
           text: "Status → " + statusLabel(newStatus),
           by: currentUser ? (currentUser.displayName || "User") : "Staff"
         })
+      }).then(() => {
+        // Visual Feedback
+        const originalText = btnElement.textContent;
+        btnElement.textContent = "✓ Request Sent!";
+        btnElement.style.backgroundColor = "#16a34a";
+        btnElement.style.color = "white";
+        btnElement.style.borderColor = "#16a34a";
+        showToast("✅ " + statusLabel(newStatus) + " request sent!");
+        
+        setTimeout(() => {
+          btnElement.textContent = originalText;
+          btnElement.style.backgroundColor = "";
+          btnElement.style.color = "";
+          btnElement.style.borderColor = "";
+        }, 2000);
       }).catch(e => alert("Error: " + e.message));
     }
 
@@ -1009,7 +1040,7 @@
             text: "Task Complete → " + statusLabel(newStatus),
             by: currentUser ? (currentUser.displayName || "User") : "Driver"
           })
-        }).catch(e => alert("Error: " + e.message));
+        }).then(() => showToast("✅ Task Completed!")).catch(e => alert("Error: " + e.message));
       }
     }
 
@@ -1033,7 +1064,7 @@
                 text: "Delivered Box #" + boxNum,
                 by: currentUser ? (currentUser.displayName || "User") : "Driver"
               })
-            }).catch(e => alert("Error updating box: " + e.message));
+            }).then(() => showToast("✅ Delivery Completed!")).catch(e => alert("Error updating box: " + e.message));
           } else {
             db.collection("boxes").add({
               boxNum: boxNum,
@@ -1053,7 +1084,7 @@
               }],
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
               createdBy: currentUser ? currentUser.uid : null
-            }).catch(e => alert("Error creating box: " + e.message));
+            }).then(() => showToast("✅ Delivery Completed!")).catch(e => alert("Error creating box: " + e.message));
           }
           
           closeModal("boxNumberModal");
@@ -1114,7 +1145,6 @@
       }
     }
 
-    // UPDATED: Mark as Yard now updates the text AND the actual GPS coordinates!
     function quickStatus(newStatus) {
       if (!activeBoxId) return;
       
@@ -1139,10 +1169,11 @@
         }
       }
       
-      db.collection("boxes").doc(activeBoxId).update(updateData).catch(e => alert("Error: " + e.message));
+      db.collection("boxes").doc(activeBoxId).update(updateData).then(() => {
+        showToast("✅ Status Updated!");
+      }).catch(e => alert("Error: " + e.message));
     }
 
-    // YARD SETTINGS (Saves to the Admin's User doc)
     function openYardSettingsModal() {
       document.getElementById("yardStreet").value = yardData ? yardData.street : "";
       document.getElementById("yardCity").value = yardData ? yardData.city : "";
@@ -1190,6 +1221,7 @@
             }).then(() => {
               yardData = yardObj;
               document.getElementById("yardGeoStatus").textContent = "✓ Yard Location Saved!";
+              showToast("✅ Yard Location Saved!");
               setTimeout(() => closeModal("yardSettingsModal"), 800);
               btn.disabled = false;
             }).catch(e => {
@@ -1234,7 +1266,7 @@
         });
 
         event.target.value = "";
-        alert("Photo uploaded successfully!");
+        showToast("✅ Photo Uploaded!");
       } catch (e) {
         console.error("Photo upload error:", e);
         alert("Error uploading photo.");
@@ -1344,6 +1376,7 @@
         pendingLatLng = null; placeMode = null;
         closeModal("addBoxModal");
         toggleFabMenu();
+        showToast("✅ Box Added!");
       } catch (e) { alert("Error: " + e.message); }
       finally { btn.disabled = false; btn.textContent = "Save Box"; }
     }
@@ -1404,6 +1437,7 @@
         await db.collection("boxes").doc(activeBoxId).update(updateData);
         pendingLatLng = null; placeMode = null;
         closeModal("editBoxModal");
+        showToast("✅ Box Updated!");
       } catch (e) { alert("Error: " + e.message); }
       finally { btn.disabled = false; btn.textContent = "Update Box"; }
     }
@@ -1442,7 +1476,10 @@
         address: fullAddress,
         boxSize: document.getElementById("newCustomerBoxSize").value,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => closeModal("addCustomerModal")).catch(e => alert("Error: " + e.message));
+      }).then(() => {
+        closeModal("addCustomerModal");
+        showToast("✅ Customer Added!");
+      }).catch(e => alert("Error: " + e.message));
     }
 
     function openEditCustomerModal(id) {
@@ -1490,12 +1527,13 @@
       }).then(() => {
         closeModal("editCustomerModal");
         activeCustomerId = null;
+        showToast("✅ Customer Updated!");
       }).catch(e => alert("Error: " + e.message));
     }
 
     function deleteCustomer(id) {
       if (!confirm("Delete this customer?")) return;
-      db.collection("customers").doc(id).delete().catch(e => alert(e.message));
+      db.collection("customers").doc(id).delete().then(() => showToast("Customer Deleted")).catch(e => alert(e.message));
     }
 
     function openAddDriverModal() {
@@ -1511,7 +1549,10 @@
         name: name,
         phone: document.getElementById("newDriverPhone").value.trim(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => closeModal("addDriverModal")).catch(e => alert("Error: " + e.message));
+      }).then(() => {
+        closeModal("addDriverModal");
+        showToast("✅ Driver Added!");
+      }).catch(e => alert("Error: " + e.message));
     }
 
     function deleteDriver(id) {
@@ -1549,6 +1590,7 @@
           }).catch(e => console.error("Error adding driver: ", e));
         }
         closeModal("addUserModal");
+        showToast("✅ User Added!");
       }).catch(e => alert("Error: " + e.message));
     }
 
