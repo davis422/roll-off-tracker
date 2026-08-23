@@ -113,6 +113,7 @@
     /* Search Bar in Customers */
     .customer-search { width: 100%; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; }
 
+    /* Modal for Entering Box Number */
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
     .modal-overlay.active { display: flex; }
     .modal { background: white; border-radius: 12px; padding: 22px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
@@ -349,6 +350,8 @@
       <input type="text" id="newCustomerPhone" placeholder="(713) 555-0198" />
       <label>Default Address</label>
       <input type="text" id="newCustomerAddress" placeholder="123 Main St, Houston, TX" />
+      <label>Box Size</label>
+      <select id="newCustomerBoxSize"><option value="">— Not Specified —</option><option value="10">10 Yard</option><option value="20">20 Yard</option><option value="30" selected>30 Yard</option><option value="40">40 Yard</option></select>
       <div class="modal-btns">
         <button class="btn-save" onclick="saveCustomer()">Save Customer</button>
         <button class="btn-cancel" onclick="closeModal('addCustomerModal')">Cancel</button>
@@ -368,6 +371,19 @@
       <div class="modal-btns">
         <button class="btn-save" onclick="commitCustomerUpdate()">Save Changes</button>
         <button class="btn-cancel" onclick="closeModal('editCustomerModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Box Number Input Modal -->
+  <div id="boxNumberModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Enter Box Number</h3>
+      <label>Box # Delivered</label>
+      <input type="text" id="deliveredBoxNum" placeholder="e.g. 52" />
+      <div class="modal-btns">
+        <button class="btn-save" onclick="confirmCompleteDelivery()">Confirm</button>
+        <button class="btn-cancel" onclick="closeModal('boxNumberModal')">Cancel</button>
       </div>
     </div>
   </div>
@@ -433,6 +449,7 @@
     let usersData = [];
     let activeBoxId = null;
     let activeCustomerId = null;
+    let pendingDeliveryBoxId = null;
     let currentView = "map";
     let currentUser = null;
     let currentUserData = null;
@@ -689,20 +706,19 @@
       alertContainer.innerHTML = `<div class="service-alert">🔥 ${serviceBoxes.length} Box${serviceBoxes.length > 1 ? 'es' : ''} Ready for Service!</div>`;
       
       el.innerHTML = serviceBoxes.map(b => {
-        const nextStatus = (b.status === "Pickup") ? "Available" : "Customer";
-        const nextLabel = (b.status === "Pickup") ? "Mark as Available" : "Complete";
+        const nextStatus = (b.status === "Pickup") ? "Available" : (b.status === "Delivery") ? "Customer" : "Customer";
+        const nextLabel = (b.status === "Pickup") ? "Mark as Available" : (b.status === "Delivery") ? "Enter Box # & Complete" : "Complete";
         const btnClass = (b.status === "Pickup") ? "btn-act-orange" : (b.status === "Exchange") ? "btn-act-blue" : "btn-act-red";
         
-        // Only show Driver if assigned
         const driverLine = (b.driver && b.driver !== "Unassigned") ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
         
         return `<div class="box-card ${b.status || ""}" onclick="selectBox('${b.id}')">
-          <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
+          <h3>Box #${b.boxNum || "New"} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
           <p><strong>Address:</strong> ${b.address || "N/A"}</p>
           ${driverLine}
           <div style="margin-top:12px;" onclick="event.stopPropagation();">
-            <button class="btn-act ${btnClass}" onclick="completeTask('${b.id}', '${nextStatus}', '${nextLabel}')">${nextLabel}</button>
+            <button class="btn-act ${btnClass}" onclick="completeTask('${b.id}', '${nextStatus}', '${nextLabel}', '${b.status}')">${nextLabel}</button>
           </div>
         </div>`;
       }).join("");
@@ -712,12 +728,11 @@
       const el = document.getElementById("boxesList");
       if (boxesData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>'; return; }
       el.innerHTML = boxesData.map(b => {
-        // Only show Driver if assigned and not in a resting state
         const shouldShowDriver = (b.driver && b.driver !== "Unassigned" && (b.status !== "Available" && b.status !== "Customer"));
         const driverLine = shouldShowDriver ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
         
         return `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')">
-          <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
+          <h3>Box #${b.boxNum || "New"} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
           <p><strong>Address:</strong> ${b.address || "N/A"}</p>
           ${driverLine}
@@ -748,9 +763,11 @@
             <h3>${c.name}</h3>
             <p>${c.phone || "No phone"}</p>
             <p>${c.address || "No address"}</p>
+            <p><strong>Preferred Size:</strong> ${c.boxSize || "Not specified"}</p>
             <p style="margin-top: 8px;"><strong>Boxes:</strong> ${customerBoxes.length > 0 ? customerBoxes.length : "None assigned"}</p>
             
             <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-act btn-act-red" onclick="sendForDelivery('${c.id}')">Send for Delivery</button>
               ${customerBoxes.map(b => `
                 <button class="btn-act" onclick="quickStatusForBox('${b.id}', 'Exchange')">Box #${b.boxNum}: Exchange</button>
                 <button class="btn-act" onclick="quickStatusForBox('${b.id}', 'Pickup')">Box #${b.boxNum}: Pickup</button>
@@ -765,6 +782,36 @@
       }).join("");
     }
 
+    function sendForDelivery(customerId) {
+      const customer = customersData.find(c => c.id === customerId);
+      if (!customer) return;
+      
+      if (!customer.address) {
+        alert("This customer does not have an address. Please edit the customer to add an address first.");
+        return;
+      }
+      
+      if (!confirm(`Send a box for delivery to ${customer.name} at ${customer.address}?`)) return;
+      
+      // Create a Delivery job (box number blank, driver assigns later)
+      db.collection("boxes").add({
+        boxNum: "New",
+        size: customer.boxSize || "Not specified",
+        customer: customer.name,
+        driver: "Unassigned",
+        address: customer.address,
+        lat: null, lng: null, // Use geocoding later if provided
+        status: "Delivery",
+        notes: "New customer delivery",
+        datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        activity: [{ time: new Date().toLocaleString(), text: "Delivery scheduled", by: currentUser ? (currentUser.displayName || "User") : "Office" }],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdBy: currentUser ? currentUser.uid : null
+      }).then(() => {
+        alert(`Delivery job created for ${customer.name}! Check the Service tab.`);
+      }).catch(e => alert("Error: " + e.message));
+    }
+
     function quickStatusForBox(boxId, newStatus) {
       db.collection("boxes").doc(boxId).update({
         status: newStatus,
@@ -776,16 +823,45 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
-    function completeTask(id, newStatus, label) {
+    function completeTask(id, newStatus, label, currentStatus) {
       if (!confirm(`Are you sure you want to mark this box as ${label}?`)) return;
-      db.collection("boxes").doc(id).update({
-        status: newStatus,
-        activity: firebase.firestore.FieldValue.arrayUnion({
-          time: new Date().toLocaleString(),
-          text: "Task Complete → " + statusLabel(newStatus),
-          by: currentUser ? (currentUser.displayName || "User") : "Driver"
-        })
-      }).catch(e => alert("Error: " + e.message));
+      
+      if (currentStatus === "Delivery") {
+        // Prompt for box number before completing
+        pendingDeliveryBoxId = id;
+        openModal("boxNumberModal");
+      } else {
+        // Standard completion
+        db.collection("boxes").doc(id).update({
+          status: newStatus,
+          activity: firebase.firestore.FieldValue.arrayUnion({
+            time: new Date().toLocaleString(),
+            text: "Task Complete → " + statusLabel(newStatus),
+            by: currentUser ? (currentUser.displayName || "User") : "Driver"
+          })
+        }).catch(e => alert("Error: " + e.message));
+      }
+    }
+
+    function confirmCompleteDelivery() {
+      const boxNum = document.getElementById("deliveredBoxNum").value.trim();
+      if (!boxNum) return alert("Please enter the box number");
+      
+      if (pendingDeliveryBoxId) {
+        db.collection("boxes").doc(pendingDeliveryBoxId).update({
+          boxNum: boxNum,
+          status: "Customer", // Delivery is complete, box is now at customer
+          activity: firebase.firestore.FieldValue.arrayUnion({
+            time: new Date().toLocaleString(),
+            text: "Delivered Box #" + boxNum,
+            by: currentUser ? (currentUser.displayName || "User") : "Driver"
+          })
+        }).catch(e => alert("Error: " + e.message));
+        
+        closeModal("boxNumberModal");
+        pendingDeliveryBoxId = null;
+        document.getElementById("deliveredBoxNum").value = "";
+      }
     }
 
     function renderDetail() {
@@ -807,7 +883,7 @@
       const isAdmin = currentUserData && currentUserData.role === 'admin';
 
       content.innerHTML = `
-        <div class="detail-title"><span class="dot dot-${box.status || "Available"}"></span> BOX #${box.boxNum} <span class="badge badge-${box.status || "Available"}">${statusLabel(box.status)}</span></div>
+        <div class="detail-title"><span class="dot dot-${box.status || "Available"}"></span> BOX #${box.boxNum || "New"} <span class="badge badge-${box.status || "Available"}">${statusLabel(box.status)}</span></div>
         <div class="detail-layout">
           <div class="info-grid">
             <div><div class="info-label">Customer</div><div class="info-val">${box.customer || "—"}</div></div>
@@ -1036,6 +1112,7 @@
       document.getElementById("newCustomerName").value = "";
       document.getElementById("newCustomerPhone").value = "";
       document.getElementById("newCustomerAddress").value = "";
+      document.getElementById("newCustomerBoxSize").value = "";
       openModal("addCustomerModal");
     }
 
@@ -1046,6 +1123,7 @@
         name: name,
         phone: document.getElementById("newCustomerPhone").value.trim(),
         address: document.getElementById("newCustomerAddress").value.trim(),
+        boxSize: document.getElementById("newCustomerBoxSize").value,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => closeModal("addCustomerModal")).catch(e => alert("Error: " + e.message));
     }
