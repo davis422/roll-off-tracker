@@ -86,6 +86,7 @@
     .btn-act-blue { background: #2563eb; color: white; border: none; }
     .btn-act-orange { background: #d97706; color: white; border: none; }
     .btn-act-red { background: #dc2626; color: white; border: none; }
+    .btn-sms { background: #6d28d9; color: white; border: none; }
     .activity-section { border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 8px; }
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
@@ -782,7 +783,6 @@
       document.getElementById("placeModeBanner").textContent = "Tap the map to set the box location";
     }
 
-    // UPDATED: Yard bubble logic
     function refreshMarkers() {
       if (!gMap) return;
       gMarkers.forEach(m => m.setMap(null));
@@ -793,7 +793,6 @@
       boxesData.forEach(b => {
         if (b.lat == null || b.lng == null) return;
         
-        // If available and we have a yard location, combine them
         if (b.status === "Available" && yardData && yardData.lat) {
           yardBoxes.push(b);
           return;
@@ -814,11 +813,10 @@
         gMarkers.push(marker);
       });
 
-      // Create the Yard Bubble
       if (yardBoxes.length > 0 && yardData && yardData.lat) {
         const icon = {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: 20, // Larger for the bubble
+          scale: 20,
           fillColor: "#64748b",
           fillOpacity: 1,
           strokeColor: "#ffffff",
@@ -832,7 +830,6 @@
           icon: icon
         });
         
-        // Build the list for the InfoWindow
         let listHtml = '<div style="font-weight:bold; margin-bottom:8px;">Boxes in Yard:</div>';
         yardBoxes.forEach(b => {
           listHtml += `<div style="cursor:pointer; padding:4px 0; border-bottom:1px solid #eee;" onclick="selectBox('${b.id}')">#${b.boxNum} (${b.size}Y)</div>`;
@@ -892,7 +889,7 @@
             document.getElementById("yardCity").value = yardData.city || "";
             document.getElementById("yardState").value = yardData.state || "";
             document.getElementById("yardZip").value = yardData.zip || "";
-            refreshMarkers(); // Refresh markers once yard loads
+            refreshMarkers();
           }
         }).catch(err => console.error("Error loading yard settings:", err));
       }
@@ -933,7 +930,6 @@
       renderDetail();
     }
 
-    // UPDATED: Notes in Service Tab
     function renderService() {
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
@@ -954,7 +950,6 @@
         
         const driverLine = (b.driver && b.driver !== "Unassigned") ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
         
-        // Prominent Note Display
         const noteHtml = b.notes ? 
           `<div class="notes-box"><strong>📝 DISPATCH NOTE:</strong><br>${b.notes}</div>` : '';
         
@@ -967,12 +962,33 @@
           <div style="margin-top:12px;" onclick="event.stopPropagation();">
             <button class="btn-act ${btnClass}" onclick="completeTask('${b.id}', '${nextStatus}', '${nextLabel}', '${b.status}')">${nextLabel}</button>
             <button class="notes-btn" onclick="promptAddNote('${b.id}')">📝 Add Note</button>
+            ${b.driver && b.driver !== "Unassigned" ? `<button class="btn-act btn-sms" onclick="sendSMS('${b.id}')">📱 Text Driver</button>` : ''}
           </div>
         </div>`;
       }).join("");
     }
 
-    // Quick Note function
+    // SMS Functionality
+    function sendSMS(boxId) {
+      const box = boxesData.find(b => b.id === boxId);
+      if (!box) return;
+      
+      // Look up the driver's phone number
+      const driverObj = driversData.find(d => d.name === box.driver);
+      const phone = driverObj ? driverObj.phone : "";
+      
+      if (!phone) {
+        alert("No phone number found for driver: " + box.driver);
+        return;
+      }
+      
+      const message = `NIAM TRACK: Box #${box.boxNum} is ${statusLabel(box.status)} for ${box.customer || "Customer"} at ${box.address || "Address"}. ${box.notes ? "Note: " + box.notes : ""}`;
+      
+      // Open SMS app with prefilled message
+      window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
+      showToast("📱 Opening SMS...");
+    }
+
     function promptAddNote(boxId) {
       const box = boxesData.find(b => b.id === boxId);
       if (!box) return;
@@ -1300,7 +1316,7 @@
               showToast("✅ Yard Location Saved!");
               setTimeout(() => closeModal("yardSettingsModal"), 800);
               btn.disabled = false;
-              refreshMarkers(); // Update the bubble immediately
+              refreshMarkers();
             }).catch(e => {
               alert("Error: " + e.message);
               btn.disabled = false;
