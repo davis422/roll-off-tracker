@@ -107,6 +107,11 @@
     /* Service Alert Banner */
     .service-alert { background: #dc2626; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 1.1rem; font-weight: 800; }
 
+    /* Notes Section in Service Tab */
+    .notes-box { background: #fef9c3; border: 1px solid #fde047; border-left: 5px solid #eab308; padding: 10px; border-radius: 6px; margin-top: 10px; margin-bottom: 10px; }
+    .notes-box strong { color: #854d0e; }
+    .notes-btn { background: #fef9c3; border: 1px dashed #eab308; color: #854d0e; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 0.8rem; margin-top: 8px; }
+
     /* Customer Cards */
     .customer-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     .customer-card h3 { font-size: 1.1rem; font-weight: 800; }
@@ -538,6 +543,8 @@
     let pendingLatLng = null;
     let gMap = null;
     let gMarkers = [];
+    let yardMarker = null;
+    let yardInfoWindow = null;
     let tempGMarker = null;
     let autocompleteNew = null;
     let autocompleteEdit = null;
@@ -775,12 +782,23 @@
       document.getElementById("placeModeBanner").textContent = "Tap the map to set the box location";
     }
 
+    // UPDATED: Yard bubble logic
     function refreshMarkers() {
       if (!gMap) return;
       gMarkers.forEach(m => m.setMap(null));
       gMarkers = [];
+
+      const yardBoxes = [];
+      
       boxesData.forEach(b => {
         if (b.lat == null || b.lng == null) return;
+        
+        // If available and we have a yard location, combine them
+        if (b.status === "Available" && yardData && yardData.lat) {
+          yardBoxes.push(b);
+          return;
+        }
+        
         const marker = new google.maps.Marker({
           position: { lat: b.lat, lng: b.lng },
           map: gMap,
@@ -795,6 +813,41 @@
         marker.addListener("click", () => selectBox(b.id));
         gMarkers.push(marker);
       });
+
+      // Create the Yard Bubble
+      if (yardBoxes.length > 0 && yardData && yardData.lat) {
+        const icon = {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 20, // Larger for the bubble
+          fillColor: "#64748b",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 3
+        };
+        
+        yardMarker = new google.maps.Marker({
+          position: { lat: yardData.lat, lng: yardData.lng },
+          map: gMap,
+          label: { text: String(yardBoxes.length), color: "white", fontWeight: "900", fontSize: "14px" },
+          icon: icon
+        });
+        
+        // Build the list for the InfoWindow
+        let listHtml = '<div style="font-weight:bold; margin-bottom:8px;">Boxes in Yard:</div>';
+        yardBoxes.forEach(b => {
+          listHtml += `<div style="cursor:pointer; padding:4px 0; border-bottom:1px solid #eee;" onclick="selectBox('${b.id}')">#${b.boxNum} (${b.size}Y)</div>`;
+        });
+        
+        yardInfoWindow = new google.maps.InfoWindow({
+          content: listHtml
+        });
+        
+        yardMarker.addListener("click", () => {
+          yardInfoWindow.open(gMap, yardMarker);
+        });
+        
+        gMarkers.push(yardMarker);
+      }
     }
 
     function startApp() {
@@ -839,6 +892,7 @@
             document.getElementById("yardCity").value = yardData.city || "";
             document.getElementById("yardState").value = yardData.state || "";
             document.getElementById("yardZip").value = yardData.zip || "";
+            refreshMarkers(); // Refresh markers once yard loads
           }
         }).catch(err => console.error("Error loading yard settings:", err));
       }
@@ -879,6 +933,7 @@
       renderDetail();
     }
 
+    // UPDATED: Notes in Service Tab
     function renderService() {
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
@@ -899,16 +954,40 @@
         
         const driverLine = (b.driver && b.driver !== "Unassigned") ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
         
+        // Prominent Note Display
+        const noteHtml = b.notes ? 
+          `<div class="notes-box"><strong>📝 DISPATCH NOTE:</strong><br>${b.notes}</div>` : '';
+        
         return `<div class="box-card ${b.status || ""}" onclick="selectBox('${b.id}')">
           <h3>Box #${b.boxNum || "New"} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
           <p><strong>Address:</strong> ${b.address || "N/A"}</p>
           ${driverLine}
+          ${noteHtml}
           <div style="margin-top:12px;" onclick="event.stopPropagation();">
             <button class="btn-act ${btnClass}" onclick="completeTask('${b.id}', '${nextStatus}', '${nextLabel}', '${b.status}')">${nextLabel}</button>
+            <button class="notes-btn" onclick="promptAddNote('${b.id}')">📝 Add Note</button>
           </div>
         </div>`;
       }).join("");
+    }
+
+    // Quick Note function
+    function promptAddNote(boxId) {
+      const box = boxesData.find(b => b.id === boxId);
+      if (!box) return;
+      
+      const newNote = prompt("Enter Dispatcher Note:\n(Current: " + (box.notes || "None") + ")", "");
+      if (newNote !== null) {
+        db.collection("boxes").doc(boxId).update({
+          notes: newNote,
+          activity: firebase.firestore.FieldValue.arrayUnion({
+            time: new Date().toLocaleString(),
+            text: "Note added: " + newNote,
+            by: currentUser ? (currentUser.displayName || "User") : "Dispatch"
+          })
+        }).then(() => showToast("✅ Note Saved!")).catch(e => alert("Error: " + e.message));
+      }
     }
 
     function renderBoxes() {
@@ -1221,6 +1300,7 @@
               showToast("✅ Yard Location Saved!");
               setTimeout(() => closeModal("yardSettingsModal"), 800);
               btn.disabled = false;
+              refreshMarkers(); // Update the bubble immediately
             }).catch(e => {
               alert("Error: " + e.message);
               btn.disabled = false;
