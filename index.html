@@ -374,6 +374,14 @@
       <input type="text" id="editCustomerPhone" />
       <label>Default Address</label>
       <input type="text" id="editCustomerAddress" />
+      <label>Preferred Box Size</label>
+      <select id="editCustomerBoxSize">
+        <option value="">— Not Specified —</option>
+        <option value="10">10 Yard</option>
+        <option value="20">20 Yard</option>
+        <option value="30">30 Yard</option>
+        <option value="40">40 Yard</option>
+      </select>
       <div class="modal-btns">
         <button class="btn-save" onclick="commitCustomerUpdate()">Save Changes</button>
         <button class="btn-cancel" onclick="closeModal('editCustomerModal')">Cancel</button>
@@ -542,7 +550,6 @@
       }
     });
 
-    // DUPLICATE CHECK FUNCTIONS
     function checkDuplicateBox() {
       const num = document.getElementById("newBoxNum").value.trim();
       const exists = boxesData.some(b => b.boxNum === num);
@@ -875,14 +882,10 @@
       if (pendingDeliveryBoxId) {
         const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
         
-        // 1. Delete the temporary job
         db.collection("boxes").doc(pendingDeliveryBoxId).delete().then(() => {
-          
-          // 2. Search for the physical box with that number in the Yard
           const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
           
           if (existingBox) {
-            // Update the REAL box with exact ID
             db.collection("boxes").doc(existingBox.id).update({
               customer: deliveryBox ? deliveryBox.customer : "",
               address: deliveryBox ? deliveryBox.address : "",
@@ -894,7 +897,6 @@
               })
             }).catch(e => alert("Error updating box: " + e.message));
           } else {
-            // If a physical box with that number doesn't exist, create a new one
             db.collection("boxes").add({
               boxNum: boxNum,
               size: deliveryBox ? deliveryBox.size : "",
@@ -1073,7 +1075,6 @@
       const boxNum = document.getElementById("newBoxNum").value.trim();
       if (!boxNum) return alert("Box number is required");
       
-      // Final safety check before saving
       const duplicateCheck = boxesData.some(b => b.boxNum === boxNum);
       if (duplicateCheck) return alert("A box with this number already exists!");
       
@@ -1140,7 +1141,6 @@
       const btn = document.getElementById("updateBoxBtn");
       btn.disabled = true; btn.textContent = "Updating...";
 
-      // Final safety check
       const duplicateCheck = boxesData.some(b => b.boxNum === newBoxNum && b.id !== activeBoxId);
       if (duplicateCheck) {
         btn.disabled = false; btn.textContent = "Update Box";
@@ -1214,6 +1214,7 @@
       document.getElementById("editCustomerName").value = customer.name || "";
       document.getElementById("editCustomerPhone").value = customer.phone || "";
       document.getElementById("editCustomerAddress").value = customer.address || "";
+      document.getElementById("editCustomerBoxSize").value = customer.boxSize || "";
       openModal("editCustomerModal");
     }
 
@@ -1224,7 +1225,8 @@
       db.collection("customers").doc(activeCustomerId).update({
         name: name,
         phone: document.getElementById("editCustomerPhone").value.trim(),
-        address: document.getElementById("editCustomerAddress").value.trim()
+        address: document.getElementById("editCustomerAddress").value.trim(),
+        boxSize: document.getElementById("editCustomerBoxSize").value
       }).then(() => {
         closeModal("editCustomerModal");
         activeCustomerId = null;
