@@ -90,7 +90,8 @@
     .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active { display: block; }
 
     /* Box Cards List */
-    .box-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 8px solid #ccc; }
+    .box-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 8px solid #ccc; cursor: pointer; }
+    .box-card:hover { background: #f8fafc; }
     .box-card.Customer { border-left-color: #16a34a; }
     .box-card.Pickup { border-left-color: #d97706; }
     .box-card.Exchange { border-left-color: #2563eb; }
@@ -639,16 +640,18 @@
       const el = document.getElementById("boxesList");
       if (boxesData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>'; return; }
       el.innerHTML = boxesData.map(b => {
-        const nextStatus = (b.status === "Pickup") ? "Available" : (b.status === "Exchange" || b.status === "Delivery") ? "Customer" : "Customer";
-        const nextLabel = (nextStatus === "Available") ? "Mark as Available" : "Complete";
-        return `<div class="box-card ${b.status || "Available"}">
+        const isActionable = (b.status === "Pickup" || b.status === "Exchange" || b.status === "Delivery");
+        const nextStatus = (b.status === "Pickup") ? "Available" : "Customer";
+        const nextLabel = (b.status === "Pickup") ? "Mark as Available" : "Complete";
+        
+        return `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')">
           <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
           <p><strong>Address:</strong> ${b.address || "N/A"}</p>
           <p><strong>Driver:</strong> ${b.driver || "Unassigned"}</p>
-          <div style="margin-top:12px; display:flex; gap:8px;">
+          ${isActionable ? `<div style="margin-top:12px;" onclick="event.stopPropagation();">
             <button class="btn-act btn-act-primary" onclick="completeTask('${b.id}', '${nextStatus}', '${nextLabel}')">${nextLabel}</button>
-          </div>
+          </div>` : ''}
         </div>`;
       }).join("");
     }
