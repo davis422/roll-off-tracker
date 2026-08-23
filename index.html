@@ -418,7 +418,6 @@
         if (user.photoURL) avatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
         else avatar.textContent = (user.displayName || "U").charAt(0).toUpperCase();
 
-        // Check if the user is authorized by their email
         db.collection("users").where("email", "==", user.email).get().then(snapshot => {
           if (!snapshot.empty) {
             currentUserData = snapshot.docs[0].data();
