@@ -60,7 +60,6 @@
     #placeModeBanner { display: none; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: #1e40af; color: white; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; z-index: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3); white-space: nowrap; }
     #placeModeBanner.active { display: block; }
 
-    /* Detail Panel - Updated for desktop/mobile */
     .detail-panel { background: #fff; padding: 20px 24px; overflow-y: auto; border-top: 2px solid #e2e8f0; position: relative; max-height: 50vh; }
     .close-sheet { position: absolute; top: 15px; right: 15px; background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: 800; cursor: pointer; color: #475569; font-size: 1rem; display: block; z-index: 10; }
     .detail-title { font-size: 1.2rem; font-weight: 900; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -321,6 +320,10 @@
       <h3>Add User</h3>
       <label>Email *</label>
       <input type="email" id="newUserEmail" placeholder="driver@email.com" />
+      <label>Name (optional)</label>
+      <input type="text" id="newUserName" placeholder="e.g. Mike D." />
+      <label>Phone (optional)</label>
+      <input type="text" id="newUserPhone" placeholder="(713) 555-0198" />
       <label>Role</label>
       <select id="newUserRole"><option value="admin">Administrator</option><option value="driver">Driver</option></select>
       <div class="modal-btns">
@@ -711,7 +714,7 @@
       if (usersData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No users yet</h3></div>'; return; }
       el.innerHTML = usersData.map(u =>
         `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-          <div><strong>${u.email}</strong><br><span style="font-size:0.8rem;color:#64748b">Role: ${u.role}</span></div>
+          <div><strong>${u.name || u.email}</strong><br><span style="font-size:0.8rem;color:#64748b">${u.email}</span><br><span style="font-size:0.8rem;color:#64748b">Role: ${u.role}</span></div>
           <button class="btn-act btn-act-danger" onclick="deleteUser('${u.id}')">Delete</button>
         </div>`
       ).join("");
@@ -897,6 +900,8 @@
 
     function openAddUserModal() {
       document.getElementById("newUserEmail").value = "";
+      document.getElementById("newUserName").value = "";
+      document.getElementById("newUserPhone").value = "";
       document.getElementById("newUserRole").value = "driver";
       openModal("addUserModal");
     }
@@ -905,16 +910,21 @@
       const email = document.getElementById("newUserEmail").value.trim();
       if (!email) return alert("Email required");
       const role = document.getElementById("newUserRole").value;
+      const name = document.getElementById("newUserName").value.trim();
+      const phone = document.getElementById("newUserPhone").value.trim();
+      
       db.collection("users").add({
         email: email,
         role: role,
+        name: name,
+        phone: phone,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         // If it's a driver, automatically add them to the Drivers list too
         if (role === 'driver') {
           db.collection("drivers").add({
-            name: email, // Use email as name so it shows up in the dropdown
-            phone: "",
+            name: name || email, // Use the new name if provided, otherwise email
+            phone: phone,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           }).catch(e => console.error("Error adding driver: ", e));
         }
