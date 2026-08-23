@@ -847,15 +847,37 @@
       if (!boxNum) return alert("Please enter the box number");
       
       if (pendingDeliveryBoxId) {
-        db.collection("boxes").doc(pendingDeliveryBoxId).update({
-          boxNum: boxNum,
-          status: "Customer", // Delivery is complete, box is now at customer
-          activity: firebase.firestore.FieldValue.arrayUnion({
-            time: new Date().toLocaleString(),
-            text: "Delivered Box #" + boxNum,
-            by: currentUser ? (currentUser.displayName || "User") : "Driver"
-          })
-        }).catch(e => alert("Error: " + e.message));
+        // Step 1: Find the existing box in the yard with that number
+        const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
+        
+        if (existingBox) {
+          // Update the REAL box in the yard
+          const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
+          db.collection("boxes").doc(existingBox.id).update({
+            customer: deliveryBox.customer,
+            address: deliveryBox.address,
+            status: "Customer",
+            activity: firebase.firestore.FieldValue.arrayUnion({
+              time: new Date().toLocaleString(),
+              text: "Delivered Box #" + boxNum,
+              by: currentUser ? (currentUser.displayName || "User") : "Driver"
+            })
+          }).catch(e => alert("Error: " + e.message));
+          
+          // Step 2: Delete the temporary "New" job
+          db.collection("boxes").doc(pendingDeliveryBoxId).delete().catch(e => console.error(e));
+        } else {
+          // If no physical box with that number exists, update the temp job to be that box
+          db.collection("boxes").doc(pendingDeliveryBoxId).update({
+            boxNum: boxNum,
+            status: "Customer",
+            activity: firebase.firestore.FieldValue.arrayUnion({
+              time: new Date().toLocaleString(),
+              text: "Delivered Box #" + boxNum,
+              by: currentUser ? (currentUser.displayName || "User") : "Driver"
+            })
+          }).catch(e => alert("Error: " + e.message));
+        }
         
         closeModal("boxNumberModal");
         pendingDeliveryBoxId = null;
@@ -1211,7 +1233,7 @@
     }
 
     function deleteUser(id) {
-      if (!confirm("Delete this user?")) return;
+      if (!confirm("Delete this user?"")) return;
       db.collection("users").doc(id).delete().catch(e => alert(e.message));
     }
 
