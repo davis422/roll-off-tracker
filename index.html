@@ -432,6 +432,19 @@
     </div>
   </div>
 
+  <!-- DISPATCH NOTES MODAL (NEW) -->
+  <div id="dispatchNotesModal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="dispatchModalTitle">Add Dispatch Notes</h3>
+      <label id="dispatchBoxInfo">Box #</label>
+      <textarea id="dispatchNoteText" rows="4" placeholder="Enter notes for the driver (Gate code, call before arriving, etc.)"></textarea>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="confirmSendToService()">Send to Service</button>
+        <button class="btn-cancel" onclick="closeModal('dispatchNotesModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- YARD SETTINGS MODAL -->
   <div id="yardSettingsModal" class="modal-overlay">
     <div class="modal">
@@ -537,6 +550,8 @@
     let activeBoxId = null;
     let activeCustomerId = null;
     let pendingDeliveryBoxId = null;
+    let pendingActionBoxId = null; // For dispatch notes modal
+    let pendingActionStatus = null; // For dispatch notes modal
     let currentView = "map";
     let currentUser = null;
     let currentUserData = null;
@@ -930,6 +945,7 @@
       renderDetail();
     }
 
+    // UPDATED: Service Tab shows notes AND texts
     function renderService() {
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
@@ -968,12 +984,10 @@
       }).join("");
     }
 
-    // SMS Functionality
     function sendSMS(boxId) {
       const box = boxesData.find(b => b.id === boxId);
       if (!box) return;
       
-      // Look up the driver's phone number
       const driverObj = driversData.find(d => d.name === box.driver);
       const phone = driverObj ? driverObj.phone : "";
       
@@ -984,7 +998,6 @@
       
       const message = `NIAM TRACK: Box #${box.boxNum} is ${statusLabel(box.status)} for ${box.customer || "Customer"} at ${box.address || "Address"}. ${box.notes ? "Note: " + box.notes : ""}`;
       
-      // Open SMS app with prefilled message
       window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
       showToast("📱 Opening SMS...");
     }
@@ -1051,8 +1064,8 @@
             <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
               <button class="btn-act btn-act-red" onclick="sendForDelivery('${c.id}')">Send for Delivery</button>
               ${customerBoxes.map(b => `
-                <button class="btn-act" id="btn-${b.id}-Exchange" onclick="quickStatusForBox('${b.id}', 'Exchange', this)">Box #${b.boxNum}: Exchange</button>
-                <button class="btn-act" id="btn-${b.id}-Pickup" onclick="quickStatusForBox('${b.id}', 'Pickup', this)">Box #${b.boxNum}: Pickup</button>
+                <button class="btn-act" id="btn-${b.id}-Exchange" onclick="openDispatchNotes('${b.id}', 'Exchange')">Box #${b.boxNum}: Exchange</button>
+                <button class="btn-act" id="btn-${b.id}-Pickup" onclick="openDispatchNotes('${b.id}', 'Pickup')">Box #${b.boxNum}: Pickup</button>
               `).join('')}
               ${isAdmin ? `
                 <button class="btn-act btn-act-blue" onclick="openEditCustomerModal('${c.id}')">Edit</button>
@@ -1062,6 +1075,41 @@
           </div>
         `;
       }).join("");
+    }
+
+    // NEW: Open Note modal
+    function openDispatchNotes(boxId, status) {
+      pendingActionBoxId = boxId;
+      pendingActionStatus = status;
+      
+      const box = boxesData.find(b => b.id === boxId);
+      if (!box) return;
+      
+      document.getElementById("dispatchModalTitle").textContent = status === "Exchange" ? "Schedule Exchange" : "Schedule Pickup";
+      document.getElementById("dispatchBoxInfo").textContent = `Box #${box.boxNum} - ${box.customer}`;
+      document.getElementById("dispatchNoteText").value = "";
+      openModal("dispatchNotesModal");
+    }
+
+    function confirmSendToService() {
+      if (!pendingActionBoxId) return;
+      
+      const note = document.getElementById("dispatchNoteText").value.trim();
+      
+      db.collection("boxes").doc(pendingActionBoxId).update({
+        status: pendingActionStatus,
+        notes: note,
+        activity: firebase.firestore.FieldValue.arrayUnion({
+          time: new Date().toLocaleString(),
+          text: "Status → " + statusLabel(pendingActionStatus) + (note ? " with note" : ""),
+          by: currentUser ? (currentUser.displayName || "User") : "Dispatch"
+        })
+      }).then(() => {
+        closeModal("dispatchNotesModal");
+        pendingActionBoxId = null;
+        pendingActionStatus = null;
+        showToast("✅ Sent to Service!");
+      }).catch(e => alert("Error: " + e.message));
     }
 
     function sendForDelivery(customerId) {
@@ -1090,31 +1138,6 @@
         createdBy: currentUser ? currentUser.uid : null
       }).then(() => {
         showToast("✅ Delivery Scheduled!");
-      }).catch(e => alert("Error: " + e.message));
-    }
-
-    function quickStatusForBox(boxId, newStatus, btnElement) {
-      db.collection("boxes").doc(boxId).update({
-        status: newStatus,
-        activity: firebase.firestore.FieldValue.arrayUnion({
-          time: new Date().toLocaleString(),
-          text: "Status → " + statusLabel(newStatus),
-          by: currentUser ? (currentUser.displayName || "User") : "Staff"
-        })
-      }).then(() => {
-        const originalText = btnElement.textContent;
-        btnElement.textContent = "✓ Request Sent!";
-        btnElement.style.backgroundColor = "#16a34a";
-        btnElement.style.color = "white";
-        btnElement.style.borderColor = "#16a34a";
-        showToast("✅ " + statusLabel(newStatus) + " request sent!");
-        
-        setTimeout(() => {
-          btnElement.textContent = originalText;
-          btnElement.style.backgroundColor = "";
-          btnElement.style.color = "";
-          btnElement.style.borderColor = "";
-        }, 2000);
       }).catch(e => alert("Error: " + e.message));
     }
 
