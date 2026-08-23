@@ -594,9 +594,10 @@
       document.getElementById("updateBoxBtn").disabled = exists;
     }
 
+    // FIXED: This now ONLY blocks if the box is at a customer or already scheduled for a job. Yard boxes are allowed!
     function checkDuplicateDelivery() {
       const num = document.getElementById("deliveredBoxNum").value.trim();
-      const exists = boxesData.some(b => b.boxNum === num && b.status !== "Delivery" && b.status !== "Customer");
+      const exists = boxesData.some(b => b.boxNum === num && b.status !== "Available");
       document.getElementById("deliveryBoxError").style.display = exists ? "block" : "none";
     }
 
@@ -1296,7 +1297,6 @@
       const customer = customersData.find(c => c.id === id);
       if (!customer) return;
       
-      // Parse the address into parts
       let street = "", city = "", state = "", zip = "";
       if (customer.address) {
         const parts = customer.address.split(", ").map(p => p.trim());
