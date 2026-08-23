@@ -695,8 +695,11 @@
       if (filtered.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No customers found</h3></div>'; return; }
       
       el.innerHTML = filtered.map(c => {
-        const hasBox = boxesData.find(b => b.customer === c.name);
-        const statusText = hasBox ? `Current Status: ${statusLabel(hasBox.status)}` : "No box currently assigned.";
+        // FIND ALL BOXES FOR THIS CUSTOMER (case-insensitive)
+        const customerBoxes = boxesData.filter(b => 
+          (b.customer || "").toLowerCase() === c.name.toLowerCase()
+        );
+        
         const isAdmin = currentUserData && currentUserData.role === 'admin';
 
         return `
@@ -704,14 +707,13 @@
             <h3>${c.name}</h3>
             <p>${c.phone || "No phone"}</p>
             <p>${c.address || "No address"}</p>
-            <p style="margin-top: 8px;"><strong>${statusText}</strong></p>
+            <p style="margin-top: 8px;"><strong>Boxes:</strong> ${customerBoxes.length > 0 ? customerBoxes.length : "None assigned"}</p>
             
             <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-              ${hasBox ? `
-                <button class="btn-act" onclick="quickStatusForBox('${hasBox.id}', 'Exchange')">Request Exchange</button>
-                <button class="btn-act" onclick="quickStatusForBox('${hasBox.id}', 'Pickup')">Request Pickup</button>
-                <button class="btn-act btn-act-primary" onclick="selectBox('${hasBox.id}')">View Box</button>
-              ` : ''}
+              ${customerBoxes.map(b => `
+                <button class="btn-act" onclick="quickStatusForBox('${b.id}', 'Exchange')">Box #${b.boxNum}: Exchange</button>
+                <button class="btn-act" onclick="quickStatusForBox('${b.id}', 'Pickup')">Box #${b.boxNum}: Pickup</button>
+              `).join('')}
               ${isAdmin ? `
                 <button class="btn-act btn-act-blue" onclick="openEditCustomerModal('${c.id}')">Edit</button>
                 <button class="btn-act btn-act-danger" onclick="deleteCustomer('${c.id}')">Delete</button>
