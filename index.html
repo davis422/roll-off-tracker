@@ -417,11 +417,11 @@
         const avatar = document.getElementById("userAvatar");
         if (user.photoURL) avatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
         else avatar.textContent = (user.displayName || "U").charAt(0).toUpperCase();
-        
-        // Check if the user is authorized by their UID
-        db.collection("users").doc(user.uid).get().then(doc => {
-          if (doc.exists) {
-            currentUserData = doc.data();
+
+        // Check if user has an admin role by their email (the current database setup)
+        db.collection("users").where("email", "==", user.email).get().then(snapshot => {
+          if (!snapshot.empty) {
+            currentUserData = snapshot.docs[0].data();
             if (currentUserData.role === 'admin') {
               document.getElementById("usersTab").style.display = "block";
               document.getElementById("settingsGear").style.display = "block";
