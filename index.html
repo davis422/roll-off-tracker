@@ -90,15 +90,14 @@
     .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active { display: block; }
 
     /* Box Cards List */
-    .box-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid #ccc; cursor: pointer; }
-    .box-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .box-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 8px solid #ccc; }
     .box-card.Customer { border-left-color: #16a34a; }
     .box-card.Pickup { border-left-color: #d97706; }
     .box-card.Exchange { border-left-color: #2563eb; }
     .box-card.Available { border-left-color: #94a3b8; }
     .box-card.Delivery { border-left-color: #dc2626; }
-    .box-card h3 { font-size: 1.05rem; font-weight: 800; }
-    .box-card p { font-size: 0.85rem; color: #64748b; }
+    .box-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 10px; }
+    .box-card p { font-size: 0.9rem; color: #475569; margin-bottom: 6px; }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
     .modal-overlay.active { display: flex; }
@@ -639,14 +638,32 @@
     function renderBoxes() {
       const el = document.getElementById("boxesList");
       if (boxesData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>'; return; }
-      el.innerHTML = boxesData.map(b =>
-        `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')">
+      el.innerHTML = boxesData.map(b => {
+        const nextStatus = (b.status === "Pickup") ? "Available" : (b.status === "Exchange" || b.status === "Delivery") ? "Customer" : "Customer";
+        const nextLabel = (nextStatus === "Available") ? "Mark as Available" : "Complete";
+        return `<div class="box-card ${b.status || "Available"}">
           <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
           <p><strong>Address:</strong> ${b.address || "N/A"}</p>
           <p><strong>Driver:</strong> ${b.driver || "Unassigned"}</p>
-        </div>`
-      ).join("");
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button class="btn-act btn-act-primary" onclick="completeTask('${b.id}', '${nextStatus}', '${nextLabel}')">${nextLabel}</button>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    // Complete Task Logic
+    function completeTask(id, newStatus, label) {
+      if (!confirm(`Are you sure you want to mark this box as ${label}?`)) return;
+      db.collection("boxes").doc(id).update({
+        status: newStatus,
+        activity: firebase.firestore.FieldValue.arrayUnion({
+          time: new Date().toLocaleString(),
+          text: "Task Complete → " + statusLabel(newStatus),
+          by: currentUser ? (currentUser.displayName || "User") : "Driver"
+        })
+      }).catch(e => alert("Error: " + e.message));
     }
 
     function renderDetail() {
