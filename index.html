@@ -242,7 +242,6 @@
       <div class="boxes-view" id="boxesView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <h2 style="font-size:1.3rem; font-weight:900;">All Boxes</h2>
-          <button class="btn-act btn-act-primary" onclick="openAddBoxModal()">+ Add Box</button>
         </div>
         <div id="boxesList"></div>
       </div>
@@ -694,11 +693,14 @@
         const nextLabel = (b.status === "Pickup") ? "Mark as Available" : "Complete";
         const btnClass = (b.status === "Pickup") ? "btn-act-orange" : (b.status === "Exchange") ? "btn-act-blue" : "btn-act-red";
         
+        // Only show Driver if assigned
+        const driverLine = (b.driver && b.driver !== "Unassigned") ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
+        
         return `<div class="box-card ${b.status || ""}" onclick="selectBox('${b.id}')">
           <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
           <p><strong>Address:</strong> ${b.address || "N/A"}</p>
-          <p><strong>Driver:</strong> ${b.driver || "Unassigned"}</p>
+          ${driverLine}
           <div style="margin-top:12px;" onclick="event.stopPropagation();">
             <button class="btn-act ${btnClass}" onclick="completeTask('${b.id}', '${nextStatus}', '${nextLabel}')">${nextLabel}</button>
           </div>
@@ -710,11 +712,15 @@
       const el = document.getElementById("boxesList");
       if (boxesData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>'; return; }
       el.innerHTML = boxesData.map(b => {
+        // Only show Driver if assigned and not in a resting state
+        const shouldShowDriver = (b.driver && b.driver !== "Unassigned" && (b.status !== "Available" && b.status !== "Customer"));
+        const driverLine = shouldShowDriver ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
+        
         return `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')">
           <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
           <p><strong>Address:</strong> ${b.address || "N/A"}</p>
-          <p><strong>Driver:</strong> ${b.driver || "Unassigned"}</p>
+          ${driverLine}
         </div>`;
       }).join("");
     }
