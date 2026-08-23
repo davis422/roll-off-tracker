@@ -82,6 +82,8 @@
     .btn-act-primary { background: #16a34a; color: white; border: none; }
     .btn-act-danger { color: #dc2626; border-color: #fca5a5; }
     .btn-act-blue { background: #2563eb; color: white; border: none; }
+    .btn-act-orange { background: #d97706; color: white; border: none; }
+    .btn-act-red { background: #dc2626; color: white; border: none; }
     .activity-section { border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 8px; }
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
@@ -99,6 +101,9 @@
     .box-card.Delivery { border-left-color: #dc2626; }
     .box-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 10px; }
     .box-card p { font-size: 0.9rem; color: #475569; margin-bottom: 6px; }
+
+    /* Service Alert Banner */
+    .service-alert { background: #dc2626; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 1.1rem; font-weight: 800; }
 
     /* Customer Cards */
     .customer-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
@@ -230,9 +235,7 @@
 
       <!-- Service View -->
       <div class="service-view" id="serviceView">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2 style="font-size:1.3rem; font-weight:900;">Boxes Needing Service</h2>
-        </div>
+        <div id="serviceAlertContainer"></div>
         <div id="serviceList"></div>
       </div>
 
@@ -675,17 +678,21 @@
 
     function renderService() {
       const el = document.getElementById("serviceList");
-      // ONLY show boxes that need work
+      const alertContainer = document.getElementById("serviceAlertContainer");
       const serviceBoxes = boxesData.filter(b => b.status === "Pickup" || b.status === "Exchange" || b.status === "Delivery");
       
       if (serviceBoxes.length === 0) {
-        el.innerHTML = '<div class="empty-msg"><h3>🎉 No boxes need service!</h3></div>';
+        alertContainer.innerHTML = '';
+        el.innerHTML = '<div class="empty-msg"><h3>🎉 No boxes need service!</h3><p>Great job catching up!</p></div>';
         return;
       }
+
+      alertContainer.innerHTML = `<div class="service-alert">🔥 ${serviceBoxes.length} Box${serviceBoxes.length > 1 ? 'es' : ''} Ready for Service!</div>`;
       
       el.innerHTML = serviceBoxes.map(b => {
         const nextStatus = (b.status === "Pickup") ? "Available" : "Customer";
         const nextLabel = (b.status === "Pickup") ? "Mark as Available" : "Complete";
+        const btnClass = (b.status === "Pickup") ? "btn-act-orange" : (b.status === "Exchange") ? "btn-act-blue" : "btn-act-red";
         
         return `<div class="box-card ${b.status || ""}" onclick="selectBox('${b.id}')">
           <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
@@ -693,7 +700,7 @@
           <p><strong>Address:</strong> ${b.address || "N/A"}</p>
           <p><strong>Driver:</strong> ${b.driver || "Unassigned"}</p>
           <div style="margin-top:12px;" onclick="event.stopPropagation();">
-            <button class="btn-act btn-act-primary" onclick="completeTask('${b.id}', '${nextStatus}', '${nextLabel}')">${nextLabel}</button>
+            <button class="btn-act ${btnClass}" onclick="completeTask('${b.id}', '${nextStatus}', '${nextLabel}')">${nextLabel}</button>
           </div>
         </div>`;
       }).join("");
@@ -813,6 +820,7 @@
           <button class="btn-act btn-act-primary" onclick="takePhoto()">📸 Take Photo</button>
           <button class="btn-act" onclick="quickStatus('Pickup')">🚛 Pickup</button>
           <button class="btn-act" onclick="quickStatus('Exchange')">🔄 Exchange</button>
+          <button class="btn-act" onclick="quickStatus('Available')">🏠 Mark as Yard</button>
           ${isAdmin ? `<button class="btn-act btn-act-primary" onclick="openEditModal()">✏️ Edit</button>
           <button class="btn-act btn-act-danger" onclick="deleteBox()">🗑️ Delete</button>` : ''}
         </div>
