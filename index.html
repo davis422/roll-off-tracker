@@ -23,6 +23,8 @@
     .nav-item:hover { background: #1e293b; color: #fff; }
     .nav-item.active { background: #16a34a; color: #fff; }
     .sidebar-footer { padding: 16px; border-top: 1px solid #1e293b; font-size: 0.75rem; color: #64748b; }
+    .yard-settings-btn { padding: 14px 12px; background: #1e293b; color: #fff; border: none; text-align: left; width: 100%; cursor: pointer; font-size: 0.85rem; font-weight: 700; }
+    .yard-settings-btn:hover { background: #334155; }
     .close-drawer { display: none; cursor: pointer; color: white; font-size: 1.2rem; }
 
     .main-wrapper { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -188,6 +190,7 @@
       <li class="nav-item" data-view="drivers" onclick="switchView('drivers')">🚛 Drivers</li>
       <li class="nav-item" data-view="users" onclick="switchView('users')" id="usersTab" style="display:none;">👤 Manage Users</li>
     </ul>
+    <button class="yard-settings-btn" onclick="openYardSettingsModal()">🏠 Set Yard Location</button>
     <div class="sidebar-footer">
       Live Firebase<br>
       <span id="syncTime">—</span>
@@ -417,6 +420,35 @@
     </div>
   </div>
 
+  <!-- YARD SETTINGS MODAL -->
+  <div id="yardSettingsModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Set Yard Location</h3>
+      <p style="font-size: 0.85rem; color: #475569;">This is where boxes will appear on the map when marked as "Available" in the yard.</p>
+      <label>Street Address *</label>
+      <input type="text" id="yardStreet" placeholder="4014 Katy Hockley Rd" autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="yardCity" placeholder="Katy" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="yardState" placeholder="TX" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="yardZip" placeholder="77493" />
+        </div>
+      </div>
+      <div class="geo-status" id="yardGeoStatus"></div>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="saveYardSettings()">Save Yard Location</button>
+        <button class="btn-cancel" onclick="closeModal('yardSettingsModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Box Number Input Modal -->
   <div id="boxNumberModal" class="modal-overlay">
     <div class="modal">
@@ -505,7 +537,9 @@
     let autocompleteEdit = null;
     let autocompleteNewCustomer = null;
     let autocompleteEditCustomer = null;
+    let autocompleteYard = null;
     let currentPhotoURL = null;
+    let yardData = null;
 
     function toggleDrawer(open) {
       const sidebar = document.getElementById("sidebar");
@@ -696,6 +730,25 @@
           document.getElementById("editCustomerZip").value = zip;
         }
       });
+
+      autocompleteYard = new google.maps.places.Autocomplete(document.getElementById("yardStreet"));
+      autocompleteYard.addListener("place_changed", () => {
+        const place = autocompleteYard.getPlace();
+        if (place && place.address_components) {
+          let street = "", city = "", state = "", zip = "";
+          for (const component of place.address_components) {
+            if (component.types.includes("street_number")) street = component.long_name + " " + street;
+            if (component.types.includes("route")) street += component.long_name;
+            if (component.types.includes("locality")) city = component.long_name;
+            if (component.types.includes("administrative_area_level_1")) state = component.short_name;
+            if (component.types.includes("postal_code")) zip = component.long_name;
+          }
+          document.getElementById("yardStreet").value = street;
+          document.getElementById("yardCity").value = city;
+          document.getElementById("yardState").value = state;
+          document.getElementById("yardZip").value = zip;
+        }
+      });
     }
 
     function startPlaceOnMap(mode) {
@@ -762,6 +815,17 @@
         snap.forEach(d => usersData.push({ id: d.id, ...d.data() }));
         if (currentView === "users") renderUsers();
       });
+
+      // Load Yard Settings
+      db.collection("settings").doc("yard").get().then(doc => {
+        if (doc.exists) {
+          yardData = doc.data();
+          document.getElementById("yardStreet").value = yardData.street || "";
+          document.getElementById("yardCity").value = yardData.city || "";
+          document.getElementById("yardState").value = yardData.state || "";
+          document.getElementById("yardZip").value = yardData.zip || "";
+        }
+      }).catch(err => console.error("Error loading yard settings:", err));
 
       document.getElementById("cameraInput").addEventListener("change", handlePhotoUpload);
     }
@@ -1048,7 +1112,7 @@
       }
     }
 
-    // UPDATED: Mark as Yard now clears the customer and address!
+    // UPDATED: Mark as Yard now updates the text AND the actual GPS coordinates!
     function quickStatus(newStatus) {
       if (!activeBoxId) return;
       
@@ -1058,12 +1122,71 @@
       };
       
       if (newStatus === "Available") {
-        updateData.customer = "Yard";
-        updateData.address = "Yard";
-        updateData.driver = "Unassigned";
+        if (yardData) {
+          updateData.customer = "Yard";
+          updateData.address = yardData.formattedAddress || buildAddress(yardData.street, yardData.city, yardData.state, yardData.zip);
+          updateData.driver = "Unassigned";
+          updateData.lat = yardData.lat;
+          updateData.lng = yardData.lng;
+        } else {
+          updateData.customer = "Yard";
+          updateData.address = "Yard";
+          updateData.driver = "Unassigned";
+          updateData.lat = null;
+          updateData.lng = null;
+        }
       }
       
       db.collection("boxes").doc(activeBoxId).update(updateData).catch(e => alert("Error: " + e.message));
+    }
+
+    // YARD SETTINGS
+    function openYardSettingsModal() {
+      document.getElementById("yardStreet").value = yardData ? yardData.street : "";
+      document.getElementById("yardCity").value = yardData ? yardData.city : "";
+      document.getElementById("yardState").value = yardData ? yardData.state : "TX";
+      document.getElementById("yardZip").value = yardData ? yardData.zip : "";
+      document.getElementById("yardGeoStatus").textContent = "";
+      openModal("yardSettingsModal");
+    }
+
+    async function saveYardSettings() {
+      const street = document.getElementById("yardStreet").value.trim();
+      const city = document.getElementById("yardCity").value.trim();
+      const state = document.getElementById("yardState").value.trim();
+      const zip = document.getElementById("yardZip").value.trim();
+      const fullAddress = buildAddress(street, city, state, zip);
+      
+      if (!street || !city || !state || !zip) return alert("Please complete the Yard Street, City, State, and ZIP fields.");
+      
+      const btn = document.querySelector('#yardSettingsModal .btn-save');
+      btn.disabled = true;
+      document.getElementById("yardGeoStatus").textContent = "Finding coordinates...";
+      
+      const geo = await geocodeAddress(fullAddress);
+      if (!geo) {
+        document.getElementById("yardGeoStatus").textContent = "Could not find coordinates for this address.";
+        btn.disabled = false;
+        return;
+      }
+      
+      const yardObj = {
+        street: street,
+        city: city,
+        state: state,
+        zip: zip,
+        formattedAddress: geo.address,
+        lat: geo.lat,
+        lng: geo.lng
+      };
+      
+      db.collection("settings").doc("yard").set(yardObj).then(() => {
+        yardData = yardObj;
+        document.getElementById("yardGeoStatus").textContent = "✓ Yard Location Saved!";
+        setTimeout(() => closeModal("yardSettingsModal"), 800);
+      }).catch(e => alert("Error: " + e.message));
+      
+      btn.disabled = false;
     }
 
     function takePhoto() {
