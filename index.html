@@ -418,32 +418,26 @@
         if (user.photoURL) avatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
         else avatar.textContent = (user.displayName || "U").charAt(0).toUpperCase();
 
-        // FIRST: Check by email (safest way to find the user)
+        // Check if the user is authorized by their email
         db.collection("users").where("email", "==", user.email).get().then(snapshot => {
           if (!snapshot.empty) {
             currentUserData = snapshot.docs[0].data();
             if (currentUserData.role === 'admin') {
               document.getElementById("usersTab").style.display = "block";
               document.getElementById("settingsGear").style.display = "block";
+            } else {
+              document.getElementById("usersTab").style.display = "none";
+              document.getElementById("settingsGear").style.display = "none";
             }
             startApp();
           } else {
-            // If no email match, try looking up by UID
-            db.collection("users").doc(user.uid).get().then(doc => {
-              if (doc.exists) {
-                currentUserData = doc.data();
-                if (currentUserData.role === 'admin') {
-                  document.getElementById("usersTab").style.display = "block";
-                  document.getElementById("settingsGear").style.display = "block";
-                }
-                startApp();
-              } else {
-                alert("You are not authorized to use this app. Please contact your administrator.");
-                auth.signOut();
-              }
-            }).catch(err => { alert("Error checking user permissions: " + err.message); auth.signOut(); });
+            alert("You are not authorized to use this app. Please contact your administrator.");
+            auth.signOut();
           }
-        }).catch(err => { alert("Error checking user permissions: " + err.message); auth.signOut(); });
+        }).catch(err => {
+          alert("Error checking user permissions: " + err.message);
+          auth.signOut();
+        });
       } else {
         document.getElementById("loginScreen").classList.remove("hidden");
         document.getElementById("loading").style.display = "none";
