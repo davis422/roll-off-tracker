@@ -816,16 +816,18 @@
         if (currentView === "users") renderUsers();
       });
 
-      // Load Yard Settings
-      db.collection("settings").doc("yard").get().then(doc => {
-        if (doc.exists) {
-          yardData = doc.data();
-          document.getElementById("yardStreet").value = yardData.street || "";
-          document.getElementById("yardCity").value = yardData.city || "";
-          document.getElementById("yardState").value = yardData.state || "";
-          document.getElementById("yardZip").value = yardData.zip || "";
-        }
-      }).catch(err => console.error("Error loading yard settings:", err));
+      // Load Yard Settings from the Admin User's document
+      if (currentUser) {
+        db.collection("users").where("email", "==", currentUser.email).get().then(snapshot => {
+          if (!snapshot.empty && snapshot.docs[0].data().yard) {
+            yardData = snapshot.docs[0].data().yard;
+            document.getElementById("yardStreet").value = yardData.street || "";
+            document.getElementById("yardCity").value = yardData.city || "";
+            document.getElementById("yardState").value = yardData.state || "";
+            document.getElementById("yardZip").value = yardData.zip || "";
+          }
+        }).catch(err => console.error("Error loading yard settings:", err));
+      }
 
       document.getElementById("cameraInput").addEventListener("change", handlePhotoUpload);
     }
@@ -1140,7 +1142,7 @@
       db.collection("boxes").doc(activeBoxId).update(updateData).catch(e => alert("Error: " + e.message));
     }
 
-    // YARD SETTINGS
+    // YARD SETTINGS (Saves to the Admin's User doc)
     function openYardSettingsModal() {
       document.getElementById("yardStreet").value = yardData ? yardData.street : "";
       document.getElementById("yardCity").value = yardData ? yardData.city : "";
@@ -1180,13 +1182,32 @@
         lng: geo.lng
       };
       
-      db.collection("settings").doc("yard").set(yardObj).then(() => {
-        yardData = yardObj;
-        document.getElementById("yardGeoStatus").textContent = "✓ Yard Location Saved!";
-        setTimeout(() => closeModal("yardSettingsModal"), 800);
-      }).catch(e => alert("Error: " + e.message));
-      
-      btn.disabled = false;
+      if (currentUser) {
+        db.collection("users").where("email", "==", currentUser.email).get().then(snapshot => {
+          if (!snapshot.empty) {
+            db.collection("users").doc(snapshot.docs[0].id).update({
+              yard: yardObj
+            }).then(() => {
+              yardData = yardObj;
+              document.getElementById("yardGeoStatus").textContent = "✓ Yard Location Saved!";
+              setTimeout(() => closeModal("yardSettingsModal"), 800);
+              btn.disabled = false;
+            }).catch(e => {
+              alert("Error: " + e.message);
+              btn.disabled = false;
+            });
+          } else {
+            btn.disabled = false;
+            alert("Could not find your user profile to save the yard location.");
+          }
+        }).catch(e => {
+          btn.disabled = false;
+          alert("Error: " + e.message);
+        });
+      } else {
+        btn.disabled = false;
+        alert("You must be logged in to save the yard location.");
+      }
     }
 
     function takePhoto() {
