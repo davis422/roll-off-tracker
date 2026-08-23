@@ -799,7 +799,7 @@
         customer: customer.name,
         driver: "Unassigned",
         address: customer.address,
-        lat: null, lng: null, // Use geocoding later if provided
+        lat: null, lng: null,
         status: "Delivery",
         notes: "New customer delivery",
         datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -826,11 +826,9 @@
       if (!confirm(`Are you sure you want to mark this box as ${label}?`)) return;
       
       if (currentStatus === "Delivery") {
-        // Prompt for box number before completing
         pendingDeliveryBoxId = id;
         openModal("boxNumberModal");
       } else {
-        // Standard completion
         db.collection("boxes").doc(id).update({
           status: newStatus,
           activity: firebase.firestore.FieldValue.arrayUnion({
@@ -847,41 +845,54 @@
       if (!boxNum) return alert("Please enter the box number");
       
       if (pendingDeliveryBoxId) {
-        // Step 1: Find the existing box in the yard with that number
-        const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
+        // Get the temporary job data
+        const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
         
-        if (existingBox) {
-          // Update the REAL box in the yard
-          const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
-          db.collection("boxes").doc(existingBox.id).update({
-            customer: deliveryBox.customer,
-            address: deliveryBox.address,
-            status: "Customer",
-            activity: firebase.firestore.FieldValue.arrayUnion({
-              time: new Date().toLocaleString(),
-              text: "Delivered Box #" + boxNum,
-              by: currentUser ? (currentUser.displayName || "User") : "Driver"
-            })
-          }).catch(e => alert("Error: " + e.message));
+        // 1. Delete the temporary job FOREVER
+        db.collection("boxes").doc(pendingDeliveryBoxId).delete().then(() => {
           
-          // Step 2: Delete the temporary "New" job
-          db.collection("boxes").doc(pendingDeliveryBoxId).delete().catch(e => console.error(e));
-        } else {
-          // If no physical box with that number exists, update the temp job to be that box
-          db.collection("boxes").doc(pendingDeliveryBoxId).update({
-            boxNum: boxNum,
-            status: "Customer",
-            activity: firebase.firestore.FieldValue.arrayUnion({
-              time: new Date().toLocaleString(),
-              text: "Delivered Box #" + boxNum,
-              by: currentUser ? (currentUser.displayName || "User") : "Driver"
-            })
-          }).catch(e => alert("Error: " + e.message));
-        }
-        
-        closeModal("boxNumberModal");
-        pendingDeliveryBoxId = null;
-        document.getElementById("deliveredBoxNum").value = "";
+          // 2. Search for the physical box with that number in the Yard
+          const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
+          
+          if (existingBox) {
+            // Update the REAL box with exact ID
+            db.collection("boxes").doc(existingBox.id).update({
+              customer: deliveryBox ? deliveryBox.customer : "",
+              address: deliveryBox ? deliveryBox.address : "",
+              status: "Customer",
+              activity: firebase.firestore.FieldValue.arrayUnion({
+                time: new Date().toLocaleString(),
+                text: "Delivered Box #" + boxNum,
+                by: currentUser ? (currentUser.displayName || "User") : "Driver"
+              })
+            }).catch(e => alert("Error updating box: " + e.message));
+          } else {
+            // If a physical box with that number doesn't exist, create a new one with that number
+            db.collection("boxes").add({
+              boxNum: boxNum,
+              size: deliveryBox ? deliveryBox.size : "",
+              customer: deliveryBox ? deliveryBox.customer : "",
+              driver: deliveryBox ? deliveryBox.driver : "Unassigned",
+              address: deliveryBox ? deliveryBox.address : "",
+              lat: deliveryBox ? deliveryBox.lat : null,
+              lng: deliveryBox ? deliveryBox.lng : null,
+              status: "Customer",
+              notes: deliveryBox ? deliveryBox.notes : "",
+              datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              activity: [{
+                time: new Date().toLocaleString(),
+                text: "Delivered Box #" + boxNum,
+                by: currentUser ? (currentUser.displayName || "User") : "Driver"
+              }],
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              createdBy: currentUser ? currentUser.uid : null
+            }).catch(e => alert("Error creating box: " + e.message));
+          }
+          
+          closeModal("boxNumberModal");
+          pendingDeliveryBoxId = null;
+          document.getElementById("deliveredBoxNum").value = "";
+        }).catch(e => alert("Error deleting temporary job: " + e.message));
       }
     }
 
@@ -1233,7 +1244,7 @@
     }
 
     function deleteUser(id) {
-      if (!confirm("Delete this user?"")) return;
+      if (!confirm("Delete this user?")) return;
       db.collection("users").doc(id).delete().catch(e => alert(e.message));
     }
 
