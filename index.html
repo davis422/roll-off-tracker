@@ -432,7 +432,7 @@
     </div>
   </div>
 
-  <!-- DISPATCH NOTES MODAL (NEW) -->
+  <!-- DISPATCH NOTES MODAL -->
   <div id="dispatchNotesModal" class="modal-overlay">
     <div class="modal">
       <h3 id="dispatchModalTitle">Add Dispatch Notes</h3>
@@ -550,8 +550,8 @@
     let activeBoxId = null;
     let activeCustomerId = null;
     let pendingDeliveryBoxId = null;
-    let pendingActionBoxId = null; // For dispatch notes modal
-    let pendingActionStatus = null; // For dispatch notes modal
+    let pendingActionBoxId = null;
+    let pendingActionStatus = null;
     let currentView = "map";
     let currentUser = null;
     let currentUserData = null;
@@ -945,7 +945,6 @@
       renderDetail();
     }
 
-    // UPDATED: Service Tab shows notes AND texts
     function renderService() {
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
@@ -1077,7 +1076,6 @@
       }).join("");
     }
 
-    // NEW: Open Note modal
     function openDispatchNotes(boxId, status) {
       pendingActionBoxId = boxId;
       pendingActionStatus = status;
@@ -1159,6 +1157,7 @@
       }
     }
 
+    // FIXED: Confirm delivery now geocodes the address and MOVES the pin!
     function confirmCompleteDelivery() {
       const boxNum = document.getElementById("deliveredBoxNum").value.trim();
       if (!boxNum) return alert("Please enter the box number");
@@ -1166,14 +1165,26 @@
       if (pendingDeliveryBoxId) {
         const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
         
-        db.collection("boxes").doc(pendingDeliveryBoxId).delete().then(() => {
+        db.collection("boxes").doc(pendingDeliveryBoxId).delete().then(async () => {
           const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
           
           if (existingBox) {
+            // Geocode the address so we can move the pin
+            let lat = null, lng = null;
+            if (deliveryBox && deliveryBox.address) {
+              const geo = await geocodeAddress(deliveryBox.address);
+              if (geo) {
+                lat = geo.lat;
+                lng = geo.lng;
+              }
+            }
+            
             db.collection("boxes").doc(existingBox.id).update({
               customer: deliveryBox ? deliveryBox.customer : "",
               address: deliveryBox ? deliveryBox.address : "",
               status: "Customer",
+              lat: lat, // Updates the pin's GPS coordinates!
+              lng: lng,
               activity: firebase.firestore.FieldValue.arrayUnion({
                 time: new Date().toLocaleString(),
                 text: "Delivered Box #" + boxNum,
@@ -1181,14 +1192,24 @@
               })
             }).then(() => showToast("✅ Delivery Completed!")).catch(e => alert("Error updating box: " + e.message));
           } else {
+            // If no physical box with that number exists, create a new one
+            let lat = null, lng = null;
+            if (deliveryBox && deliveryBox.address) {
+              const geo = await geocodeAddress(deliveryBox.address);
+              if (geo) {
+                lat = geo.lat;
+                lng = geo.lng;
+              }
+            }
+            
             db.collection("boxes").add({
               boxNum: boxNum,
               size: deliveryBox ? deliveryBox.size : "",
               customer: deliveryBox ? deliveryBox.customer : "",
               driver: deliveryBox ? deliveryBox.driver : "Unassigned",
               address: deliveryBox ? deliveryBox.address : "",
-              lat: deliveryBox ? deliveryBox.lat : null,
-              lng: deliveryBox ? deliveryBox.lng : null,
+              lat: lat, // Sets the pin's GPS coordinates!
+              lng: lng,
               status: "Customer",
               notes: deliveryBox ? deliveryBox.notes : "",
               datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
