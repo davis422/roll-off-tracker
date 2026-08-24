@@ -56,15 +56,20 @@
 
     .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr; overflow: hidden; }
     
+    /* MAP VIEW – hidden by default, shown only on Map tab */
     #mapView { 
-      display: grid; 
+      display: none; /* hidden unless Map tab */
       grid-template-columns: 320px 1fr; 
       overflow: hidden; 
       position: relative; 
       height: 100%;
       width: 100%;
     }
-    
+    /* Force hidden when class is applied (used for non-map tabs) */
+    #mapView.hidden { 
+      display: none !important; 
+    }
+    /* When map is visible (Map tab), show as grid (desktop) or flex (mobile) */
     #mapView.active { 
       display: grid !important; 
     }
@@ -119,7 +124,6 @@
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
 
-    /* Driver card styling - matching box card */
     .driver-card { 
       background: white; 
       border-radius: 12px; 
@@ -240,7 +244,8 @@
       aside.open { left: 0; }
       .close-drawer { display: block; }
 
-      #mapView { 
+      /* On mobile, map view becomes column (map on top, boxes below) */
+      #mapView.active { 
         display: flex !important;
         flex-direction: column;
         height: 100%;
@@ -398,7 +403,7 @@
 
     <div class="dashboard-grid">
       <!-- MAP VIEW -->
-      <div id="mapView">
+      <div id="mapView" class="active">
         <div class="map-panel">
           <div id="map"></div>
           <div id="placeModeBanner">Tap the map to set the box location</div>
@@ -477,7 +482,7 @@
     </div>
   </div>
 
-  <!-- MODALS (same as before) -->
+  <!-- MODALS (unchanged) -->
   <div id="addBoxModal" class="modal-overlay">
     <div class="modal">
       <h3>Add New Box</h3>
@@ -1571,7 +1576,7 @@
     }
 
     // ============================================================
-    // VIEW SWITCHING - FIXED: map hidden for non-map views
+    // VIEW SWITCHING - FIXED: use class 'hidden' to force hide map
     // ============================================================
     function switchView(view) {
       currentView = view;
@@ -1579,8 +1584,8 @@
       const nav = document.querySelector(`[data-view="${view}"]`);
       if (nav) nav.classList.add("active");
       
-      // 1. Hide EVERYTHING first
-      document.getElementById("mapView").style.display = "none";
+      // 1. Hide ALL views first
+      document.getElementById("mapView").classList.add("hidden");   // force hide map
       document.getElementById("serviceView").classList.remove("active");
       document.getElementById("boxesView").classList.remove("active");
       document.getElementById("customersView").classList.remove("active");
@@ -1591,7 +1596,8 @@
 
       // 2. Show the requested view
       if (view === "map") {
-        // Restore map display
+        // Show map: remove hidden class and set proper display
+        document.getElementById("mapView").classList.remove("hidden");
         if (window.innerWidth <= 900) {
           document.getElementById("mapView").style.display = "flex";
           document.getElementById("mapView").style.flexDirection = "column";
