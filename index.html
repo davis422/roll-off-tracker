@@ -1576,7 +1576,7 @@
     }
 
     // ============================================================
-    // VIEW SWITCHING - FIXED: use class 'hidden' to force hide map
+    // VIEW SWITCHING - FIXED: remove 'active' when hiding map
     // ============================================================
     function switchView(view) {
       currentView = view;
@@ -1585,7 +1585,10 @@
       if (nav) nav.classList.add("active");
       
       // 1. Hide ALL views first
-      document.getElementById("mapView").classList.add("hidden");   // force hide map
+      const mapView = document.getElementById("mapView");
+      mapView.classList.add("hidden");
+      mapView.classList.remove("active");  // <-- CRITICAL: remove 'active' to prevent override
+      
       document.getElementById("serviceView").classList.remove("active");
       document.getElementById("boxesView").classList.remove("active");
       document.getElementById("customersView").classList.remove("active");
@@ -1596,14 +1599,14 @@
 
       // 2. Show the requested view
       if (view === "map") {
-        // Show map: remove hidden class and set proper display
-        document.getElementById("mapView").classList.remove("hidden");
+        mapView.classList.remove("hidden");
+        mapView.classList.add("active");  // <-- add back only for Map tab
         if (window.innerWidth <= 900) {
-          document.getElementById("mapView").style.display = "flex";
-          document.getElementById("mapView").style.flexDirection = "column";
+          mapView.style.display = "flex";
+          mapView.style.flexDirection = "column";
         } else {
-          document.getElementById("mapView").style.display = "grid";
-          document.getElementById("mapView").style.gridTemplateColumns = "320px 1fr";
+          mapView.style.display = "grid";
+          mapView.style.gridTemplateColumns = "320px 1fr";
         }
         document.getElementById("detailPanel").style.display = "block";
         setTimeout(() => {
