@@ -28,11 +28,11 @@
     .close-drawer { display: none; cursor: pointer; color: white; font-size: 1.2rem; }
 
     .main-wrapper { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    header { height: 56px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; gap: 12px; }
+    header { height: 56px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; gap: 12px; flex-shrink: 0; }
     .menu-btn { display: none; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #334155; }
     .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; flex: 1; max-width: 360px; }
     .search-box input { border: none; background: transparent; width: 100%; outline: none; font-size: 0.85rem; margin-left: 8px; }
-    .user-area { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; }
+    .user-area { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
     .avatar { width: 32px; height: 32px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; overflow: hidden; }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
     .btn-logout { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; color: #475569; }
@@ -41,16 +41,16 @@
     .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr; overflow: hidden; }
     .top-split { display: grid; grid-template-columns: 320px 1fr; overflow: hidden; position: relative; }
 
-    .boxes-panel { background: #fff; border-right: 1px solid #cbd5e1; display: flex; flex-direction: column; overflow: hidden; }
-    .panel-header { padding: 12px 16px; font-weight: 800; font-size: 0.9rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-    .box-list { flex: 1; overflow-y: auto; }
+    .boxes-panel { background: #fff; border-right: 1px solid #cbd5e1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .panel-header { padding: 12px 16px; font-weight: 800; font-size: 0.9rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .box-list { flex: 1; overflow-y: auto; min-height: 0; }
     .box-item { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
     .box-item:hover, .box-item.active { background: #f0fdf4; }
     .box-item-title { font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
     .box-item-addr { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
     .box-item-status { font-size: 0.75rem; font-weight: 700; margin-top: 4px; }
 
-    .map-panel { position: relative; width: 100%; height: 100%; background: #e2e8f0; }
+    .map-panel { position: relative; width: 100%; height: 100%; background: #e2e8f0; min-height: 0; }
     #map { width: 100%; height: 100%; }
     
     .fab-menu { position: absolute; bottom: 20px; right: 20px; z-index: 550; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
@@ -180,20 +180,120 @@
       box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important;
     }
 
+    /* ============================================================
+       MOBILE FIXES - Box List Scrolling
+       ============================================================ */
     @media (max-width: 900px) {
       .menu-btn { display: block; }
+      
       aside { position: fixed; left: -250px; top: 0; bottom: 0; transition: left 0.3s; z-index: 3001; }
       aside.open { left: 0; }
       .close-drawer { display: block; }
-      .top-split { grid-template-columns: 1fr; grid-template-rows: 55% 45%; }
-      .boxes-panel { border-right: none; border-top: 1px solid #cbd5e1; display: flex; }
+
+      .top-split {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .map-panel {
+        flex: 1;
+        min-height: 150px;
+        height: auto;
+        overflow: hidden;
+      }
+
+      .boxes-panel {
+        height: 45vh;
+        min-height: 120px;
+        border-right: none;
+        border-top: 1px solid #cbd5e1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      .panel-header {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+      }
+
+      .box-list {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+      }
+
+      .box-item {
+        padding: 10px 12px;
+      }
+
+      .box-item-title {
+        font-size: 0.85rem;
+      }
+
+      .box-item-addr {
+        font-size: 0.75rem;
+      }
+
+      .box-item-status {
+        font-size: 0.7rem;
+      }
+
       .detail-layout { flex-direction: column; }
       .search-box { max-width: 150px; }
       .user-area span { display: none; }
-      .detail-panel { position: absolute; top: 56px; left: 0; right: 0; bottom: 0; height: auto; max-height: none; z-index: 800; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease; }
+      
+      .detail-panel {
+        position: absolute;
+        top: 56px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: auto;
+        max-height: none;
+        z-index: 800;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+      }
       .detail-panel.show { transform: translateY(0); }
+      
       .fab-menu { bottom: 20px; }
       .address-row-3 { grid-template-columns: 1fr; }
+    }
+
+    /* Extra small screens (phones under 400px) */
+    @media (max-width: 400px) {
+      .boxes-panel {
+        height: 40vh;
+        min-height: 100px;
+      }
+      .panel-header {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+      }
+      .box-item {
+        padding: 8px 10px;
+      }
+      .box-item-title {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Landscape phones - give more room to the list */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .boxes-panel {
+        height: 55vh;
+      }
+      .map-panel {
+        min-height: 100px;
+      }
     }
   </style>
 </head>
@@ -512,12 +612,10 @@
     </div>
   </div>
 
-  <!-- UPDATED: Box Number Modal with validation -->
   <div id="boxNumberModal" class="modal-overlay">
     <div class="modal">
       <h3>Enter Box Number</h3>
       <div class="error-message" id="deliveryBoxError">⚠️ A box with this number already exists!</div>
-      <!-- NEW: Specific error messages for validation -->
       <div id="boxNotFoundError" class="error-message" style="display:none; background:#fee2e2; color:#b91c1c; padding:10px; border-radius:6px; margin-bottom:10px; font-size:0.85rem; font-weight:700; text-align:center;">
         ❌ Box #<span id="missingBoxNum"></span> not found. Please check the number.
       </div>
@@ -571,7 +669,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpJR485BlVu3luTb-zf_q1JyV9wrSaBkk&libraries=places&callback=initGoogleMap"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9EKxFCUfV0Zv3va0l4sIvUFrA4liaJ1k&libraries=places&callback=initGoogleMap"></script>
 
   <script>
     const firebaseConfig = {
@@ -580,7 +678,8 @@
       projectId: "test-c8d17",
       storageBucket: "test-c8d17.firebasestorage.app",
       messagingSenderId: "595934730594",
-      appId: "1:595934730594:web:a3b9b24fcaff346811b43b"
+      appId: "1:595934730594:web:a3b9b24fcaff346811b43b",
+      measurementId: "G-8BRY66YWHM"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -641,7 +740,6 @@
     function openModal(id) { document.getElementById(id).classList.add("active"); }
     function closeModal(id) { document.getElementById(id).classList.remove("active"); }
 
-    // Clear box validation errors when typing
     function clearBoxErrors() {
       document.getElementById("boxNotFoundError").style.display = "none";
       document.getElementById("boxNotAvailableError").style.display = "none";
@@ -719,12 +817,6 @@
       const exists = boxesData.some(b => b.boxNum === num && b.id !== activeBoxId);
       document.getElementById("editBoxError").style.display = exists ? "block" : "none";
       document.getElementById("updateBoxBtn").disabled = exists;
-    }
-
-    function checkDuplicateDelivery() {
-      const num = document.getElementById("deliveredBoxNum").value.trim();
-      const exists = boxesData.some(b => b.boxNum === num && b.status !== "Available");
-      document.getElementById("deliveryBoxError").style.display = exists ? "block" : "none";
     }
 
     function buildAddress(street, city, state, zip) {
@@ -1263,9 +1355,6 @@
       }
     }
 
-    // ============================================================
-    // UPDATED: confirmCompleteDelivery with box validation
-    // ============================================================
     async function confirmCompleteDelivery() {
       const boxNum = document.getElementById("deliveredBoxNum").value.trim();
       if (!boxNum) {
@@ -1284,13 +1373,10 @@
         return;
       }
 
-      // ============================================================
       // BOX VALIDATION - Check if box exists in the database
-      // ============================================================
       const boxExists = boxesData.some(b => b.boxNum === boxNum);
       
       if (!boxExists) {
-        // Box doesn't exist at all - show error
         document.getElementById("missingBoxNum").textContent = boxNum;
         document.getElementById("boxNotFoundError").style.display = "block";
         document.getElementById("boxNotAvailableError").style.display = "none";
@@ -1300,11 +1386,9 @@
         return;
       }
 
-      // Check if box is available (status === "Available")
       const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
       
       if (!existingBox) {
-        // Box exists but is not available
         const boxStatus = boxesData.find(b => b.boxNum === boxNum)?.status || "unknown";
         document.getElementById("unavailableBoxNum").textContent = boxNum + " (Current status: " + statusLabel(boxStatus) + ")";
         document.getElementById("boxNotAvailableError").style.display = "block";
@@ -1315,11 +1399,6 @@
         return;
       }
 
-      // ============================================================
-      // Box is valid and available - proceed with delivery
-      // ============================================================
-      
-      // Clear any previous errors
       clearBoxErrors();
       
       try {
@@ -1329,7 +1408,6 @@
         return;
       }
       
-      // Geocode the customer's address
       let lat = null, lng = null;
       if (deliveryBox.address) {
         const geo = await geocodeAddress(deliveryBox.address);
