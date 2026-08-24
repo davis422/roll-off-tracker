@@ -119,6 +119,21 @@
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
 
+    /* Driver card styling */
+    .driver-card { 
+      background: white; 
+      border-radius: 12px; 
+      padding: 20px; 
+      margin-bottom: 12px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+      border-left: 8px solid #2563eb; 
+      cursor: pointer; 
+      transition: background 0.15s; 
+    }
+    .driver-card:hover { background: #f0fdf4; }
+    .driver-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; }
+    .driver-card p { font-size: 0.85rem; color: #64748b; }
+
     .customers-view, .drivers-view, .users-view, .boxes-view, .service-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
     .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active, .service-view.active { display: block; }
 
@@ -421,9 +436,10 @@
         <div id="customersList"></div>
       </div>
 
+      <!-- FIXED: Drivers tab - clean list like Boxes tab -->
       <div class="drivers-view" id="driversView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2 style="font-size:1.2rem; font-weight:900;">Drivers</h2>
+          <h2 style="font-size:1.3rem; font-weight:900;">Drivers</h2>
           <button class="btn-act btn-act-primary" onclick="openAddDriverModal()">+ Add Driver</button>
         </div>
         <div id="driversList"></div>
@@ -764,8 +780,8 @@
     let tempGMarker = null;
     let currentPhotoURL = null;
     let yardData = null;
+    let activeDriverId = null;
 
-    let autocompleteNewStreet = null;
     let autocompleteNewBoxStreet = null;
     let autocompleteEditBoxStreet = null;
     let autocompleteNewCustomerStreet = null;
@@ -946,7 +962,6 @@
           document.getElementById("newBoxState").value = state;
           document.getElementById("newBoxZip").value = zip;
           
-          // Geocode for pin placement
           if (street && city && state && zip) {
             const fullAddress = buildAddress(street, city, state, zip);
             geocodeAddress(fullAddress).then(geo => {
@@ -1147,6 +1162,7 @@
         renderBoxes();
         renderCustomers();
         renderService();
+        renderDrivers();
         document.getElementById("loading").style.display = "none";
       });
 
@@ -1378,6 +1394,95 @@
           </div>
         `;
       }).join("");
+    }
+
+    // ============================================================
+    // RENDER DRIVERS - Clean list like Boxes tab!
+    // ============================================================
+    function renderDrivers() {
+      const el = document.getElementById("driversList");
+      
+      if (driversData.length === 0) { 
+        el.innerHTML = '<div class="empty-msg"><h3>No drivers yet</h3></div>'; 
+        return; 
+      }
+      
+      el.innerHTML = driversData.map(driver => {
+        // Count how many boxes this driver is assigned to
+        const assignedBoxes = boxesData.filter(b => b.driver === driver.name && b.boxNum !== "New");
+        const boxCount = assignedBoxes.length;
+        
+        // Build the driver card - clickable to show details
+        return `
+          <div class="driver-card" onclick="selectDriver('${driver.id}')" style="cursor:pointer;">
+            <h3>🚛 ${driver.name}</h3>
+            <p>📱 ${driver.phone || "No phone"}</p>
+            <p>📦 ${boxCount} box${boxCount !== 1 ? 'es' : ''} assigned</p>
+            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;" onclick="event.stopPropagation();">
+              <button class="btn-act btn-act-danger" onclick="deleteDriver('${driver.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // ============================================================
+    // SELECT DRIVER - Show driver details (add this function!)
+    // ============================================================
+    function selectDriver(driverId) {
+      const driver = driversData.find(d => d.id === driverId);
+      if (!driver) return;
+      
+      activeDriverId = driverId;
+      
+      // Find all boxes assigned to this driver
+      const assignedBoxes = boxesData.filter(b => b.driver === driver.name && b.boxNum !== "New");
+      
+      // Build driver details HTML
+      const content = document.getElementById("detailContent");
+      const empty = document.getElementById("detailEmpty");
+      
+      empty.style.display = "none";
+      content.style.display = "block";
+      
+      let boxesHtml = '';
+      if (assignedBoxes.length === 0) {
+        boxesHtml = '<p style="color:#94a3b8;">No boxes currently assigned.</p>';
+      } else {
+        boxesHtml = assignedBoxes.map(b => {
+          const fullAddress = buildAddress(b.street, b.city, b.state, b.zip);
+          return `<div style="padding:8px 12px; background:#f8fafc; border-radius:6px; margin-bottom:6px; border-left:3px solid #16a34a; cursor:pointer;" onclick="selectBox('${b.id}')">
+            <strong>#${b.boxNum}</strong> - ${statusLabel(b.status)}<br>
+            <span style="font-size:0.8rem; color:#64748b;">${b.customer || "Yard"} | ${fullAddress || "No address"}</span>
+          </div>`;
+        }).join('');
+      }
+      
+      content.innerHTML = `
+        <div class="detail-title">🚛 ${driver.name}</div>
+        <div class="detail-layout">
+          <div class="info-grid" style="grid-template-columns:1fr;">
+            <div><div class="info-label">Phone</div><div class="info-val">${driver.phone || "No phone"}</div></div>
+            <div><div class="info-label">Email</div><div class="info-val">${driver.email || "Not set"}</div></div>
+            <div><div class="info-label">Assigned Boxes</div><div class="info-val">${assignedBoxes.length}</div></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <div class="activity-title">Assigned Boxes</div>
+          ${boxesHtml}
+        </div>
+        <div class="actions-row" style="margin-top:16px;">
+          <button class="btn-act btn-act-danger" onclick="deleteDriver('${driver.id}')">🗑️ Delete Driver</button>
+        </div>
+      `;
+      
+      // Show the detail panel on mobile
+      if (window.innerWidth <= 900) {
+        document.getElementById("detailPanel").classList.add("show");
+      }
+      document.getElementById("detailPanel").style.display = "block";
+      
+      toggleDrawer(false);
     }
 
     function openDeliveryNotes(customerId) {
@@ -1638,6 +1743,7 @@
     // ============================================================
     function selectBox(id) {
       activeBoxId = id;
+      activeDriverId = null; // Clear any selected driver
       
       if (window.innerWidth <= 900) {
         document.getElementById("detailPanel").classList.add("show");
@@ -1797,18 +1903,8 @@
     function closeDetailPanel() {
       document.getElementById("detailPanel").classList.remove("show");
       activeBoxId = null;
+      activeDriverId = null;
       renderDetail();
-    }
-
-    function renderDrivers() {
-      const el = document.getElementById("driversList");
-      if (driversData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No drivers yet</h3></div>'; return; }
-      el.innerHTML = driversData.map(d =>
-        `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-          <div><strong>${d.name}</strong><br><span style="font-size:0.8rem;color:#64748b">${d.phone || ""}</span></div>
-          ${currentUserData && currentUserData.role === 'admin' ? `<button class="btn-act btn-act-danger" onclick="deleteDriver('${d.id}')">Delete</button>` : ''}
-        </div>`
-      ).join("");
     }
 
     function renderUsers() {
@@ -1847,9 +1943,6 @@
       openModal("addBoxModal");
     }
 
-    // ============================================================
-    // SAVE BOX - Uses split address fields
-    // ============================================================
     async function saveBox() {
       const boxNum = document.getElementById("newBoxNum").value.trim();
       if (!boxNum) return alert("Box number is required");
@@ -2109,7 +2202,13 @@
 
     function deleteDriver(id) {
       if (!confirm("Delete this driver?")) return;
-      db.collection("drivers").doc(id).delete().catch(e => alert(e.message));
+      db.collection("drivers").doc(id).delete().then(() => {
+        showToast("Driver Deleted");
+        if (activeDriverId === id) {
+          activeDriverId = null;
+          closeDetailPanel();
+        }
+      }).catch(e => alert(e.message));
     }
 
     function openAddUserModal() {
