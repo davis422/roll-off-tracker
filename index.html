@@ -152,7 +152,6 @@
     .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2999; }
     .mobile-overlay.active { display: block; }
 
-    /* FIX: Address row grid layout for modals */
     .address-row-3 {
       display: grid;
       grid-template-columns: 1fr 0.7fr 0.8fr;
@@ -439,6 +438,7 @@
     </div>
   </div>
 
+  <!-- DISPATCH NOTES MODAL (for Pickup/Exchange) -->
   <div id="dispatchNotesModal" class="modal-overlay">
     <div class="modal">
       <h3 id="dispatchModalTitle">Add Dispatch Notes</h3>
@@ -447,6 +447,20 @@
       <div class="modal-btns">
         <button class="btn-save" onclick="confirmSendToService()">Send to Service</button>
         <button class="btn-cancel" onclick="closeModal('dispatchNotesModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW: DELIVERY NOTES MODAL (for Send for Delivery) -->
+  <div id="deliveryNotesModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Send for Delivery</h3>
+      <label id="deliveryCustomerInfo">Customer: </label>
+      <label>Dispatch Notes</label>
+      <textarea id="deliveryNoteText" rows="4" placeholder="Gate code, special instructions, waste type, etc."></textarea>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="confirmSendForDelivery()">Send for Delivery</button>
+        <button class="btn-cancel" onclick="closeModal('deliveryNotesModal')">Cancel</button>
       </div>
     </div>
   </div>
@@ -556,6 +570,7 @@
     let pendingDeliveryBoxId = null;
     let pendingActionBoxId = null;
     let pendingActionStatus = null;
+    let pendingDeliveryCustomerId = null; // NEW: for delivery notes flow
     let currentView = "map";
     let currentUser = null;
     let currentUserData = null;
@@ -1065,7 +1080,7 @@
             <p style="margin-top: 8px;"><strong>Boxes:</strong> ${customerBoxes.length > 0 ? customerBoxes.length : "None assigned"}</p>
             
             <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-              <button class="btn-act btn-act-red" onclick="sendForDelivery('${c.id}')">Send for Delivery</button>
+              <button class="btn-act btn-act-red" onclick="openDeliveryNotes('${c.id}')">Send for Delivery</button>
               ${customerBoxes.map(b => `
                 <button class="btn-act" id="btn-${b.id}-Exchange" onclick="openDispatchNotes('${b.id}', 'Exchange')">Box #${b.boxNum}: Exchange</button>
                 <button class="btn-act" id="btn-${b.id}-Pickup" onclick="openDispatchNotes('${b.id}', 'Pickup')">Box #${b.boxNum}: Pickup</button>
@@ -1080,6 +1095,57 @@
       }).join("");
     }
 
+    // NEW: Open delivery notes modal before sending for delivery
+    function openDeliveryNotes(customerId) {
+      const customer = customersData.find(c => c.id === customerId);
+      if (!customer) return;
+      
+      if (!customer.address) {
+        alert("This customer does not have an address. Please edit the customer to add an address first.");
+        return;
+      }
+      
+      pendingDeliveryCustomerId = customerId;
+      document.getElementById("deliveryCustomerInfo").textContent = "Customer: " + customer.name + " | Address: " + customer.address;
+      document.getElementById("deliveryNoteText").value = "";
+      openModal("deliveryNotesModal");
+    }
+
+    // NEW: Confirm and send for delivery with notes
+    function confirmSendForDelivery() {
+      if (!pendingDeliveryCustomerId) return;
+      
+      const customer = customersData.find(c => c.id === pendingDeliveryCustomerId);
+      if (!customer) return;
+      
+      const note = document.getElementById("deliveryNoteText").value.trim();
+      
+      const finalNotes = note || "New customer delivery";
+      
+      db.collection("boxes").add({
+        boxNum: "New",
+        size: customer.boxSize || "Not specified",
+        customer: customer.name,
+        driver: "Unassigned",
+        address: customer.address,
+        lat: null, lng: null,
+        status: "Delivery",
+        notes: finalNotes,
+        datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        activity: [{ 
+          time: new Date().toLocaleString(), 
+          text: "Delivery scheduled" + (note ? " with note" : ""), 
+          by: currentUser ? (currentUser.displayName || "User") : "Office" 
+        }],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdBy: currentUser ? currentUser.uid : null
+      }).then(() => {
+        closeModal("deliveryNotesModal");
+        pendingDeliveryCustomerId = null;
+        showToast("✅ Delivery Scheduled with Notes!");
+      }).catch(e => alert("Error: " + e.message));
+    }
+
     function openDispatchNotes(boxId, status) {
       pendingActionBoxId = boxId;
       pendingActionStatus = status;
@@ -1089,7 +1155,7 @@
       
       document.getElementById("dispatchModalTitle").textContent = status === "Exchange" ? "Schedule Exchange" : "Schedule Pickup";
       document.getElementById("dispatchBoxInfo").textContent = `Box #${box.boxNum} - ${box.customer}`;
-      document.getElementById("dispatchNoteText").value = "";
+      document.getElementById("dispatchNoteText").value = box.notes || "";
       openModal("dispatchNotesModal");
     }
 
@@ -1100,7 +1166,7 @@
       
       db.collection("boxes").doc(pendingActionBoxId).update({
         status: pendingActionStatus,
-        notes: note,
+        notes: note || "",
         activity: firebase.firestore.FieldValue.arrayUnion({
           time: new Date().toLocaleString(),
           text: "Status → " + statusLabel(pendingActionStatus) + (note ? " with note" : ""),
@@ -1111,35 +1177,6 @@
         pendingActionBoxId = null;
         pendingActionStatus = null;
         showToast("✅ Sent to Service!");
-      }).catch(e => alert("Error: " + e.message));
-    }
-
-    function sendForDelivery(customerId) {
-      const customer = customersData.find(c => c.id === customerId);
-      if (!customer) return;
-      
-      if (!customer.address) {
-        alert("This customer does not have an address. Please edit the customer to add an address first.");
-        return;
-      }
-      
-      if (!confirm(`Send a box for delivery to ${customer.name} at ${customer.address}?`)) return;
-      
-      db.collection("boxes").add({
-        boxNum: "New",
-        size: customer.boxSize || "Not specified",
-        customer: customer.name,
-        driver: "Unassigned",
-        address: customer.address,
-        lat: null, lng: null,
-        status: "Delivery",
-        notes: "New customer delivery",
-        datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        activity: [{ time: new Date().toLocaleString(), text: "Delivery scheduled", by: currentUser ? (currentUser.displayName || "User") : "Office" }],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        createdBy: currentUser ? currentUser.uid : null
-      }).then(() => {
-        showToast("✅ Delivery Scheduled!");
       }).catch(e => alert("Error: " + e.message));
     }
 
@@ -1161,9 +1198,6 @@
       }
     }
 
-    // ============================================================
-    // FIXED: confirmCompleteDelivery - NOW GEOCODES THE ADDRESS!
-    // ============================================================
     async function confirmCompleteDelivery() {
       const boxNum = document.getElementById("deliveredBoxNum").value.trim();
       if (!boxNum) return alert("Please enter the box number");
@@ -1173,7 +1207,6 @@
       const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
       if (!deliveryBox) return alert("Delivery job not found");
       
-      // 1️⃣ First, delete the delivery job
       try {
         await db.collection("boxes").doc(pendingDeliveryBoxId).delete();
       } catch (e) {
@@ -1181,11 +1214,9 @@
         return;
       }
       
-      // 2️⃣ Find the physical box (should be "Available")
       const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
       
       if (existingBox) {
-        // 3️⃣ Geocode the CUSTOMER's address to get the actual coordinates
         let lat = null, lng = null;
         if (deliveryBox.address) {
           const geo = await geocodeAddress(deliveryBox.address);
@@ -1193,7 +1224,6 @@
             lat = geo.lat;
             lng = geo.lng;
           } else {
-            // Fallback: if geocoding fails, try using the customer's address from the customers collection
             const customer = customersData.find(c => c.name === deliveryBox.customer);
             if (customer && customer.address) {
               const geo2 = await geocodeAddress(customer.address);
@@ -1205,7 +1235,6 @@
           }
         }
         
-        // 4️⃣ Update the box with the customer info AND the new coordinates
         const updateData = {
           customer: deliveryBox.customer || "",
           address: deliveryBox.address || "",
@@ -1229,7 +1258,6 @@
         }
         
       } else {
-        // No existing box with that number - create a new one
         let lat = null, lng = null;
         if (deliveryBox.address) {
           const geo = await geocodeAddress(deliveryBox.address);
@@ -1265,7 +1293,6 @@
         }
       }
       
-      // 5️⃣ Clean up
       closeModal("boxNumberModal");
       pendingDeliveryBoxId = null;
       document.getElementById("deliveredBoxNum").value = "";
