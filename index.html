@@ -119,7 +119,7 @@
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
 
-    /* Driver card styling - matching box card style */
+    /* Driver card styling - matching box card */
     .driver-card { 
       background: white; 
       border-radius: 12px; 
@@ -131,10 +131,9 @@
       transition: background 0.15s; 
     }
     .driver-card:hover { background: #f0fdf4; }
-    .driver-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; color: #0f172a; }
+    .driver-card h3 { font-size: 1.2rem; font-weight: 900; margin-bottom: 6px; color: #0f172a; }
     .driver-card p { font-size: 0.85rem; color: #475569; }
 
-    /* View containers */
     .customers-view, .drivers-view, .users-view, .boxes-view, .service-view { 
       display: none; 
       flex: 1; 
@@ -398,6 +397,7 @@
     </header>
 
     <div class="dashboard-grid">
+      <!-- MAP VIEW -->
       <div id="mapView">
         <div class="map-panel">
           <div id="map"></div>
@@ -425,11 +425,13 @@
         </div>
       </div>
 
+      <!-- SERVICE VIEW -->
       <div class="service-view" id="serviceView">
         <div id="serviceAlertContainer"></div>
         <div id="serviceList"></div>
       </div>
 
+      <!-- BOXES VIEW (clean list) -->
       <div class="boxes-view" id="boxesView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">All Boxes</h2>
@@ -438,6 +440,7 @@
         <div id="boxesList"></div>
       </div>
 
+      <!-- CUSTOMERS VIEW -->
       <div class="customers-view" id="customersView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">Customers</h2>
@@ -447,7 +450,7 @@
         <div id="customersList"></div>
       </div>
 
-      <!-- FIXED: Drivers tab - clean list like Boxes tab, NO MAP -->
+      <!-- DRIVERS VIEW - clean list, NO MAP -->
       <div class="drivers-view" id="driversView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">Drivers</h2>
@@ -456,6 +459,7 @@
         <div id="driversList"></div>
       </div>
 
+      <!-- USERS VIEW -->
       <div class="users-view" id="usersView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.2rem; font-weight:900;">Manage Users</h2>
@@ -464,6 +468,7 @@
         <div id="usersList"></div>
       </div>
 
+      <!-- DETAIL PANEL -->
       <div class="detail-panel" id="detailPanel">
         <button class="close-sheet" onclick="closeDetailPanel()">✕</button>
         <div class="empty-msg" id="detailEmpty">Select a box to view details</div>
@@ -472,7 +477,7 @@
     </div>
   </div>
 
-  <!-- MODALS -->
+  <!-- MODALS (same as before) -->
   <div id="addBoxModal" class="modal-overlay">
     <div class="modal">
       <h3>Add New Box</h3>
@@ -754,6 +759,9 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9EKxFCUfV0Zv3va0l4sIvUFrA4liaJ1k&libraries=places&callback=initGoogleMap"></script>
 
   <script>
+    // ============================================================
+    // FIREBASE CONFIG & INIT
+    // ============================================================
     const firebaseConfig = {
       apiKey: "AIzaSyD9EKxFCUfV0Zv3va0l4sIvUFrA4liaJ1k",
       authDomain: "test-c8d17.firebaseapp.com",
@@ -769,6 +777,9 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
 
+    // ============================================================
+    // GLOBAL STATE
+    // ============================================================
     let boxesData = [];
     let driversData = [];
     let customersData = [];
@@ -799,10 +810,9 @@
     let autocompleteEditCustomerStreet = null;
     let autocompleteYardStreet = null;
 
-    document.addEventListener('DOMContentLoaded', function() {
-      switchView('map');
-    });
-
+    // ============================================================
+    // DOM HELPERS
+    // ============================================================
     function toggleDrawer(open) {
       const sidebar = document.getElementById("sidebar");
       const overlay = document.getElementById("mobileOverlay");
@@ -847,6 +857,9 @@
       }, 3000);
     }
 
+    // ============================================================
+    // AUTH
+    // ============================================================
     function signInWithGoogle() {
       document.getElementById("loginError").textContent = "";
       const provider = new firebase.auth.GoogleAuthProvider();
@@ -892,6 +905,9 @@
       }
     });
 
+    // ============================================================
+    // UTILITY
+    // ============================================================
     function checkDuplicateBox() {
       const num = document.getElementById("newBoxNum").value.trim();
       const exists = boxesData.some(b => b.boxNum === num);
@@ -929,6 +945,9 @@
       });
     }
 
+    // ============================================================
+    // GOOGLE MAPS
+    // ============================================================
     function initGoogleMap() {
       gMap = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 29.7604, lng: -95.3698 },
@@ -952,7 +971,7 @@
         }, 700);
       });
 
-      // 1. ADD BOX - Street Autocomplete
+      // Autocomplete for all address fields
       const newBoxStreetInput = document.getElementById("newBoxStreet");
       autocompleteNewBoxStreet = new google.maps.places.Autocomplete(newBoxStreetInput);
       autocompleteNewBoxStreet.addListener("place_changed", () => {
@@ -972,7 +991,6 @@
           document.getElementById("newBoxCity").value = city;
           document.getElementById("newBoxState").value = state;
           document.getElementById("newBoxZip").value = zip;
-          
           if (street && city && state && zip) {
             const fullAddress = buildAddress(street, city, state, zip);
             geocodeAddress(fullAddress).then(geo => {
@@ -985,7 +1003,6 @@
         }
       });
 
-      // 2. EDIT BOX - Street Autocomplete
       const editBoxStreetInput = document.getElementById("editBoxStreet");
       autocompleteEditBoxStreet = new google.maps.places.Autocomplete(editBoxStreetInput);
       autocompleteEditBoxStreet.addListener("place_changed", () => {
@@ -1005,7 +1022,6 @@
           document.getElementById("editBoxCity").value = city;
           document.getElementById("editBoxState").value = state;
           document.getElementById("editBoxZip").value = zip;
-          
           if (street && city && state && zip) {
             const fullAddress = buildAddress(street, city, state, zip);
             geocodeAddress(fullAddress).then(geo => {
@@ -1018,7 +1034,6 @@
         }
       });
 
-      // 3. ADD CUSTOMER - Street Autocomplete
       const newCustomerStreetInput = document.getElementById("newCustomerStreet");
       autocompleteNewCustomerStreet = new google.maps.places.Autocomplete(newCustomerStreetInput);
       autocompleteNewCustomerStreet.addListener("place_changed", () => {
@@ -1041,7 +1056,6 @@
         }
       });
 
-      // 4. EDIT CUSTOMER - Street Autocomplete
       const editCustomerStreetInput = document.getElementById("editCustomerStreet");
       autocompleteEditCustomerStreet = new google.maps.places.Autocomplete(editCustomerStreetInput);
       autocompleteEditCustomerStreet.addListener("place_changed", () => {
@@ -1064,7 +1078,6 @@
         }
       });
 
-      // 5. YARD SETTINGS - Street Autocomplete
       const yardStreetInput = document.getElementById("yardStreet");
       autocompleteYardStreet = new google.maps.places.Autocomplete(yardStreetInput);
       autocompleteYardStreet.addListener("place_changed", () => {
@@ -1162,6 +1175,9 @@
       }
     }
 
+    // ============================================================
+    // START APP & REAL-TIME LISTENERS
+    // ============================================================
     function startApp() {
       switchView('map');
       
@@ -1219,9 +1235,17 @@
       document.getElementById("editBoxCustomer").innerHTML = opts;
     }
 
+    function populateDriverSelects() {
+      const opts = '<option value="">— Unassigned —</option>' + driversData.map(d => `<option value="${d.name}">${d.name}</option>`).join("");
+      document.getElementById("newBoxDriver").innerHTML = opts;
+      document.getElementById("editBoxDriver").innerHTML = opts;
+    }
+
     // ============================================================
-    // RENDER APP - HIDE "New" boxes on map page
+    // RENDER FUNCTIONS
     // ============================================================
+
+    // MAP VIEW
     function renderApp() {
       const search = (document.getElementById("searchInput").value || "").toLowerCase().trim();
       const filter = document.getElementById("statusFilter").value;
@@ -1253,9 +1277,7 @@
       renderDetail();
     }
 
-    // ============================================================
-    // RENDER SERVICE - HIDE "New" boxes in service tab
-    // ============================================================
+    // SERVICE VIEW
     function renderService() {
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
@@ -1301,18 +1323,14 @@
     function sendSMS(boxId) {
       const box = boxesData.find(b => b.id === boxId);
       if (!box) return;
-      
       const driverObj = driversData.find(d => d.name === box.driver);
       const phone = driverObj ? driverObj.phone : "";
-      
       if (!phone) {
         alert("No phone number found for driver: " + box.driver);
         return;
       }
-      
       const fullAddress = buildAddress(box.street, box.city, box.state, box.zip);
       const message = `NIAM TRACK: Box #${box.boxNum} is ${statusLabel(box.status)} for ${box.customer || "Customer"} at ${fullAddress || "Address"}. ${box.notes ? "Note: " + box.notes : ""}`;
-      
       window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
       showToast("📱 Opening SMS...");
     }
@@ -1320,7 +1338,6 @@
     function promptAddNote(boxId) {
       const box = boxesData.find(b => b.id === boxId);
       if (!box) return;
-      
       const newNote = prompt("Enter Dispatcher Note:\n(Current: " + (box.notes || "None") + ")", "");
       if (newNote !== null) {
         db.collection("boxes").doc(boxId).update({
@@ -1334,24 +1351,18 @@
       }
     }
 
-    // ============================================================
-    // RENDER BOXES - HIDE "New" boxes, show full address
-    // ============================================================
+    // BOXES VIEW (clean list)
     function renderBoxes() {
       const el = document.getElementById("boxesList");
-      
       const filteredBoxes = boxesData.filter(b => b.boxNum !== "New");
-      
       if (filteredBoxes.length === 0) { 
         el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>'; 
         return; 
       }
-      
       el.innerHTML = filteredBoxes.map(b => {
         const shouldShowDriver = (b.driver && b.driver !== "Unassigned" && (b.status !== "Available" && b.status !== "Customer"));
         const driverLine = shouldShowDriver ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
         const fullAddress = buildAddress(b.street, b.city, b.state, b.zip);
-        
         return `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')" style="cursor:pointer;">
           <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
@@ -1361,28 +1372,21 @@
       }).join("");
     }
 
-    // ============================================================
-    // RENDER CUSTOMERS
-    // ============================================================
+    // CUSTOMERS VIEW
     function renderCustomers() {
       const el = document.getElementById("customersList");
       const search = (document.getElementById("customerSearch").value || "").toLowerCase().trim();
-      
       const filtered = customersData.filter(c => {
         if (!search) return true;
         return c.name.toLowerCase().includes(search);
       });
-
       if (filtered.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No customers found</h3></div>'; return; }
-      
       el.innerHTML = filtered.map(c => {
         const customerBoxes = boxesData.filter(b => 
           (b.customer || "").toLowerCase() === c.name.toLowerCase() &&
           b.boxNum !== "New"
         );
-        
         const isAdmin = currentUserData && currentUserData.role === 'admin';
-
         return `
           <div class="customer-card">
             <h3>${c.name}</h3>
@@ -1390,7 +1394,6 @@
             <p>${c.address || "No address"}</p>
             <p><strong>Preferred Size:</strong> ${c.boxSize || "Not specified"}</p>
             <p style="margin-top: 8px;"><strong>Boxes:</strong> ${customerBoxes.length > 0 ? customerBoxes.length : "None assigned"}</p>
-            
             <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
               <button class="btn-act btn-act-red" onclick="openDeliveryNotes('${c.id}')">Send for Delivery</button>
               ${customerBoxes.map(b => `
@@ -1408,21 +1411,17 @@
     }
 
     // ============================================================
-    // RENDER DRIVERS - Clean list matching Boxes tab style
+    // DRIVERS VIEW - CLEAN LIST, NO MAP
     // ============================================================
     function renderDrivers() {
       const el = document.getElementById("driversList");
-      
       if (driversData.length === 0) { 
         el.innerHTML = '<div class="empty-msg"><h3>No drivers yet</h3></div>'; 
         return; 
       }
-      
       el.innerHTML = driversData.map(driver => {
         const assignedBoxes = boxesData.filter(b => b.driver === driver.name && b.boxNum !== "New");
         const boxCount = assignedBoxes.length;
-        
-        // Build list of assigned box numbers as tags
         let boxesList = '';
         if (boxCount > 0) {
           boxesList = assignedBoxes.map(b => {
@@ -1431,12 +1430,10 @@
         } else {
           boxesList = '<span style="color:#94a3b8; font-size:0.8rem;">None assigned</span>';
         }
-        
-        // Build the driver card - clean and prominent
         return `
           <div class="driver-card" onclick="selectDriver('${driver.id}')" style="cursor:pointer;">
-            <h3 style="font-size:1.2rem; font-weight:900; color:#0f172a;">🚛 ${driver.name}</h3>
-            <p style="margin-top:4px;"><strong>Phone:</strong> ${driver.phone || "No phone"}</p>
+            <h3>🚛 ${driver.name}</h3>
+            <p><strong>Phone:</strong> ${driver.phone || "No phone"}</p>
             <p><strong>Assigned Boxes:</strong> ${boxCount}</p>
             <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">
               ${boxesList}
@@ -1450,23 +1447,18 @@
     }
 
     // ============================================================
-    // SELECT DRIVER - Show driver details with assigned boxes
+    // SELECT DRIVER - show details with assigned boxes
     // ============================================================
     function selectDriver(driverId) {
       const driver = driversData.find(d => d.id === driverId);
       if (!driver) return;
-      
       activeDriverId = driverId;
       activeBoxId = null;
-      
       const assignedBoxes = boxesData.filter(b => b.driver === driver.name && b.boxNum !== "New");
-      
       const content = document.getElementById("detailContent");
       const empty = document.getElementById("detailEmpty");
-      
       empty.style.display = "none";
       content.style.display = "block";
-      
       let boxesHtml = '';
       if (assignedBoxes.length === 0) {
         boxesHtml = '<p style="color:#94a3b8;">No boxes currently assigned.</p>';
@@ -1479,7 +1471,6 @@
           </div>`;
         }).join('');
       }
-      
       content.innerHTML = `
         <div class="detail-title" style="font-size:1.3rem;">🚛 ${driver.name}</div>
         <div class="detail-layout">
@@ -1496,220 +1487,19 @@
           <button class="btn-act btn-act-danger" onclick="deleteDriver('${driver.id}')">🗑️ Delete Driver</button>
         </div>
       `;
-      
       if (window.innerWidth <= 900) {
         document.getElementById("detailPanel").classList.add("show");
       }
       document.getElementById("detailPanel").style.display = "block";
-      
       toggleDrawer(false);
     }
 
-    function openDeliveryNotes(customerId) {
-      const customer = customersData.find(c => c.id === customerId);
-      if (!customer) return;
-      
-      if (!customer.address) {
-        alert("This customer does not have an address. Please edit the customer to add an address first.");
-        return;
-      }
-      
-      pendingDeliveryCustomerId = customerId;
-      document.getElementById("deliveryCustomerInfo").textContent = "Customer: " + customer.name + " | Address: " + customer.address;
-      document.getElementById("deliveryNoteText").value = "";
-      openModal("deliveryNotesModal");
-    }
-
-    function confirmSendForDelivery() {
-      if (!pendingDeliveryCustomerId) return;
-      
-      const customer = customersData.find(c => c.id === pendingDeliveryCustomerId);
-      if (!customer) return;
-      
-      const note = document.getElementById("deliveryNoteText").value.trim();
-      
-      const finalNotes = note || "New customer delivery";
-      
-      db.collection("boxes").add({
-        boxNum: "New",
-        size: customer.boxSize || "Not specified",
-        customer: customer.name,
-        driver: "Unassigned",
-        street: "",
-        city: "",
-        state: "",
-        zip: "",
-        address: customer.address,
-        lat: null, lng: null,
-        status: "Delivery",
-        notes: finalNotes,
-        datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        activity: [{ 
-          time: new Date().toLocaleString(), 
-          text: "Delivery scheduled" + (note ? " with note" : ""), 
-          by: currentUser ? (currentUser.displayName || "User") : "Office" 
-        }],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        createdBy: currentUser ? currentUser.uid : null
-      }).then(() => {
-        closeModal("deliveryNotesModal");
-        pendingDeliveryCustomerId = null;
-        showToast("✅ Delivery Scheduled with Notes!");
-      }).catch(e => alert("Error: " + e.message));
-    }
-
-    function openDispatchNotes(boxId, status) {
-      pendingActionBoxId = boxId;
-      pendingActionStatus = status;
-      
-      const box = boxesData.find(b => b.id === boxId);
-      if (!box) return;
-      
-      document.getElementById("dispatchModalTitle").textContent = status === "Exchange" ? "Schedule Exchange" : "Schedule Pickup";
-      document.getElementById("dispatchBoxInfo").textContent = `Box #${box.boxNum} - ${box.customer}`;
-      document.getElementById("dispatchNoteText").value = box.notes || "";
-      openModal("dispatchNotesModal");
-    }
-
-    function confirmSendToService() {
-      if (!pendingActionBoxId) return;
-      
-      const note = document.getElementById("dispatchNoteText").value.trim();
-      
-      db.collection("boxes").doc(pendingActionBoxId).update({
-        status: pendingActionStatus,
-        notes: note || "",
-        activity: firebase.firestore.FieldValue.arrayUnion({
-          time: new Date().toLocaleString(),
-          text: "Status → " + statusLabel(pendingActionStatus) + (note ? " with note" : ""),
-          by: currentUser ? (currentUser.displayName || "User") : "Dispatch"
-        })
-      }).then(() => {
-        closeModal("dispatchNotesModal");
-        pendingActionBoxId = null;
-        pendingActionStatus = null;
-        showToast("✅ Sent to Service!");
-      }).catch(e => alert("Error: " + e.message));
-    }
-
-    function completeTask(id, newStatus, label, currentStatus) {
-      if (!confirm(`Are you sure you want to mark this box as ${label}?`)) return;
-      
-      if (currentStatus === "Delivery") {
-        pendingDeliveryBoxId = id;
-        openModal("boxNumberModal");
-      } else {
-        db.collection("boxes").doc(id).update({
-          status: newStatus,
-          activity: firebase.firestore.FieldValue.arrayUnion({
-            time: new Date().toLocaleString(),
-            text: "Task Complete → " + statusLabel(newStatus),
-            by: currentUser ? (currentUser.displayName || "User") : "Driver"
-          })
-        }).then(() => showToast("✅ Task Completed!")).catch(e => alert("Error: " + e.message));
-      }
-    }
-
-    async function confirmCompleteDelivery() {
-      const boxNum = document.getElementById("deliveredBoxNum").value.trim();
-      if (!boxNum) {
-        alert("Please enter the box number");
-        return;
-      }
-      
-      if (!pendingDeliveryBoxId) {
-        alert("No delivery in progress");
-        return;
-      }
-      
-      const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
-      if (!deliveryBox) {
-        alert("Delivery job not found");
-        return;
-      }
-
-      const boxExists = boxesData.some(b => b.boxNum === boxNum);
-      
-      if (!boxExists) {
-        document.getElementById("missingBoxNum").textContent = boxNum;
-        document.getElementById("boxNotFoundError").style.display = "block";
-        document.getElementById("boxNotAvailableError").style.display = "none";
-        document.getElementById("deliveredBoxNum").classList.add("input-error");
-        document.getElementById("deliveredBoxNum").focus();
-        document.getElementById("deliveredBoxNum").select();
-        return;
-      }
-
-      const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
-      
-      if (!existingBox) {
-        const boxStatus = boxesData.find(b => b.boxNum === boxNum)?.status || "unknown";
-        document.getElementById("unavailableBoxNum").textContent = boxNum + " (Current status: " + statusLabel(boxStatus) + ")";
-        document.getElementById("boxNotAvailableError").style.display = "block";
-        document.getElementById("boxNotFoundError").style.display = "none";
-        document.getElementById("deliveredBoxNum").classList.add("input-error");
-        document.getElementById("deliveredBoxNum").focus();
-        document.getElementById("deliveredBoxNum").select();
-        return;
-      }
-
-      clearBoxErrors();
-      
-      try {
-        await db.collection("boxes").doc(pendingDeliveryBoxId).delete();
-      } catch (e) {
-        alert("Error removing delivery job: " + e.message);
-        return;
-      }
-      
-      let lat = null, lng = null;
-      const customer = customersData.find(c => c.name === deliveryBox.customer);
-      if (customer && customer.address) {
-        const geo = await geocodeAddress(customer.address);
-        if (geo) {
-          lat = geo.lat;
-          lng = geo.lng;
-        }
-      }
-      
-      const updateData = {
-        customer: deliveryBox.customer || "",
-        street: "",
-        city: "",
-        state: "",
-        zip: "",
-        address: customer ? customer.address : "",
-        status: "Customer",
-        driver: "Unassigned",
-        lat: lat,
-        lng: lng,
-        notes: deliveryBox.notes || "",
-        activity: firebase.firestore.FieldValue.arrayUnion({
-          time: new Date().toLocaleString(),
-          text: "Delivered Box #" + boxNum + " to " + (deliveryBox.customer || "customer"),
-          by: currentUser ? (currentUser.displayName || "User") : "Driver"
-        })
-      };
-      
-      try {
-        await db.collection("boxes").doc(existingBox.id).update(updateData);
-        showToast("✅ Delivery Completed! Pin moved to customer address.");
-      } catch (e) {
-        alert("Error updating box: " + e.message);
-      }
-      
-      closeModal("boxNumberModal");
-      pendingDeliveryBoxId = null;
-      document.getElementById("deliveredBoxNum").value = "";
-    }
-
     // ============================================================
-    // RENDER DETAIL - Shows details for selected box
+    // DETAIL PANEL
     // ============================================================
     function renderDetail() {
       const empty = document.getElementById("detailEmpty");
       const content = document.getElementById("detailContent");
-
       if (!activeBoxId) {
         empty.style.display = "block";
         content.style.display = "none";
@@ -1717,14 +1507,12 @@
       }
       const box = boxesData.find(b => b.id === activeBoxId);
       if (!box) return;
-
       empty.style.display = "none";
       content.style.display = "block";
       const activities = (box.activity || []).slice().reverse().slice(0, 6);
       currentPhotoURL = box.photoURL || null;
       const isAdmin = currentUserData && currentUserData.role === 'admin';
       const fullAddress = buildAddress(box.street, box.city, box.state, box.zip);
-
       content.innerHTML = `
         <div class="detail-title"><span class="dot dot-${box.status || "Available"}"></span> BOX #${box.boxNum || "New"} <span class="badge badge-${box.status || "Available"}">${statusLabel(box.status)}</span></div>
         <div class="detail-layout">
@@ -1752,26 +1540,19 @@
         <div class="activity-section"><div class="activity-title">Recent Activity</div>
         ${activities.length === 0 ? '<div style="font-size:0.8rem;color:#94a3b8">No activity yet</div>' : activities.map(a => `<div class="activity-row"><span>${a.time} — ${a.text}</span><span>${a.by||""}</span></div>`).join("")}
         </div>`;
-
       if (window.innerWidth <= 900) {
         document.getElementById("detailPanel").classList.add("show");
       }
     }
 
-    // ============================================================
-    // SELECT BOX
-    // ============================================================
     function selectBox(id) {
       activeBoxId = id;
       activeDriverId = null;
-      
       if (window.innerWidth <= 900) {
         document.getElementById("detailPanel").classList.add("show");
       }
-      
       document.getElementById("detailPanel").style.display = "block";
       renderDetail();
-      
       if (currentView === "map") {
         const box = boxesData.find(b => b.id === id);
         if (box && gMap && box.lat != null && box.lng != null) {
@@ -1779,18 +1560,87 @@
           gMap.setZoom(15);
         }
       }
-      
       toggleDrawer(false);
     }
 
+    function closeDetailPanel() {
+      document.getElementById("detailPanel").classList.remove("show");
+      activeBoxId = null;
+      activeDriverId = null;
+      renderDetail();
+    }
+
+    // ============================================================
+    // VIEW SWITCHING - FIXED: map hidden for non-map views
+    // ============================================================
+    function switchView(view) {
+      currentView = view;
+      document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+      const nav = document.querySelector(`[data-view="${view}"]`);
+      if (nav) nav.classList.add("active");
+      
+      // 1. Hide EVERYTHING first
+      document.getElementById("mapView").style.display = "none";
+      document.getElementById("serviceView").classList.remove("active");
+      document.getElementById("boxesView").classList.remove("active");
+      document.getElementById("customersView").classList.remove("active");
+      document.getElementById("driversView").classList.remove("active");
+      document.getElementById("usersView").classList.remove("active");
+      document.getElementById("detailPanel").classList.remove("show");
+      document.getElementById("detailPanel").style.display = "none";
+
+      // 2. Show the requested view
+      if (view === "map") {
+        // Restore map display
+        if (window.innerWidth <= 900) {
+          document.getElementById("mapView").style.display = "flex";
+          document.getElementById("mapView").style.flexDirection = "column";
+        } else {
+          document.getElementById("mapView").style.display = "grid";
+          document.getElementById("mapView").style.gridTemplateColumns = "320px 1fr";
+        }
+        document.getElementById("detailPanel").style.display = "block";
+        setTimeout(() => {
+          if (gMap) google.maps.event.trigger(gMap, "resize");
+        }, 200);
+        renderApp();
+      } else if (view === "service") {
+        document.getElementById("serviceView").classList.add("active");
+        renderService();
+      } else if (view === "boxes") {
+        document.getElementById("boxesView").classList.add("active");
+        renderBoxes();
+      } else if (view === "customers") {
+        document.getElementById("customersView").classList.add("active");
+        renderCustomers();
+      } else if (view === "drivers") {
+        document.getElementById("driversView").classList.add("active");
+        renderDrivers();
+      } else if (view === "users") {
+        document.getElementById("usersView").classList.add("active");
+        renderUsers();
+      }
+      
+      toggleDrawer(false);
+      
+      // Hide FAB buttons for non-map views
+      const addBox = document.getElementById("btnAddBox");
+      const customers = document.getElementById("btnCustomers");
+      const drivers = document.getElementById("btnDrivers");
+      addBox.classList.add("hidden");
+      customers.classList.add("hidden");
+      drivers.classList.add("hidden");
+    }
+
+    // ============================================================
+    // QUICK STATUS & OTHER ACTIONS
+    // ============================================================
     function quickStatus(newStatus) {
       if (!activeBoxId) return;
-      
       let updateData = {
         status: newStatus,
         activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Status → " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Driver/Admin" })
       };
-      
       if (newStatus === "Available") {
         if (yardData) {
           updateData.customer = "Yard";
@@ -1814,12 +1664,42 @@
           updateData.lng = null;
         }
       }
-      
       db.collection("boxes").doc(activeBoxId).update(updateData).then(() => {
         showToast("✅ Status Updated!");
       }).catch(e => alert("Error: " + e.message));
     }
 
+    function takePhoto() {
+      if (!activeBoxId) return;
+      document.getElementById("cameraInput").click();
+    }
+
+    async function handlePhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file || !activeBoxId) return;
+      try {
+        const storageRef = storage.ref(`box_photos/${activeBoxId}/${Date.now()}.jpg`);
+        const uploadTask = await storageRef.put(file);
+        const downloadURL = await uploadTask.ref.getDownloadURL();
+        await db.collection("boxes").doc(activeBoxId).update({
+          photoURL: downloadURL,
+          activity: firebase.firestore.FieldValue.arrayUnion({
+            time: new Date().toLocaleString(),
+            text: "📸 Photo uploaded",
+            by: currentUser ? (currentUser.displayName || "User") : "Driver"
+          })
+        });
+        event.target.value = "";
+        showToast("✅ Photo Uploaded!");
+      } catch (e) {
+        console.error("Photo upload error:", e);
+        alert("Error uploading photo.");
+      }
+    }
+
+    // ============================================================
+    // YARD SETTINGS
+    // ============================================================
     function openYardSettingsModal() {
       document.getElementById("yardStreet").value = yardData ? yardData.street : "";
       document.getElementById("yardCity").value = yardData ? yardData.city : "";
@@ -1835,115 +1715,48 @@
       const state = document.getElementById("yardState").value.trim();
       const zip = document.getElementById("yardZip").value.trim();
       const fullAddress = buildAddress(street, city, state, zip);
-      
       if (!street || !city || !state || !zip) return alert("Please complete the Yard Street, City, State, and ZIP fields.");
-      
       const btn = document.querySelector('#yardSettingsModal .btn-save');
       btn.disabled = true;
       document.getElementById("yardGeoStatus").textContent = "Finding coordinates...";
-      
       const geo = await geocodeAddress(fullAddress);
       if (!geo) {
         document.getElementById("yardGeoStatus").textContent = "Could not find coordinates for this address.";
         btn.disabled = false;
         return;
       }
-      
       const yardObj = {
-        street: street,
-        city: city,
-        state: state,
-        zip: zip,
+        street, city, state, zip,
         formattedAddress: geo.address,
         lat: geo.lat,
         lng: geo.lng
       };
-      
       if (currentUser) {
         db.collection("users").where("email", "==", currentUser.email).get().then(snapshot => {
           if (!snapshot.empty) {
-            db.collection("users").doc(snapshot.docs[0].id).update({
-              yard: yardObj
-            }).then(() => {
-              yardData = yardObj;
-              document.getElementById("yardGeoStatus").textContent = "✓ Yard Location Saved!";
-              showToast("✅ Yard Location Saved!");
-              setTimeout(() => closeModal("yardSettingsModal"), 800);
-              btn.disabled = false;
-              refreshMarkers();
-            }).catch(e => {
-              alert("Error: " + e.message);
-              btn.disabled = false;
-            });
+            db.collection("users").doc(snapshot.docs[0].id).update({ yard: yardObj })
+              .then(() => {
+                yardData = yardObj;
+                document.getElementById("yardGeoStatus").textContent = "✓ Yard Location Saved!";
+                showToast("✅ Yard Location Saved!");
+                setTimeout(() => closeModal("yardSettingsModal"), 800);
+                btn.disabled = false;
+                refreshMarkers();
+              }).catch(e => { alert("Error: " + e.message); btn.disabled = false; });
           } else {
             btn.disabled = false;
             alert("Could not find your user profile to save the yard location.");
           }
-        }).catch(e => {
-          btn.disabled = false;
-          alert("Error: " + e.message);
-        });
+        }).catch(e => { btn.disabled = false; alert("Error: " + e.message); });
       } else {
         btn.disabled = false;
         alert("You must be logged in to save the yard location.");
       }
     }
 
-    function takePhoto() {
-      if (!activeBoxId) return;
-      document.getElementById("cameraInput").click();
-    }
-
-    async function handlePhotoUpload(event) {
-      const file = event.target.files[0];
-      if (!file || !activeBoxId) return;
-
-      try {
-        const storageRef = storage.ref(`box_photos/${activeBoxId}/${Date.now()}.jpg`);
-        const uploadTask = await storageRef.put(file);
-        const downloadURL = await uploadTask.ref.getDownloadURL();
-
-        await db.collection("boxes").doc(activeBoxId).update({
-          photoURL: downloadURL,
-          activity: firebase.firestore.FieldValue.arrayUnion({
-            time: new Date().toLocaleString(),
-            text: "📸 Photo uploaded",
-            by: currentUser ? (currentUser.displayName || "User") : "Driver"
-          })
-        });
-
-        event.target.value = "";
-        showToast("✅ Photo Uploaded!");
-      } catch (e) {
-        console.error("Photo upload error:", e);
-        alert("Error uploading photo.");
-      }
-    }
-
-    function closeDetailPanel() {
-      document.getElementById("detailPanel").classList.remove("show");
-      activeBoxId = null;
-      activeDriverId = null;
-      renderDetail();
-    }
-
-    function renderUsers() {
-      const el = document.getElementById("usersList");
-      if (usersData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No users yet</h3></div>'; return; }
-      el.innerHTML = usersData.map(u =>
-        `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-          <div><strong>${u.name || u.email}</strong><br><span style="font-size:0.8rem;color:#64748b">${u.email}</span><br><span style="font-size:0.8rem;color:#64748b">Phone: ${u.phone || "N/A"}</span><br><span style="font-size:0.8rem;color:#64748b">Role: ${u.role}</span></div>
-          <button class="btn-act btn-act-danger" onclick="deleteUser('${u.id}')">Delete</button>
-        </div>`
-      ).join("");
-    }
-
-    function populateDriverSelects() {
-      const opts = '<option value="">— Unassigned —</option>' + driversData.map(d => `<option value="${d.name}">${d.name}</option>`).join("");
-      document.getElementById("newBoxDriver").innerHTML = opts;
-      document.getElementById("editBoxDriver").innerHTML = opts;
-    }
-
+    // ============================================================
+    // BOX MODALS
+    // ============================================================
     function openAddBoxModal() {
       populateDriverSelects();
       populateCustomerSelects();
@@ -1966,50 +1779,32 @@
     async function saveBox() {
       const boxNum = document.getElementById("newBoxNum").value.trim();
       if (!boxNum) return alert("Box number is required");
-      
       const duplicateCheck = boxesData.some(b => b.boxNum === boxNum);
       if (duplicateCheck) return alert("A box with this number already exists!");
-      
       const street = document.getElementById("newBoxStreet").value.trim();
       const city = document.getElementById("newBoxCity").value.trim();
       const state = document.getElementById("newBoxState").value.trim();
       const zip = document.getElementById("newBoxZip").value.trim();
-      
       if (!street || !city || !state || !zip) {
         return alert("Please complete the Street, City, State, and ZIP fields.");
       }
-      
       const fullAddress = buildAddress(street, city, state, zip);
-      
       const btn = document.getElementById("saveBoxBtn");
       btn.disabled = true; btn.textContent = "Saving...";
-
       let lat = pendingLatLng ? pendingLatLng.lat : null;
       let lng = pendingLatLng ? pendingLatLng.lng : null;
-      
       if (!lat || !lng) {
         const geo = await geocodeAddress(fullAddress);
-        if (geo) {
-          lat = geo.lat;
-          lng = geo.lng;
-          document.getElementById("newGeoStatus").textContent = "✓ Address located!";
-        }
+        if (geo) { lat = geo.lat; lng = geo.lng; document.getElementById("newGeoStatus").textContent = "✓ Address located!"; }
       }
-
       try {
         const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         await db.collection("boxes").add({
-          boxNum: boxNum,
-          size: document.getElementById("newBoxSize").value,
+          boxNum, size: document.getElementById("newBoxSize").value,
           customer: document.getElementById("newBoxCustomer").value || "Yard",
           driver: document.getElementById("newBoxDriver").value || "Unassigned",
-          street: street,
-          city: city,
-          state: state,
-          zip: zip,
-          address: fullAddress,
-          lat: lat,
-          lng: lng,
+          street, city, state, zip, address: fullAddress,
+          lat, lng,
           status: document.getElementById("newBoxStatus").value,
           notes: document.getElementById("newBoxNotes").value.trim(),
           datePlaced: today,
@@ -2048,56 +1843,38 @@
 
     async function commitBoxUpdate() {
       if (!activeBoxId) return;
-      
       const newBoxNum = document.getElementById("editBoxNum").value.trim();
       const street = document.getElementById("editBoxStreet").value.trim();
       const city = document.getElementById("editBoxCity").value.trim();
       const state = document.getElementById("editBoxState").value.trim();
       const zip = document.getElementById("editBoxZip").value.trim();
       const newStatus = document.getElementById("editBoxStatus").value;
-      
       if (!street || !city || !state || !zip) {
         return alert("Please complete the Street, City, State, and ZIP fields.");
       }
-      
       const fullAddress = buildAddress(street, city, state, zip);
-      
       const btn = document.getElementById("updateBoxBtn");
       btn.disabled = true; btn.textContent = "Updating...";
-
       const duplicateCheck = boxesData.some(b => b.boxNum === newBoxNum && b.id !== activeBoxId);
       if (duplicateCheck) {
         btn.disabled = false; btn.textContent = "Update Box";
         return alert("A box with this number already exists!");
       }
-
       let lat = pendingLatLng ? pendingLatLng.lat : null;
       let lng = pendingLatLng ? pendingLatLng.lng : null;
-      
       if (!lat || !lng) {
         const geo = await geocodeAddress(fullAddress);
-        if (geo) {
-          lat = geo.lat;
-          lng = geo.lng;
-          document.getElementById("editGeoStatus").textContent = "✓ Address located!";
-        }
+        if (geo) { lat = geo.lat; lng = geo.lng; document.getElementById("editGeoStatus").textContent = "✓ Address located!"; }
       }
-
       const updateData = {
-        boxNum: newBoxNum,
-        status: newStatus,
+        boxNum: newBoxNum, status: newStatus,
         customer: document.getElementById("editBoxCustomer").value || "Yard",
         driver: document.getElementById("editBoxDriver").value || "Unassigned",
-        street: street,
-        city: city,
-        state: state,
-        zip: zip,
-        address: fullAddress,
+        street, city, state, zip, address: fullAddress,
         notes: document.getElementById("editBoxNotes").value.trim(),
         activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Updated to " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Admin" })
       };
       if (lat && lng) { updateData.lat = lat; updateData.lng = lng; }
-
       try {
         await db.collection("boxes").doc(activeBoxId).update(updateData);
         pendingLatLng = null; placeMode = null;
@@ -2112,6 +1889,9 @@
       db.collection("boxes").doc(activeBoxId).delete().then(() => { activeBoxId = null; renderDetail(); }).catch(e => alert("Error: " + e.message));
     }
 
+    // ============================================================
+    // CUSTOMER MODALS
+    // ============================================================
     function openAddCustomerModal() {
       document.getElementById("newCustomerName").value = "";
       document.getElementById("newCustomerPhone").value = "";
@@ -2126,18 +1906,14 @@
     function saveCustomer() {
       const name = document.getElementById("newCustomerName").value.trim();
       if (!name) return alert("Name required");
-      
       const street = document.getElementById("newCustomerStreet").value.trim();
       const city = document.getElementById("newCustomerCity").value.trim();
       const state = document.getElementById("newCustomerState").value.trim();
       const zip = document.getElementById("newCustomerZip").value.trim();
       const fullAddress = buildAddress(street, city, state, zip);
-      
       if (!street || !city || !state || !zip) return alert("Please complete the Street, City, State, and ZIP fields.");
-      
       db.collection("customers").add({
-        name: name,
-        phone: document.getElementById("newCustomerPhone").value.trim(),
+        name, phone: document.getElementById("newCustomerPhone").value.trim(),
         address: fullAddress,
         boxSize: document.getElementById("newCustomerBoxSize").value,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2151,7 +1927,6 @@
       activeCustomerId = id;
       const customer = customersData.find(c => c.id === id);
       if (!customer) return;
-      
       let street = "", city = "", state = "", zip = "";
       if (customer.address) {
         const parts = customer.address.split(", ").map(p => p.trim());
@@ -2160,7 +1935,6 @@
         state = parts[2] || "";
         zip = parts[3] || "";
       }
-      
       document.getElementById("editCustomerName").value = customer.name || "";
       document.getElementById("editCustomerPhone").value = customer.phone || "";
       document.getElementById("editCustomerStreet").value = street;
@@ -2175,18 +1949,14 @@
       if (!activeCustomerId) return;
       const name = document.getElementById("editCustomerName").value.trim();
       if (!name) return alert("Name required");
-      
       const street = document.getElementById("editCustomerStreet").value.trim();
       const city = document.getElementById("editCustomerCity").value.trim();
       const state = document.getElementById("editCustomerState").value.trim();
       const zip = document.getElementById("editCustomerZip").value.trim();
       const fullAddress = buildAddress(street, city, state, zip);
-      
       if (!street || !city || !state || !zip) return alert("Please complete the Street, City, State, and ZIP fields.");
-      
       db.collection("customers").doc(activeCustomerId).update({
-        name: name,
-        phone: document.getElementById("editCustomerPhone").value.trim(),
+        name, phone: document.getElementById("editCustomerPhone").value.trim(),
         address: fullAddress,
         boxSize: document.getElementById("editCustomerBoxSize").value
       }).then(() => {
@@ -2201,6 +1971,9 @@
       db.collection("customers").doc(id).delete().then(() => showToast("Customer Deleted")).catch(e => alert(e.message));
     }
 
+    // ============================================================
+    // DRIVER MODALS
+    // ============================================================
     function openAddDriverModal() {
       document.getElementById("newDriverName").value = "";
       document.getElementById("newDriverPhone").value = "";
@@ -2211,8 +1984,7 @@
       const name = document.getElementById("newDriverName").value.trim();
       if (!name) return alert("Name required");
       db.collection("drivers").add({
-        name: name,
-        phone: document.getElementById("newDriverPhone").value.trim(),
+        name, phone: document.getElementById("newDriverPhone").value.trim(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         closeModal("addDriverModal");
@@ -2231,6 +2003,9 @@
       }).catch(e => alert(e.message));
     }
 
+    // ============================================================
+    // USER MODALS
+    // ============================================================
     function openAddUserModal() {
       document.getElementById("newUserEmail").value = "";
       document.getElementById("newUserName").value = "";
@@ -2245,12 +2020,8 @@
       const role = document.getElementById("newUserRole").value;
       const name = document.getElementById("newUserName").value.trim();
       const phone = document.getElementById("newUserPhone").value.trim();
-      
       db.collection("users").add({
-        email: email,
-        role: role,
-        name: name,
-        phone: phone,
+        email, role, name, phone,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         if (role === 'driver') {
@@ -2270,64 +2041,188 @@
       db.collection("users").doc(id).delete().catch(e => alert(e.message));
     }
 
-    // ============================================================
-    // SWITCH VIEW - FIXED: Properly hides map for non-map views
-    // ============================================================
-    function switchView(view) {
-      currentView = view;
-      document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-      const nav = document.querySelector(`[data-view="${view}"]`);
-      if (nav) nav.classList.add("active");
-      
-      // Hide ALL views first
-      document.getElementById("mapView").style.display = "none";
-      document.getElementById("serviceView").classList.remove("active");
-      document.getElementById("boxesView").classList.remove("active");
-      document.getElementById("customersView").classList.remove("active");
-      document.getElementById("driversView").classList.remove("active");
-      document.getElementById("usersView").classList.remove("active");
-      document.getElementById("detailPanel").classList.remove("show");
-      document.getElementById("detailPanel").style.display = "none";
-
-      if (view === "map") {
-        if (window.innerWidth <= 900) {
-          document.getElementById("mapView").style.display = "flex";
-          document.getElementById("mapView").style.flexDirection = "column";
-        } else {
-          document.getElementById("mapView").style.display = "grid";
-          document.getElementById("mapView").style.gridTemplateColumns = "320px 1fr";
-        }
-        document.getElementById("detailPanel").style.display = "block";
-        setTimeout(() => {
-          if (gMap) google.maps.event.trigger(gMap, "resize");
-        }, 200);
-        renderApp();
-      } else if (view === "service") {
-        document.getElementById("serviceView").classList.add("active");
-        renderService();
-      } else if (view === "boxes") {
-        document.getElementById("boxesView").classList.add("active");
-        renderBoxes();
-      } else if (view === "customers") {
-        document.getElementById("customersView").classList.add("active");
-        renderCustomers();
-      } else if (view === "drivers") {
-        document.getElementById("driversView").classList.add("active");
-        renderDrivers();
-      } else if (view === "users") {
-        document.getElementById("usersView").classList.add("active");
-        renderUsers();
-      }
-      
-      toggleDrawer(false);
-      
-      const addBox = document.getElementById("btnAddBox");
-      const customers = document.getElementById("btnCustomers");
-      const drivers = document.getElementById("btnDrivers");
-      addBox.classList.add("hidden");
-      customers.classList.add("hidden");
-      drivers.classList.add("hidden");
+    function renderUsers() {
+      const el = document.getElementById("usersList");
+      if (usersData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No users yet</h3></div>'; return; }
+      el.innerHTML = usersData.map(u =>
+        `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+          <div><strong>${u.name || u.email}</strong><br><span style="font-size:0.8rem;color:#64748b">${u.email}</span><br><span style="font-size:0.8rem;color:#64748b">Phone: ${u.phone || "N/A"}</span><br><span style="font-size:0.8rem;color:#64748b">Role: ${u.role}</span></div>
+          <button class="btn-act btn-act-danger" onclick="deleteUser('${u.id}')">Delete</button>
+        </div>`
+      ).join("");
     }
+
+    // ============================================================
+    // DELIVERY / PICKUP / EXCHANGE WORKFLOW
+    // ============================================================
+    function openDeliveryNotes(customerId) {
+      const customer = customersData.find(c => c.id === customerId);
+      if (!customer) return;
+      if (!customer.address) {
+        alert("This customer does not have an address. Please edit the customer to add an address first.");
+        return;
+      }
+      pendingDeliveryCustomerId = customerId;
+      document.getElementById("deliveryCustomerInfo").textContent = "Customer: " + customer.name + " | Address: " + customer.address;
+      document.getElementById("deliveryNoteText").value = "";
+      openModal("deliveryNotesModal");
+    }
+
+    function confirmSendForDelivery() {
+      if (!pendingDeliveryCustomerId) return;
+      const customer = customersData.find(c => c.id === pendingDeliveryCustomerId);
+      if (!customer) return;
+      const note = document.getElementById("deliveryNoteText").value.trim();
+      const finalNotes = note || "New customer delivery";
+      db.collection("boxes").add({
+        boxNum: "New",
+        size: customer.boxSize || "Not specified",
+        customer: customer.name,
+        driver: "Unassigned",
+        street: "", city: "", state: "", zip: "",
+        address: customer.address,
+        lat: null, lng: null,
+        status: "Delivery",
+        notes: finalNotes,
+        datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        activity: [{ time: new Date().toLocaleString(), text: "Delivery scheduled" + (note ? " with note" : ""), by: currentUser ? (currentUser.displayName || "User") : "Office" }],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdBy: currentUser ? currentUser.uid : null
+      }).then(() => {
+        closeModal("deliveryNotesModal");
+        pendingDeliveryCustomerId = null;
+        showToast("✅ Delivery Scheduled with Notes!");
+      }).catch(e => alert("Error: " + e.message));
+    }
+
+    function openDispatchNotes(boxId, status) {
+      pendingActionBoxId = boxId;
+      pendingActionStatus = status;
+      const box = boxesData.find(b => b.id === boxId);
+      if (!box) return;
+      document.getElementById("dispatchModalTitle").textContent = status === "Exchange" ? "Schedule Exchange" : "Schedule Pickup";
+      document.getElementById("dispatchBoxInfo").textContent = `Box #${box.boxNum} - ${box.customer}`;
+      document.getElementById("dispatchNoteText").value = box.notes || "";
+      openModal("dispatchNotesModal");
+    }
+
+    function confirmSendToService() {
+      if (!pendingActionBoxId) return;
+      const note = document.getElementById("dispatchNoteText").value.trim();
+      db.collection("boxes").doc(pendingActionBoxId).update({
+        status: pendingActionStatus,
+        notes: note || "",
+        activity: firebase.firestore.FieldValue.arrayUnion({
+          time: new Date().toLocaleString(),
+          text: "Status → " + statusLabel(pendingActionStatus) + (note ? " with note" : ""),
+          by: currentUser ? (currentUser.displayName || "User") : "Dispatch"
+        })
+      }).then(() => {
+        closeModal("dispatchNotesModal");
+        pendingActionBoxId = null;
+        pendingActionStatus = null;
+        showToast("✅ Sent to Service!");
+      }).catch(e => alert("Error: " + e.message));
+    }
+
+    function completeTask(id, newStatus, label, currentStatus) {
+      if (!confirm(`Are you sure you want to mark this box as ${label}?`)) return;
+      if (currentStatus === "Delivery") {
+        pendingDeliveryBoxId = id;
+        openModal("boxNumberModal");
+      } else {
+        db.collection("boxes").doc(id).update({
+          status: newStatus,
+          activity: firebase.firestore.FieldValue.arrayUnion({
+            time: new Date().toLocaleString(),
+            text: "Task Complete → " + statusLabel(newStatus),
+            by: currentUser ? (currentUser.displayName || "User") : "Driver"
+          })
+        }).then(() => showToast("✅ Task Completed!")).catch(e => alert("Error: " + e.message));
+      }
+    }
+
+    async function confirmCompleteDelivery() {
+      const boxNum = document.getElementById("deliveredBoxNum").value.trim();
+      if (!boxNum) {
+        alert("Please enter the box number");
+        return;
+      }
+      if (!pendingDeliveryBoxId) {
+        alert("No delivery in progress");
+        return;
+      }
+      const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
+      if (!deliveryBox) {
+        alert("Delivery job not found");
+        return;
+      }
+      const boxExists = boxesData.some(b => b.boxNum === boxNum);
+      if (!boxExists) {
+        document.getElementById("missingBoxNum").textContent = boxNum;
+        document.getElementById("boxNotFoundError").style.display = "block";
+        document.getElementById("boxNotAvailableError").style.display = "none";
+        document.getElementById("deliveredBoxNum").classList.add("input-error");
+        document.getElementById("deliveredBoxNum").focus();
+        document.getElementById("deliveredBoxNum").select();
+        return;
+      }
+      const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
+      if (!existingBox) {
+        const boxStatus = boxesData.find(b => b.boxNum === boxNum)?.status || "unknown";
+        document.getElementById("unavailableBoxNum").textContent = boxNum + " (Current status: " + statusLabel(boxStatus) + ")";
+        document.getElementById("boxNotAvailableError").style.display = "block";
+        document.getElementById("boxNotFoundError").style.display = "none";
+        document.getElementById("deliveredBoxNum").classList.add("input-error");
+        document.getElementById("deliveredBoxNum").focus();
+        document.getElementById("deliveredBoxNum").select();
+        return;
+      }
+      clearBoxErrors();
+      try {
+        await db.collection("boxes").doc(pendingDeliveryBoxId).delete();
+      } catch (e) {
+        alert("Error removing delivery job: " + e.message);
+        return;
+      }
+      let lat = null, lng = null;
+      const customer = customersData.find(c => c.name === deliveryBox.customer);
+      if (customer && customer.address) {
+        const geo = await geocodeAddress(customer.address);
+        if (geo) { lat = geo.lat; lng = geo.lng; }
+      }
+      const updateData = {
+        customer: deliveryBox.customer || "",
+        street: "", city: "", state: "", zip: "",
+        address: customer ? customer.address : "",
+        status: "Customer",
+        driver: "Unassigned",
+        lat, lng,
+        notes: deliveryBox.notes || "",
+        activity: firebase.firestore.FieldValue.arrayUnion({
+          time: new Date().toLocaleString(),
+          text: "Delivered Box #" + boxNum + " to " + (deliveryBox.customer || "customer"),
+          by: currentUser ? (currentUser.displayName || "User") : "Driver"
+        })
+      };
+      try {
+        await db.collection("boxes").doc(existingBox.id).update(updateData);
+        showToast("✅ Delivery Completed! Pin moved to customer address.");
+      } catch (e) {
+        alert("Error updating box: " + e.message);
+      }
+      closeModal("boxNumberModal");
+      pendingDeliveryBoxId = null;
+      document.getElementById("deliveredBoxNum").value = "";
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+      switchView('map');
+    });
+
   </script>
 </body>
 </html>
