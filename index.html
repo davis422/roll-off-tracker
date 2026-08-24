@@ -119,7 +119,7 @@
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
 
-    /* Driver card styling */
+    /* Driver card styling - matching box card style */
     .driver-card { 
       background: white; 
       border-radius: 12px; 
@@ -134,8 +134,18 @@
     .driver-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; color: #0f172a; }
     .driver-card p { font-size: 0.85rem; color: #475569; }
 
-    .customers-view, .drivers-view, .users-view, .boxes-view, .service-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
-    .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active, .service-view.active { display: block; }
+    /* View containers */
+    .customers-view, .drivers-view, .users-view, .boxes-view, .service-view { 
+      display: none; 
+      flex: 1; 
+      overflow-y: auto; 
+      padding: 20px; 
+      background: #f8fafc;
+      height: 100%;
+    }
+    .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active, .service-view.active { 
+      display: block; 
+    }
 
     .box-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 8px solid #ccc; cursor: pointer; transition: background 0.15s; }
     .box-card:hover { background: #f0fdf4; }
@@ -421,14 +431,15 @@
       </div>
 
       <div class="boxes-view" id="boxesView">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">All Boxes</h2>
+          <button class="btn-act btn-act-primary" onclick="openAddBoxModal()">+ Add Box</button>
         </div>
         <div id="boxesList"></div>
       </div>
 
       <div class="customers-view" id="customersView">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">Customers</h2>
           <button class="btn-act btn-act-primary" onclick="openAddCustomerModal()">+ Add Customer</button>
         </div>
@@ -446,7 +457,7 @@
       </div>
 
       <div class="users-view" id="usersView">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.2rem; font-weight:900;">Manage Users</h2>
           <button class="btn-act btn-act-primary" onclick="openAddUserModal()">+ Add User</button>
         </div>
@@ -1397,7 +1408,7 @@
     }
 
     // ============================================================
-    // RENDER DRIVERS - Clean list with prominent names, NO MAP
+    // RENDER DRIVERS - Clean list matching Boxes tab style
     // ============================================================
     function renderDrivers() {
       const el = document.getElementById("driversList");
@@ -1421,17 +1432,17 @@
           boxesList = '<span style="color:#94a3b8; font-size:0.8rem;">None assigned</span>';
         }
         
-        // Build the driver card - prominent name, clickable
+        // Build the driver card - clean and prominent
         return `
           <div class="driver-card" onclick="selectDriver('${driver.id}')" style="cursor:pointer;">
-            <h3 style="font-size:1.2rem; font-weight:900; color:#0f172a;">${driver.name}</h3>
+            <h3 style="font-size:1.2rem; font-weight:900; color:#0f172a;">🚛 ${driver.name}</h3>
             <p style="margin-top:4px;"><strong>Phone:</strong> ${driver.phone || "No phone"}</p>
             <p><strong>Assigned Boxes:</strong> ${boxCount}</p>
             <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">
               ${boxesList}
             </div>
             <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;" onclick="event.stopPropagation();">
-              <button class="btn-act btn-act-danger" onclick="deleteDriver('${driver.id}')">Delete</button>
+              <button class="btn-act btn-act-danger" onclick="deleteDriver('${driver.id}')">🗑️ Delete</button>
             </div>
           </div>
         `;
@@ -2301,7 +2312,6 @@
         document.getElementById("customersView").classList.add("active");
         renderCustomers();
       } else if (view === "drivers") {
-        // IMPORTANT: mapView is already hidden (display:none) from above
         document.getElementById("driversView").classList.add("active");
         renderDrivers();
       } else if (view === "users") {
