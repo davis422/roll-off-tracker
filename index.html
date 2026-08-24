@@ -165,6 +165,11 @@
       margin-bottom: 4px;
     }
 
+    /* FIX: Make Google Places autocomplete appear above modals */
+    .pac-container {
+      z-index: 99999 !important;
+    }
+
     @media (max-width: 900px) {
       .menu-btn { display: block; }
       aside { position: fixed; left: -250px; top: 0; bottom: 0; transition: left 0.3s; z-index: 3001; }
@@ -438,7 +443,6 @@
     </div>
   </div>
 
-  <!-- DISPATCH NOTES MODAL (for Pickup/Exchange) -->
   <div id="dispatchNotesModal" class="modal-overlay">
     <div class="modal">
       <h3 id="dispatchModalTitle">Add Dispatch Notes</h3>
@@ -451,7 +455,6 @@
     </div>
   </div>
 
-  <!-- NEW: DELIVERY NOTES MODAL (for Send for Delivery) -->
   <div id="deliveryNotesModal" class="modal-overlay">
     <div class="modal">
       <h3>Send for Delivery</h3>
@@ -570,7 +573,7 @@
     let pendingDeliveryBoxId = null;
     let pendingActionBoxId = null;
     let pendingActionStatus = null;
-    let pendingDeliveryCustomerId = null; // NEW: for delivery notes flow
+    let pendingDeliveryCustomerId = null;
     let currentView = "map";
     let currentUser = null;
     let currentUserData = null;
@@ -581,13 +584,15 @@
     let yardMarker = null;
     let yardInfoWindow = null;
     let tempGMarker = null;
+    let currentPhotoURL = null;
+    let yardData = null;
+
+    // Keep these for reference (not used with new PlaceAutocompleteElement)
     let autocompleteNew = null;
     let autocompleteEdit = null;
     let autocompleteNewCustomer = null;
     let autocompleteEditCustomer = null;
     let autocompleteYard = null;
-    let currentPhotoURL = null;
-    let yardData = null;
 
     function toggleDrawer(open) {
       const sidebar = document.getElementById("sidebar");
@@ -732,80 +737,143 @@
         }, 700);
       });
 
-      autocompleteNew = new google.maps.places.Autocomplete(document.getElementById("newBoxAddress"));
-      autocompleteNew.addListener("place_changed", () => {
-        const place = autocompleteNew.getPlace();
-        if (place.geometry) {
-          pendingLatLng = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+      // ============================================================
+      // 1. ADD BOX - Address Autocomplete (NEW PlaceAutocompleteElement)
+      // ============================================================
+      const newBoxAddressInput = document.getElementById("newBoxAddress");
+      const newAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+      newAutocomplete.id = "newBoxAutocomplete";
+      newAutocomplete.input = newBoxAddressInput;
+      newAutocomplete.addEventListener("gmp-placeselect", (event) => {
+        const place = event.detail.place;
+        if (place && place.location) {
+          pendingLatLng = { 
+            lat: place.location.lat(), 
+            lng: place.location.lng() 
+          };
           document.getElementById("newGeoStatus").textContent = "✓ Address found! Pin set precisely.";
-        }
-      });
-
-      autocompleteEdit = new google.maps.places.Autocomplete(document.getElementById("editBoxAddress"));
-      autocompleteEdit.addListener("place_changed", () => {
-        const place = autocompleteEdit.getPlace();
-        if (place.geometry) {
-          pendingLatLng = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
-          document.getElementById("editGeoStatus").textContent = "✓ Address found! Pin set precisely.";
-        }
-      });
-
-      autocompleteNewCustomer = new google.maps.places.Autocomplete(document.getElementById("newCustomerStreet"));
-      autocompleteNewCustomer.addListener("place_changed", () => {
-        const place = autocompleteNewCustomer.getPlace();
-        if (place && place.address_components) {
-          let street = "", city = "", state = "", zip = "";
-          for (const component of place.address_components) {
-            if (component.types.includes("street_number")) street = component.long_name + " " + street;
-            if (component.types.includes("route")) street += component.long_name;
-            if (component.types.includes("locality")) city = component.long_name;
-            if (component.types.includes("administrative_area_level_1")) state = component.short_name;
-            if (component.types.includes("postal_code")) zip = component.long_name;
+          if (place.formattedAddress) {
+            newBoxAddressInput.value = place.formattedAddress;
           }
-          document.getElementById("newCustomerStreet").value = street;
+        }
+      });
+      newBoxAddressInput.parentNode.insertBefore(newAutocomplete, newBoxAddressInput.nextSibling);
+
+      // ============================================================
+      // 2. EDIT BOX - Address Autocomplete (NEW PlaceAutocompleteElement)
+      // ============================================================
+      const editBoxAddressInput = document.getElementById("editBoxAddress");
+      const editAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+      editAutocomplete.id = "editBoxAutocomplete";
+      editAutocomplete.input = editBoxAddressInput;
+      editAutocomplete.addEventListener("gmp-placeselect", (event) => {
+        const place = event.detail.place;
+        if (place && place.location) {
+          pendingLatLng = { 
+            lat: place.location.lat(), 
+            lng: place.location.lng() 
+          };
+          document.getElementById("editGeoStatus").textContent = "✓ Address found! Pin set precisely.";
+          if (place.formattedAddress) {
+            editBoxAddressInput.value = place.formattedAddress;
+          }
+        }
+      });
+      editBoxAddressInput.parentNode.insertBefore(editAutocomplete, editBoxAddressInput.nextSibling);
+
+      // ============================================================
+      // 3. ADD CUSTOMER - Street Autocomplete (NEW PlaceAutocompleteElement)
+      // ============================================================
+      const newCustomerStreetInput = document.getElementById("newCustomerStreet");
+      const newCustomerAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+      newCustomerAutocomplete.id = "newCustomerAutocomplete";
+      newCustomerAutocomplete.input = newCustomerStreetInput;
+      newCustomerAutocomplete.addEventListener("gmp-placeselect", (event) => {
+        const place = event.detail.place;
+        if (place && place.addressComponents) {
+          let street = "", city = "", state = "", zip = "";
+          const components = place.addressComponents;
+          
+          for (const comp of components) {
+            if (comp.types.includes("street_number")) street = comp.longText + " " + street;
+            if (comp.types.includes("route")) street += comp.longText;
+            if (comp.types.includes("locality")) city = comp.longText;
+            if (comp.types.includes("administrative_area_level_1")) state = comp.shortText;
+            if (comp.types.includes("postal_code")) zip = comp.longText;
+          }
+          
+          document.getElementById("newCustomerStreet").value = street.trim();
           document.getElementById("newCustomerCity").value = city;
           document.getElementById("newCustomerState").value = state;
           document.getElementById("newCustomerZip").value = zip;
         }
       });
+      newCustomerStreetInput.parentNode.insertBefore(newCustomerAutocomplete, newCustomerStreetInput.nextSibling);
 
-      autocompleteEditCustomer = new google.maps.places.Autocomplete(document.getElementById("editCustomerStreet"));
-      autocompleteEditCustomer.addListener("place_changed", () => {
-        const place = autocompleteEditCustomer.getPlace();
-        if (place && place.address_components) {
+      // ============================================================
+      // 4. EDIT CUSTOMER - Street Autocomplete (NEW PlaceAutocompleteElement)
+      // ============================================================
+      const editCustomerStreetInput = document.getElementById("editCustomerStreet");
+      const editCustomerAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+      editCustomerAutocomplete.id = "editCustomerAutocomplete";
+      editCustomerAutocomplete.input = editCustomerStreetInput;
+      editCustomerAutocomplete.addEventListener("gmp-placeselect", (event) => {
+        const place = event.detail.place;
+        if (place && place.addressComponents) {
           let street = "", city = "", state = "", zip = "";
-          for (const component of place.address_components) {
-            if (component.types.includes("street_number")) street = component.long_name + " " + street;
-            if (component.types.includes("route")) street += component.long_name;
-            if (component.types.includes("locality")) city = component.long_name;
-            if (component.types.includes("administrative_area_level_1")) state = component.short_name;
-            if (component.types.includes("postal_code")) zip = component.long_name;
+          const components = place.addressComponents;
+          
+          for (const comp of components) {
+            if (comp.types.includes("street_number")) street = comp.longText + " " + street;
+            if (comp.types.includes("route")) street += comp.longText;
+            if (comp.types.includes("locality")) city = comp.longText;
+            if (comp.types.includes("administrative_area_level_1")) state = comp.shortText;
+            if (comp.types.includes("postal_code")) zip = comp.longText;
           }
-          document.getElementById("editCustomerStreet").value = street;
+          
+          document.getElementById("editCustomerStreet").value = street.trim();
           document.getElementById("editCustomerCity").value = city;
           document.getElementById("editCustomerState").value = state;
           document.getElementById("editCustomerZip").value = zip;
         }
       });
+      editCustomerStreetInput.parentNode.insertBefore(editCustomerAutocomplete, editCustomerStreetInput.nextSibling);
 
-      autocompleteYard = new google.maps.places.Autocomplete(document.getElementById("yardStreet"));
-      autocompleteYard.addListener("place_changed", () => {
-        const place = autocompleteYard.getPlace();
-        if (place && place.address_components) {
+      // ============================================================
+      // 5. YARD SETTINGS - Street Autocomplete (NEW PlaceAutocompleteElement)
+      // ============================================================
+      const yardStreetInput = document.getElementById("yardStreet");
+      const yardAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+      yardAutocomplete.id = "yardAutocomplete";
+      yardAutocomplete.input = yardStreetInput;
+      yardAutocomplete.addEventListener("gmp-placeselect", (event) => {
+        const place = event.detail.place;
+        if (place && place.addressComponents) {
           let street = "", city = "", state = "", zip = "";
-          for (const component of place.address_components) {
-            if (component.types.includes("street_number")) street = component.long_name + " " + street;
-            if (component.types.includes("route")) street += component.long_name;
-            if (component.types.includes("locality")) city = component.long_name;
-            if (component.types.includes("administrative_area_level_1")) state = component.short_name;
-            if (component.types.includes("postal_code")) zip = component.long_name;
+          const components = place.addressComponents;
+          
+          for (const comp of components) {
+            if (comp.types.includes("street_number")) street = comp.longText + " " + street;
+            if (comp.types.includes("route")) street += comp.longText;
+            if (comp.types.includes("locality")) city = comp.longText;
+            if (comp.types.includes("administrative_area_level_1")) state = comp.shortText;
+            if (comp.types.includes("postal_code")) zip = comp.longText;
           }
-          document.getElementById("yardStreet").value = street;
+          
+          document.getElementById("yardStreet").value = street.trim();
           document.getElementById("yardCity").value = city;
           document.getElementById("yardState").value = state;
           document.getElementById("yardZip").value = zip;
         }
       });
+      yardStreetInput.parentNode.insertBefore(yardAutocomplete, yardStreetInput.nextSibling);
+
+      // Keep references
+      autocompleteNew = newAutocomplete;
+      autocompleteEdit = editAutocomplete;
+      autocompleteNewCustomer = newCustomerAutocomplete;
+      autocompleteEditCustomer = editCustomerAutocomplete;
+      autocompleteYard = yardAutocomplete;
     }
 
     function startPlaceOnMap(mode) {
@@ -1095,7 +1163,6 @@
       }).join("");
     }
 
-    // NEW: Open delivery notes modal before sending for delivery
     function openDeliveryNotes(customerId) {
       const customer = customersData.find(c => c.id === customerId);
       if (!customer) return;
@@ -1111,7 +1178,6 @@
       openModal("deliveryNotesModal");
     }
 
-    // NEW: Confirm and send for delivery with notes
     function confirmSendForDelivery() {
       if (!pendingDeliveryCustomerId) return;
       
