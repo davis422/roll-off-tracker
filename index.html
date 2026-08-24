@@ -170,6 +170,16 @@
       z-index: 99999 !important;
     }
 
+    /* Error state for box number input */
+    .input-error {
+      border-color: #dc2626 !important;
+      background-color: #fef2f2 !important;
+    }
+    .input-error:focus {
+      border-color: #dc2626 !important;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important;
+    }
+
     @media (max-width: 900px) {
       .menu-btn { display: block; }
       aside { position: fixed; left: -250px; top: 0; bottom: 0; transition: left 0.3s; z-index: 3001; }
@@ -502,14 +512,22 @@
     </div>
   </div>
 
+  <!-- UPDATED: Box Number Modal with validation -->
   <div id="boxNumberModal" class="modal-overlay">
     <div class="modal">
       <h3>Enter Box Number</h3>
       <div class="error-message" id="deliveryBoxError">⚠️ A box with this number already exists!</div>
+      <!-- NEW: Specific error messages for validation -->
+      <div id="boxNotFoundError" class="error-message" style="display:none; background:#fee2e2; color:#b91c1c; padding:10px; border-radius:6px; margin-bottom:10px; font-size:0.85rem; font-weight:700; text-align:center;">
+        ❌ Box #<span id="missingBoxNum"></span> not found. Please check the number.
+      </div>
+      <div id="boxNotAvailableError" class="error-message" style="display:none; background:#fee2e2; color:#b91c1c; padding:10px; border-radius:6px; margin-bottom:10px; font-size:0.85rem; font-weight:700; text-align:center;">
+        ❌ Box #<span id="unavailableBoxNum"></span> is not available. It may already be in use.
+      </div>
       <label>Box # Delivered</label>
-      <input type="text" id="deliveredBoxNum" placeholder="e.g. 52" oninput="checkDuplicateDelivery()" />
+      <input type="text" id="deliveredBoxNum" placeholder="e.g. 52" oninput="clearBoxErrors()" />
       <div class="modal-btns">
-        <button class="btn-save" onclick="confirmCompleteDelivery()">Confirm</button>
+        <button class="btn-save" id="confirmDeliveryBtn" onclick="confirmCompleteDelivery()">Confirm</button>
         <button class="btn-cancel" onclick="closeModal('boxNumberModal')">Cancel</button>
       </div>
     </div>
@@ -593,7 +611,6 @@
     let currentPhotoURL = null;
     let yardData = null;
 
-    // Autocomplete variables
     let autocompleteNew = null;
     let autocompleteEdit = null;
     let autocompleteNewCustomer = null;
@@ -624,6 +641,14 @@
     function openModal(id) { document.getElementById(id).classList.add("active"); }
     function closeModal(id) { document.getElementById(id).classList.remove("active"); }
 
+    // Clear box validation errors when typing
+    function clearBoxErrors() {
+      document.getElementById("boxNotFoundError").style.display = "none";
+      document.getElementById("boxNotAvailableError").style.display = "none";
+      document.getElementById("deliveryBoxError").style.display = "none";
+      document.getElementById("deliveredBoxNum").classList.remove("input-error");
+    }
+
     function statusLabel(s) {
       return { Delivery: "To Be Delivered", Customer: "At Customer", Pickup: "Ready for Pickup", Exchange: "Ready for Exchange", Available: "Available" }[s] || s;
     }
@@ -634,7 +659,7 @@
       toast.classList.add("show");
       setTimeout(() => {
         toast.classList.remove("show");
-      }, 2500);
+      }, 3000);
     }
 
     function signInWithGoogle() {
@@ -748,9 +773,7 @@
         }, 700);
       });
 
-      // ============================================================
-      // 1. ADD BOX - Address Autocomplete (using old, stable API)
-      // ============================================================
+      // 1. ADD BOX - Address Autocomplete
       const newBoxAddressInput = document.getElementById("newBoxAddress");
       autocompleteNew = new google.maps.places.Autocomplete(newBoxAddressInput);
       autocompleteNew.addListener("place_changed", () => {
@@ -767,9 +790,7 @@
         }
       });
 
-      // ============================================================
       // 2. EDIT BOX - Address Autocomplete
-      // ============================================================
       const editBoxAddressInput = document.getElementById("editBoxAddress");
       autocompleteEdit = new google.maps.places.Autocomplete(editBoxAddressInput);
       autocompleteEdit.addListener("place_changed", () => {
@@ -786,37 +807,22 @@
         }
       });
 
-      // ============================================================
       // 3. ADD CUSTOMER - Street Autocomplete
-      // ============================================================
       const newCustomerStreetInput = document.getElementById("newCustomerStreet");
       autocompleteNewCustomer = new google.maps.places.Autocomplete(newCustomerStreetInput);
       autocompleteNewCustomer.addListener("place_changed", () => {
         const place = autocompleteNewCustomer.getPlace();
         if (place && place.address_components) {
           let street = "", city = "", state = "", zip = "";
-          
           for (const component of place.address_components) {
             const types = component.types || [];
-            if (types.includes("street_number")) {
-              street = component.long_name + " " + street;
-            }
-            if (types.includes("route")) {
-              street += component.long_name;
-            }
-            if (types.includes("locality")) {
-              city = component.long_name;
-            }
-            if (types.includes("administrative_area_level_1")) {
-              state = component.short_name;
-            }
-            if (types.includes("postal_code")) {
-              zip = component.long_name;
-            }
+            if (types.includes("street_number")) street = component.long_name + " " + street;
+            if (types.includes("route")) street += component.long_name;
+            if (types.includes("locality")) city = component.long_name;
+            if (types.includes("administrative_area_level_1")) state = component.short_name;
+            if (types.includes("postal_code")) zip = component.long_name;
           }
-          
           street = street.trim();
-          
           document.getElementById("newCustomerStreet").value = street;
           document.getElementById("newCustomerCity").value = city;
           document.getElementById("newCustomerState").value = state;
@@ -824,37 +830,22 @@
         }
       });
 
-      // ============================================================
       // 4. EDIT CUSTOMER - Street Autocomplete
-      // ============================================================
       const editCustomerStreetInput = document.getElementById("editCustomerStreet");
       autocompleteEditCustomer = new google.maps.places.Autocomplete(editCustomerStreetInput);
       autocompleteEditCustomer.addListener("place_changed", () => {
         const place = autocompleteEditCustomer.getPlace();
         if (place && place.address_components) {
           let street = "", city = "", state = "", zip = "";
-          
           for (const component of place.address_components) {
             const types = component.types || [];
-            if (types.includes("street_number")) {
-              street = component.long_name + " " + street;
-            }
-            if (types.includes("route")) {
-              street += component.long_name;
-            }
-            if (types.includes("locality")) {
-              city = component.long_name;
-            }
-            if (types.includes("administrative_area_level_1")) {
-              state = component.short_name;
-            }
-            if (types.includes("postal_code")) {
-              zip = component.long_name;
-            }
+            if (types.includes("street_number")) street = component.long_name + " " + street;
+            if (types.includes("route")) street += component.long_name;
+            if (types.includes("locality")) city = component.long_name;
+            if (types.includes("administrative_area_level_1")) state = component.short_name;
+            if (types.includes("postal_code")) zip = component.long_name;
           }
-          
           street = street.trim();
-          
           document.getElementById("editCustomerStreet").value = street;
           document.getElementById("editCustomerCity").value = city;
           document.getElementById("editCustomerState").value = state;
@@ -862,37 +853,22 @@
         }
       });
 
-      // ============================================================
       // 5. YARD SETTINGS - Street Autocomplete
-      // ============================================================
       const yardStreetInput = document.getElementById("yardStreet");
       autocompleteYard = new google.maps.places.Autocomplete(yardStreetInput);
       autocompleteYard.addListener("place_changed", () => {
         const place = autocompleteYard.getPlace();
         if (place && place.address_components) {
           let street = "", city = "", state = "", zip = "";
-          
           for (const component of place.address_components) {
             const types = component.types || [];
-            if (types.includes("street_number")) {
-              street = component.long_name + " " + street;
-            }
-            if (types.includes("route")) {
-              street += component.long_name;
-            }
-            if (types.includes("locality")) {
-              city = component.long_name;
-            }
-            if (types.includes("administrative_area_level_1")) {
-              state = component.short_name;
-            }
-            if (types.includes("postal_code")) {
-              zip = component.long_name;
-            }
+            if (types.includes("street_number")) street = component.long_name + " " + street;
+            if (types.includes("route")) street += component.long_name;
+            if (types.includes("locality")) city = component.long_name;
+            if (types.includes("administrative_area_level_1")) state = component.short_name;
+            if (types.includes("postal_code")) zip = component.long_name;
           }
-          
           street = street.trim();
-          
           document.getElementById("yardStreet").value = street;
           document.getElementById("yardCity").value = city;
           document.getElementById("yardState").value = state;
@@ -1287,14 +1263,64 @@
       }
     }
 
+    // ============================================================
+    // UPDATED: confirmCompleteDelivery with box validation
+    // ============================================================
     async function confirmCompleteDelivery() {
       const boxNum = document.getElementById("deliveredBoxNum").value.trim();
-      if (!boxNum) return alert("Please enter the box number");
+      if (!boxNum) {
+        alert("Please enter the box number");
+        return;
+      }
       
-      if (!pendingDeliveryBoxId) return alert("No delivery in progress");
+      if (!pendingDeliveryBoxId) {
+        alert("No delivery in progress");
+        return;
+      }
       
       const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
-      if (!deliveryBox) return alert("Delivery job not found");
+      if (!deliveryBox) {
+        alert("Delivery job not found");
+        return;
+      }
+
+      // ============================================================
+      // BOX VALIDATION - Check if box exists in the database
+      // ============================================================
+      const boxExists = boxesData.some(b => b.boxNum === boxNum);
+      
+      if (!boxExists) {
+        // Box doesn't exist at all - show error
+        document.getElementById("missingBoxNum").textContent = boxNum;
+        document.getElementById("boxNotFoundError").style.display = "block";
+        document.getElementById("boxNotAvailableError").style.display = "none";
+        document.getElementById("deliveredBoxNum").classList.add("input-error");
+        document.getElementById("deliveredBoxNum").focus();
+        document.getElementById("deliveredBoxNum").select();
+        return;
+      }
+
+      // Check if box is available (status === "Available")
+      const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
+      
+      if (!existingBox) {
+        // Box exists but is not available
+        const boxStatus = boxesData.find(b => b.boxNum === boxNum)?.status || "unknown";
+        document.getElementById("unavailableBoxNum").textContent = boxNum + " (Current status: " + statusLabel(boxStatus) + ")";
+        document.getElementById("boxNotAvailableError").style.display = "block";
+        document.getElementById("boxNotFoundError").style.display = "none";
+        document.getElementById("deliveredBoxNum").classList.add("input-error");
+        document.getElementById("deliveredBoxNum").focus();
+        document.getElementById("deliveredBoxNum").select();
+        return;
+      }
+
+      // ============================================================
+      // Box is valid and available - proceed with delivery
+      // ============================================================
+      
+      // Clear any previous errors
+      clearBoxErrors();
       
       try {
         await db.collection("boxes").doc(pendingDeliveryBoxId).delete();
@@ -1303,83 +1329,45 @@
         return;
       }
       
-      const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
-      
-      if (existingBox) {
-        let lat = null, lng = null;
-        if (deliveryBox.address) {
-          const geo = await geocodeAddress(deliveryBox.address);
-          if (geo) {
-            lat = geo.lat;
-            lng = geo.lng;
-          } else {
-            const customer = customersData.find(c => c.name === deliveryBox.customer);
-            if (customer && customer.address) {
-              const geo2 = await geocodeAddress(customer.address);
-              if (geo2) {
-                lat = geo2.lat;
-                lng = geo2.lng;
-              }
+      // Geocode the customer's address
+      let lat = null, lng = null;
+      if (deliveryBox.address) {
+        const geo = await geocodeAddress(deliveryBox.address);
+        if (geo) {
+          lat = geo.lat;
+          lng = geo.lng;
+        } else {
+          const customer = customersData.find(c => c.name === deliveryBox.customer);
+          if (customer && customer.address) {
+            const geo2 = await geocodeAddress(customer.address);
+            if (geo2) {
+              lat = geo2.lat;
+              lng = geo2.lng;
             }
           }
         }
-        
-        const updateData = {
-          customer: deliveryBox.customer || "",
-          address: deliveryBox.address || "",
-          status: "Customer",
-          driver: "Unassigned",
-          lat: lat,
-          lng: lng,
-          notes: deliveryBox.notes || "",
-          activity: firebase.firestore.FieldValue.arrayUnion({
-            time: new Date().toLocaleString(),
-            text: "Delivered Box #" + boxNum + " to " + (deliveryBox.customer || "customer"),
-            by: currentUser ? (currentUser.displayName || "User") : "Driver"
-          })
-        };
-        
-        try {
-          await db.collection("boxes").doc(existingBox.id).update(updateData);
-          showToast("✅ Delivery Completed! Pin moved to customer address.");
-        } catch (e) {
-          alert("Error updating box: " + e.message);
-        }
-        
-      } else {
-        let lat = null, lng = null;
-        if (deliveryBox.address) {
-          const geo = await geocodeAddress(deliveryBox.address);
-          if (geo) {
-            lat = geo.lat;
-            lng = geo.lng;
-          }
-        }
-        
-        try {
-          await db.collection("boxes").add({
-            boxNum: boxNum,
-            size: deliveryBox.size || "",
-            customer: deliveryBox.customer || "",
-            driver: "Unassigned",
-            address: deliveryBox.address || "",
-            lat: lat,
-            lng: lng,
-            status: "Customer",
-            notes: deliveryBox.notes || "",
-            datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            activity: [{
-              time: new Date().toLocaleString(),
-              text: "Delivered Box #" + boxNum + " to " + (deliveryBox.customer || "customer"),
-              by: currentUser ? (currentUser.displayName || "User") : "Driver"
-            }],
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            createdBy: currentUser ? currentUser.uid : null
-          });
-          showToast("✅ New Box Created at Customer Location!");
-        } catch (e) {
-          alert("Error creating box: " + e.message);
-        }
+      }
+      
+      const updateData = {
+        customer: deliveryBox.customer || "",
+        address: deliveryBox.address || "",
+        status: "Customer",
+        driver: "Unassigned",
+        lat: lat,
+        lng: lng,
+        notes: deliveryBox.notes || "",
+        activity: firebase.firestore.FieldValue.arrayUnion({
+          time: new Date().toLocaleString(),
+          text: "Delivered Box #" + boxNum + " to " + (deliveryBox.customer || "customer"),
+          by: currentUser ? (currentUser.displayName || "User") : "Driver"
+        })
+      };
+      
+      try {
+        await db.collection("boxes").doc(existingBox.id).update(updateData);
+        showToast("✅ Delivery Completed! Pin moved to customer address.");
+      } catch (e) {
+        alert("Error updating box: " + e.message);
       }
       
       closeModal("boxNumberModal");
