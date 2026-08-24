@@ -482,7 +482,7 @@
     </div>
   </div>
 
-  <!-- MODALS (unchanged) -->
+  <!-- MODALS -->
   <div id="addBoxModal" class="modal-overlay">
     <div class="modal">
       <h3>Add New Box</h3>
@@ -1283,14 +1283,13 @@
     }
 
     // ============================================================
-    // SERVICE VIEW - FIXED: now includes "New" boxes (Delivery orders)
+    // SERVICE VIEW - shows "New" delivery boxes
     // ============================================================
     function renderService() {
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
       const serviceBoxes = boxesData.filter(b => 
         (b.status === "Pickup" || b.status === "Exchange" || b.status === "Delivery")
-        // Removed: && b.boxNum !== "New"
       );
       
       if (serviceBoxes.length === 0) {
@@ -1312,7 +1311,6 @@
         const noteHtml = b.notes ? 
           `<div class="notes-box"><strong>📝 DISPATCH NOTE:</strong><br>${b.notes}</div>` : '';
         
-        // Show box number or "New Box (Delivery)" if not assigned
         const boxDisplay = b.boxNum === "New" ? "New Box (Delivery)" : `#${b.boxNum}`;
         
         return `<div class="box-card ${b.status || ""}" onclick="selectBox('${b.id}')">
@@ -1505,7 +1503,7 @@
     }
 
     // ============================================================
-    // DETAIL PANEL
+    // DETAIL PANEL - with "Complete Pickup" button
     // ============================================================
     function renderDetail() {
       const empty = document.getElementById("detailEmpty");
@@ -1523,6 +1521,9 @@
       currentPhotoURL = box.photoURL || null;
       const isAdmin = currentUserData && currentUserData.role === 'admin';
       const fullAddress = buildAddress(box.street, box.city, box.state, box.zip);
+      
+      const isPickup = box.status === "Pickup";
+      
       content.innerHTML = `
         <div class="detail-title"><span class="dot dot-${box.status || "Available"}"></span> BOX #${box.boxNum || "New"} <span class="badge badge-${box.status || "Available"}">${statusLabel(box.status)}</span></div>
         <div class="detail-layout">
@@ -1541,9 +1542,10 @@
         </div>
         <div class="actions-row">
           <button class="btn-act btn-act-primary" onclick="takePhoto()">📸 Take Photo</button>
-          <button class="btn-act" onclick="quickStatus('Pickup')">🚛 Pickup</button>
-          <button class="btn-act" onclick="quickStatus('Exchange')">🔄 Exchange</button>
-          <button class="btn-act" onclick="quickStatus('Available')">🏠 Mark as Yard</button>
+          <button class="btn-act" onclick="quickStatus('Pickup')">🚛 Mark Pickup</button>
+          <button class="btn-act" onclick="quickStatus('Exchange')">🔄 Mark Exchange</button>
+          <button class="btn-act btn-act-success" onclick="quickStatus('Available')" style="background:#16a34a;color:white;border:none;">🏠 Mark as Yard</button>
+          ${isPickup ? `<button class="btn-act btn-act-success" onclick="quickStatus('Available')" style="background:#2563eb;color:white;border:none;">✅ Complete Pickup</button>` : ''}
           ${isAdmin ? `<button class="btn-act btn-act-primary" onclick="openEditModal()">✏️ Edit</button>
           <button class="btn-act btn-act-danger" onclick="deleteBox()">🗑️ Delete</button>` : ''}
         </div>
@@ -1589,10 +1591,9 @@
       const nav = document.querySelector(`[data-view="${view}"]`);
       if (nav) nav.classList.add("active");
       
-      // 1. Hide ALL views first
       const mapView = document.getElementById("mapView");
       mapView.classList.add("hidden");
-      mapView.classList.remove("active");  // <-- CRITICAL: remove 'active' to prevent override
+      mapView.classList.remove("active");
       
       document.getElementById("serviceView").classList.remove("active");
       document.getElementById("boxesView").classList.remove("active");
@@ -1602,10 +1603,9 @@
       document.getElementById("detailPanel").classList.remove("show");
       document.getElementById("detailPanel").style.display = "none";
 
-      // 2. Show the requested view
       if (view === "map") {
         mapView.classList.remove("hidden");
-        mapView.classList.add("active");  // <-- add back only for Map tab
+        mapView.classList.add("active");
         if (window.innerWidth <= 900) {
           mapView.style.display = "flex";
           mapView.style.flexDirection = "column";
@@ -1637,7 +1637,6 @@
       
       toggleDrawer(false);
       
-      // Hide FAB buttons for non-map views
       const addBox = document.getElementById("btnAddBox");
       const customers = document.getElementById("btnCustomers");
       const drivers = document.getElementById("btnDrivers");
@@ -1805,7 +1804,6 @@
       let state = document.getElementById("newBoxState").value.trim();
       let zip = document.getElementById("newBoxZip").value.trim();
 
-      // Auto-fill from customer if address fields are empty and customer is selected
       if (customerName && (!street || !city || !state || !zip)) {
         const customer = customersData.find(c => c.name === customerName);
         if (customer && customer.address) {
@@ -1866,7 +1864,7 @@
     }
 
     // ============================================================
-    // EDIT BOX - sync address from customer
+    // EDIT BOX
     // ============================================================
     function openEditModal() {
       const box = boxesData.find(b => b.id === activeBoxId);
@@ -1923,7 +1921,6 @@
         })
       };
 
-      // If customer is set, sync address from that customer
       if (newCustomer) {
         const customer = customersData.find(c => c.name === newCustomer);
         if (customer && customer.address) {
@@ -1933,7 +1930,6 @@
           updateData.state = parts[2] || "";
           updateData.zip = parts[3] || "";
           updateData.address = customer.address;
-          // Geocode to get lat/lng
           const geo = await geocodeAddress(customer.address);
           if (geo) {
             updateData.lat = geo.lat;
@@ -1941,7 +1937,6 @@
           }
         }
       } else {
-        // If no customer, keep existing address from the form
         const street = document.getElementById("editBoxStreet").value.trim();
         const city = document.getElementById("editBoxCity").value.trim();
         const state = document.getElementById("editBoxState").value.trim();
@@ -1951,7 +1946,6 @@
         updateData.state = state;
         updateData.zip = zip;
         updateData.address = buildAddress(street, city, state, zip);
-        // If lat/lng not set, geocode
         if (!pendingLatLng) {
           const geo = await geocodeAddress(updateData.address);
           if (geo) {
@@ -2234,7 +2228,6 @@
         })
       };
 
-      // --- CASE 1: Moving to "Available" (Pickup complete) → set address to YARD ---
       if (newStatus === "Available") {
         if (yardData && yardData.lat) {
           updateData.customer = "Yard";
@@ -2247,7 +2240,6 @@
           updateData.lat = yardData.lat;
           updateData.lng = yardData.lng;
         } else {
-          // Fallback: clear address if yard not set
           updateData.customer = "Yard";
           updateData.street = "";
           updateData.city = "";
@@ -2260,7 +2252,6 @@
         }
       }
 
-      // --- CASE 2: Moving to "Customer" (Exchange complete) → set address to CUSTOMER'S address ---
       if (newStatus === "Customer") {
         const box = boxesData.find(b => b.id === id);
         if (box && box.customer) {
@@ -2272,7 +2263,6 @@
             updateData.state = parts[2] || "";
             updateData.zip = parts[3] || "";
             updateData.address = customer.address;
-            // Geocode to get lat/lng (async)
             geocodeAddress(customer.address).then(geo => {
               if (geo) {
                 db.collection("boxes").doc(id).update({ lat: geo.lat, lng: geo.lng });
@@ -2282,14 +2272,13 @@
         }
       }
 
-      // --- Send update to Firestore ---
       db.collection("boxes").doc(id).update(updateData)
         .then(() => showToast("✅ Task Completed!"))
         .catch(e => alert("Error: " + e.message));
     }
 
     // ============================================================
-    // CONFIRM COMPLETE DELIVERY (unchanged)
+    // CONFIRM COMPLETE DELIVERY - FIXED: populates street/city/state/zip
     // ============================================================
     async function confirmCompleteDelivery() {
       const boxNum = document.getElementById("deliveredBoxNum").value.trim();
@@ -2306,6 +2295,7 @@
         alert("Delivery job not found");
         return;
       }
+
       const boxExists = boxesData.some(b => b.boxNum === boxNum);
       if (!boxExists) {
         document.getElementById("missingBoxNum").textContent = boxNum;
@@ -2316,6 +2306,7 @@
         document.getElementById("deliveredBoxNum").select();
         return;
       }
+
       const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
       if (!existingBox) {
         const boxStatus = boxesData.find(b => b.boxNum === boxNum)?.status || "unknown";
@@ -2327,26 +2318,45 @@
         document.getElementById("deliveredBoxNum").select();
         return;
       }
+
       clearBoxErrors();
+
       try {
         await db.collection("boxes").doc(pendingDeliveryBoxId).delete();
       } catch (e) {
         alert("Error removing delivery job: " + e.message);
         return;
       }
+
       let lat = null, lng = null;
+      let street = "", city = "", state = "", zip = "", fullAddress = "";
+
       const customer = customersData.find(c => c.name === deliveryBox.customer);
       if (customer && customer.address) {
+        const parts = customer.address.split(", ").map(s => s.trim());
+        street = parts[0] || "";
+        city = parts[1] || "";
+        state = parts[2] || "";
+        zip = parts[3] || "";
+        fullAddress = customer.address;
         const geo = await geocodeAddress(customer.address);
-        if (geo) { lat = geo.lat; lng = geo.lng; }
+        if (geo) {
+          lat = geo.lat;
+          lng = geo.lng;
+        }
       }
+
       const updateData = {
         customer: deliveryBox.customer || "",
-        street: "", city: "", state: "", zip: "",
-        address: customer ? customer.address : "",
+        street: street,
+        city: city,
+        state: state,
+        zip: zip,
+        address: fullAddress,
         status: "Customer",
         driver: "Unassigned",
-        lat, lng,
+        lat: lat,
+        lng: lng,
         notes: deliveryBox.notes || "",
         activity: firebase.firestore.FieldValue.arrayUnion({
           time: new Date().toLocaleString(),
@@ -2354,12 +2364,14 @@
           by: currentUser ? (currentUser.displayName || "User") : "Driver"
         })
       };
+
       try {
         await db.collection("boxes").doc(existingBox.id).update(updateData);
         showToast("✅ Delivery Completed! Pin moved to customer address.");
       } catch (e) {
         alert("Error updating box: " + e.message);
       }
+
       closeModal("boxNumberModal");
       pendingDeliveryBoxId = null;
       document.getElementById("deliveredBoxNum").value = "";
