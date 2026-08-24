@@ -322,7 +322,7 @@
       <label>Driver</label>
       <select id="newBoxDriver"><option value="">— Unassigned —</option></select>
       <label>Address</label>
-      <input type="text" id="newBoxAddress" placeholder="4014 Katy Hockley Rd..." autocomplete="off" />
+      <input type="text" id="newBoxAddress" placeholder="Start typing address..." autocomplete="off" />
       <div class="geo-status" id="newGeoStatus"></div>
       <label>Status</label>
       <select id="newBoxStatus">
@@ -381,7 +381,7 @@
       <label>Phone</label>
       <input type="text" id="newCustomerPhone" placeholder="(713) 555-0198" />
       <label>Street Address *</label>
-      <input type="text" id="newCustomerStreet" placeholder="4014 Katy Hockley Rd" autocomplete="off" />
+      <input type="text" id="newCustomerStreet" placeholder="Start typing address..." autocomplete="off" />
       <div class="address-row-3">
         <div>
           <label>City *</label>
@@ -397,7 +397,13 @@
         </div>
       </div>
       <label>Box Size</label>
-      <select id="newCustomerBoxSize"><option value="">— Not Specified —</option><option value="10">10 Yard</option><option value="20">20 Yard</option><option value="30" selected>30 Yard</option><option value="40">40 Yard</option></select>
+      <select id="newCustomerBoxSize">
+        <option value="">— Not Specified —</option>
+        <option value="10">10 Yard</option>
+        <option value="20">20 Yard</option>
+        <option value="30">30 Yard</option>
+        <option value="40">40 Yard</option>
+      </select>
       <div class="modal-btns">
         <button class="btn-save" onclick="saveCustomer()">Save Customer</button>
         <button class="btn-cancel" onclick="closeModal('addCustomerModal')">Cancel</button>
@@ -473,7 +479,7 @@
       <h3>Set Yard Location</h3>
       <p style="font-size: 0.85rem; color: #475569;">This is where boxes will appear on the map when marked as "Available" in the yard.</p>
       <label>Street Address *</label>
-      <input type="text" id="yardStreet" placeholder="4014 Katy Hockley Rd" autocomplete="off" />
+      <input type="text" id="yardStreet" placeholder="Start typing address..." autocomplete="off" />
       <div class="address-row-3">
         <div>
           <label>City *</label>
@@ -587,13 +593,6 @@
     let currentPhotoURL = null;
     let yardData = null;
 
-    // Keep these for reference (not used with new PlaceAutocompleteElement)
-    let autocompleteNew = null;
-    let autocompleteEdit = null;
-    let autocompleteNewCustomer = null;
-    let autocompleteEditCustomer = null;
-    let autocompleteYard = null;
-
     function toggleDrawer(open) {
       const sidebar = document.getElementById("sidebar");
       const overlay = document.getElementById("mobileOverlay");
@@ -697,7 +696,13 @@
     }
 
     function buildAddress(street, city, state, zip) {
-      return [street, city, state, zip].filter(p => p && p.trim()).join(", ");
+      // Clean up the address parts
+      const parts = [];
+      if (street && street.trim()) parts.push(street.trim());
+      if (city && city.trim()) parts.push(city.trim());
+      if (state && state.trim()) parts.push(state.trim());
+      if (zip && zip.trim()) parts.push(zip.trim());
+      return parts.join(", ");
     }
 
     function geocodeAddress(address) {
@@ -795,14 +800,28 @@
           const components = place.addressComponents;
           
           for (const comp of components) {
-            if (comp.types.includes("street_number")) street = comp.longText + " " + street;
-            if (comp.types.includes("route")) street += comp.longText;
-            if (comp.types.includes("locality")) city = comp.longText;
-            if (comp.types.includes("administrative_area_level_1")) state = comp.shortText;
-            if (comp.types.includes("postal_code")) zip = comp.longText;
+            const types = comp.types || [];
+            if (types.includes("street_number")) {
+              street = comp.longText + " " + street;
+            }
+            if (types.includes("route")) {
+              street += comp.longText;
+            }
+            if (types.includes("locality")) {
+              city = comp.longText;
+            }
+            if (types.includes("administrative_area_level_1")) {
+              state = comp.shortText;
+            }
+            if (types.includes("postal_code")) {
+              zip = comp.longText;
+            }
           }
           
-          document.getElementById("newCustomerStreet").value = street.trim();
+          // Clean up street
+          street = street.trim();
+          
+          document.getElementById("newCustomerStreet").value = street;
           document.getElementById("newCustomerCity").value = city;
           document.getElementById("newCustomerState").value = state;
           document.getElementById("newCustomerZip").value = zip;
@@ -824,14 +843,27 @@
           const components = place.addressComponents;
           
           for (const comp of components) {
-            if (comp.types.includes("street_number")) street = comp.longText + " " + street;
-            if (comp.types.includes("route")) street += comp.longText;
-            if (comp.types.includes("locality")) city = comp.longText;
-            if (comp.types.includes("administrative_area_level_1")) state = comp.shortText;
-            if (comp.types.includes("postal_code")) zip = comp.longText;
+            const types = comp.types || [];
+            if (types.includes("street_number")) {
+              street = comp.longText + " " + street;
+            }
+            if (types.includes("route")) {
+              street += comp.longText;
+            }
+            if (types.includes("locality")) {
+              city = comp.longText;
+            }
+            if (types.includes("administrative_area_level_1")) {
+              state = comp.shortText;
+            }
+            if (types.includes("postal_code")) {
+              zip = comp.longText;
+            }
           }
           
-          document.getElementById("editCustomerStreet").value = street.trim();
+          street = street.trim();
+          
+          document.getElementById("editCustomerStreet").value = street;
           document.getElementById("editCustomerCity").value = city;
           document.getElementById("editCustomerState").value = state;
           document.getElementById("editCustomerZip").value = zip;
@@ -853,27 +885,33 @@
           const components = place.addressComponents;
           
           for (const comp of components) {
-            if (comp.types.includes("street_number")) street = comp.longText + " " + street;
-            if (comp.types.includes("route")) street += comp.longText;
-            if (comp.types.includes("locality")) city = comp.longText;
-            if (comp.types.includes("administrative_area_level_1")) state = comp.shortText;
-            if (comp.types.includes("postal_code")) zip = comp.longText;
+            const types = comp.types || [];
+            if (types.includes("street_number")) {
+              street = comp.longText + " " + street;
+            }
+            if (types.includes("route")) {
+              street += comp.longText;
+            }
+            if (types.includes("locality")) {
+              city = comp.longText;
+            }
+            if (types.includes("administrative_area_level_1")) {
+              state = comp.shortText;
+            }
+            if (types.includes("postal_code")) {
+              zip = comp.longText;
+            }
           }
           
-          document.getElementById("yardStreet").value = street.trim();
+          street = street.trim();
+          
+          document.getElementById("yardStreet").value = street;
           document.getElementById("yardCity").value = city;
           document.getElementById("yardState").value = state;
           document.getElementById("yardZip").value = zip;
         }
       });
       yardStreetInput.parentNode.insertBefore(yardAutocomplete, yardStreetInput.nextSibling);
-
-      // Keep references
-      autocompleteNew = newAutocomplete;
-      autocompleteEdit = editAutocomplete;
-      autocompleteNewCustomer = newCustomerAutocomplete;
-      autocompleteEditCustomer = editCustomerAutocomplete;
-      autocompleteYard = yardAutocomplete;
     }
 
     function startPlaceOnMap(mode) {
@@ -950,7 +988,7 @@
     }
 
     function startApp() {
-      initGoogleMap();
+      // initGoogleMap is called by the script callback
 
       db.collection("boxes").onSnapshot(snap => {
         boxesData = [];
@@ -1758,6 +1796,7 @@
       const customer = customersData.find(c => c.id === id);
       if (!customer) return;
       
+      // Parse address back into parts
       let street = "", city = "", state = "", zip = "";
       if (customer.address) {
         const parts = customer.address.split(", ").map(p => p.trim());
