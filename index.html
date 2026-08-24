@@ -458,8 +458,22 @@
       <select id="newBoxCustomer"><option value="">— No Customer —</option></select>
       <label>Driver</label>
       <select id="newBoxDriver"><option value="">— Unassigned —</option></select>
-      <label>Address</label>
-      <input type="text" id="newBoxAddress" placeholder="Start typing address..." autocomplete="off" />
+      <label>Street Address *</label>
+      <input type="text" id="newBoxStreet" placeholder="Start typing address..." autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="newBoxCity" placeholder="Katy" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="newBoxState" placeholder="TX" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="newBoxZip" placeholder="77493" />
+        </div>
+      </div>
       <div class="geo-status" id="newGeoStatus"></div>
       <label>Status</label>
       <select id="newBoxStatus">
@@ -497,8 +511,22 @@
       <select id="editBoxCustomer"><option value="">— No Customer —</option></select>
       <label>Driver</label>
       <select id="editBoxDriver"><option value="">— Unassigned —</option></select>
-      <label>Address</label>
-      <input type="text" id="editBoxAddress" autocomplete="off" />
+      <label>Street Address *</label>
+      <input type="text" id="editBoxStreet" autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="editBoxCity" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="editBoxState" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="editBoxZip" />
+        </div>
+      </div>
       <div class="geo-status" id="editGeoStatus"></div>
       <label>Notes</label>
       <textarea id="editBoxNotes" rows="2"></textarea>
@@ -737,11 +765,12 @@
     let currentPhotoURL = null;
     let yardData = null;
 
-    let autocompleteNew = null;
-    let autocompleteEdit = null;
-    let autocompleteNewCustomer = null;
-    let autocompleteEditCustomer = null;
-    let autocompleteYard = null;
+    let autocompleteNewStreet = null;
+    let autocompleteNewBoxStreet = null;
+    let autocompleteEditBoxStreet = null;
+    let autocompleteNewCustomerStreet = null;
+    let autocompleteEditCustomerStreet = null;
+    let autocompleteYardStreet = null;
 
     document.addEventListener('DOMContentLoaded', function() {
       switchView('map');
@@ -896,45 +925,78 @@
         }, 700);
       });
 
-      // 1. ADD BOX - Address Autocomplete
-      const newBoxAddressInput = document.getElementById("newBoxAddress");
-      autocompleteNew = new google.maps.places.Autocomplete(newBoxAddressInput);
-      autocompleteNew.addListener("place_changed", () => {
-        const place = autocompleteNew.getPlace();
-        if (place.geometry) {
-          pendingLatLng = { 
-            lat: place.geometry.location.lat(), 
-            lng: place.geometry.location.lng() 
-          };
-          document.getElementById("newGeoStatus").textContent = "✓ Address found! Pin set precisely.";
-          if (place.formatted_address) {
-            newBoxAddressInput.value = place.formatted_address;
+      // 1. ADD BOX - Street Autocomplete
+      const newBoxStreetInput = document.getElementById("newBoxStreet");
+      autocompleteNewBoxStreet = new google.maps.places.Autocomplete(newBoxStreetInput);
+      autocompleteNewBoxStreet.addListener("place_changed", () => {
+        const place = autocompleteNewBoxStreet.getPlace();
+        if (place && place.address_components) {
+          let street = "", city = "", state = "", zip = "";
+          for (const component of place.address_components) {
+            const types = component.types || [];
+            if (types.includes("street_number")) street = component.long_name + " " + street;
+            if (types.includes("route")) street += component.long_name;
+            if (types.includes("locality")) city = component.long_name;
+            if (types.includes("administrative_area_level_1")) state = component.short_name;
+            if (types.includes("postal_code")) zip = component.long_name;
+          }
+          street = street.trim();
+          document.getElementById("newBoxStreet").value = street;
+          document.getElementById("newBoxCity").value = city;
+          document.getElementById("newBoxState").value = state;
+          document.getElementById("newBoxZip").value = zip;
+          
+          // Geocode for pin placement
+          if (street && city && state && zip) {
+            const fullAddress = buildAddress(street, city, state, zip);
+            geocodeAddress(fullAddress).then(geo => {
+              if (geo) {
+                pendingLatLng = { lat: geo.lat, lng: geo.lng };
+                document.getElementById("newGeoStatus").textContent = "✓ Address found! Pin set precisely.";
+              }
+            });
           }
         }
       });
 
-      // 2. EDIT BOX - Address Autocomplete
-      const editBoxAddressInput = document.getElementById("editBoxAddress");
-      autocompleteEdit = new google.maps.places.Autocomplete(editBoxAddressInput);
-      autocompleteEdit.addListener("place_changed", () => {
-        const place = autocompleteEdit.getPlace();
-        if (place.geometry) {
-          pendingLatLng = { 
-            lat: place.geometry.location.lat(), 
-            lng: place.geometry.location.lng() 
-          };
-          document.getElementById("editGeoStatus").textContent = "✓ Address found! Pin set precisely.";
-          if (place.formatted_address) {
-            editBoxAddressInput.value = place.formatted_address;
+      // 2. EDIT BOX - Street Autocomplete
+      const editBoxStreetInput = document.getElementById("editBoxStreet");
+      autocompleteEditBoxStreet = new google.maps.places.Autocomplete(editBoxStreetInput);
+      autocompleteEditBoxStreet.addListener("place_changed", () => {
+        const place = autocompleteEditBoxStreet.getPlace();
+        if (place && place.address_components) {
+          let street = "", city = "", state = "", zip = "";
+          for (const component of place.address_components) {
+            const types = component.types || [];
+            if (types.includes("street_number")) street = component.long_name + " " + street;
+            if (types.includes("route")) street += component.long_name;
+            if (types.includes("locality")) city = component.long_name;
+            if (types.includes("administrative_area_level_1")) state = component.short_name;
+            if (types.includes("postal_code")) zip = component.long_name;
+          }
+          street = street.trim();
+          document.getElementById("editBoxStreet").value = street;
+          document.getElementById("editBoxCity").value = city;
+          document.getElementById("editBoxState").value = state;
+          document.getElementById("editBoxZip").value = zip;
+          
+          if (street && city && state && zip) {
+            const fullAddress = buildAddress(street, city, state, zip);
+            geocodeAddress(fullAddress).then(geo => {
+              if (geo) {
+                pendingLatLng = { lat: geo.lat, lng: geo.lng };
+                document.getElementById("editGeoStatus").textContent = "✓ Address found! Pin set precisely.";
+              }
+            });
           }
         }
       });
 
       // 3. ADD CUSTOMER - Street Autocomplete
       const newCustomerStreetInput = document.getElementById("newCustomerStreet");
-      autocompleteNewCustomer = new google.maps.places.Autocomplete(newCustomerStreetInput);
-      autocompleteNewCustomer.addListener("place_changed", () => {
-        const place = autocompleteNewCustomer.getPlace();
+      autocompleteNewCustomerStreet = new google.maps.places.Autocomplete(newCustomerStreetInput);
+      autocompleteNewCustomerStreet.addListener("place_changed", () => {
+        const place = autocompleteNewCustomerStreet.getPlace();
         if (place && place.address_components) {
           let street = "", city = "", state = "", zip = "";
           for (const component of place.address_components) {
@@ -955,9 +1017,9 @@
 
       // 4. EDIT CUSTOMER - Street Autocomplete
       const editCustomerStreetInput = document.getElementById("editCustomerStreet");
-      autocompleteEditCustomer = new google.maps.places.Autocomplete(editCustomerStreetInput);
-      autocompleteEditCustomer.addListener("place_changed", () => {
-        const place = autocompleteEditCustomer.getPlace();
+      autocompleteEditCustomerStreet = new google.maps.places.Autocomplete(editCustomerStreetInput);
+      autocompleteEditCustomerStreet.addListener("place_changed", () => {
+        const place = autocompleteEditCustomerStreet.getPlace();
         if (place && place.address_components) {
           let street = "", city = "", state = "", zip = "";
           for (const component of place.address_components) {
@@ -978,9 +1040,9 @@
 
       // 5. YARD SETTINGS - Street Autocomplete
       const yardStreetInput = document.getElementById("yardStreet");
-      autocompleteYard = new google.maps.places.Autocomplete(yardStreetInput);
-      autocompleteYard.addListener("place_changed", () => {
-        const place = autocompleteYard.getPlace();
+      autocompleteYardStreet = new google.maps.places.Autocomplete(yardStreetInput);
+      autocompleteYardStreet.addListener("place_changed", () => {
+        const place = autocompleteYardStreet.getPlace();
         if (place && place.address_components) {
           let street = "", city = "", state = "", zip = "";
           for (const component of place.address_components) {
@@ -1018,7 +1080,6 @@
       
       boxesData.forEach(b => {
         if (b.lat == null || b.lng == null) return;
-        // HIDE "New" boxes on the map
         if (b.boxNum === "New") return;
         
         if (b.status === "Available" && yardData && yardData.lat) {
@@ -1139,11 +1200,10 @@
       const filter = document.getElementById("statusFilter").value;
       
       const filtered = boxesData.filter(b => {
-        // HIDE "New" boxes from the list
         if (b.boxNum === "New") return false;
         if (filter !== "ALL" && b.status !== filter) return false;
         if (!search) return true;
-        const hay = [b.boxNum, b.customer, b.address, b.driver, b.notes].join(" ").toLowerCase();
+        const hay = [b.boxNum, b.customer, b.street, b.city, b.state, b.zip, b.driver, b.notes].join(" ").toLowerCase();
         return hay.includes(search);
       });
       
@@ -1153,13 +1213,14 @@
       if (filtered.length === 0) {
         listEl.innerHTML = '<div class="empty-msg"><h3>No boxes found</h3></div>';
       } else {
-        listEl.innerHTML = filtered.map(b =>
-          `<div class="box-item ${b.id === activeBoxId ? "active" : ""}" onclick="selectBox('${b.id}')">
+        listEl.innerHTML = filtered.map(b => {
+          const fullAddress = buildAddress(b.street, b.city, b.state, b.zip);
+          return `<div class="box-item ${b.id === activeBoxId ? "active" : ""}" onclick="selectBox('${b.id}')">
             <div class="box-item-title"><span class="dot dot-${b.status || "Available"}"></span> #${b.boxNum}</div>
-            <div class="box-item-addr">${b.address || "No address"}</div>
+            <div class="box-item-addr">${fullAddress || "No address"}</div>
             <div class="box-item-status">${statusLabel(b.status)} - ${b.customer || ""}</div>
-          </div>`
-        ).join("");
+          </div>`;
+        }).join("");
       }
       refreshMarkers();
       renderDetail();
@@ -1173,7 +1234,7 @@
       const alertContainer = document.getElementById("serviceAlertContainer");
       const serviceBoxes = boxesData.filter(b => 
         (b.status === "Pickup" || b.status === "Exchange" || b.status === "Delivery") &&
-        b.boxNum !== "New"  // HIDE "New" boxes from service tab
+        b.boxNum !== "New"
       );
       
       if (serviceBoxes.length === 0) {
@@ -1190,6 +1251,7 @@
         const btnClass = (b.status === "Pickup") ? "btn-act-orange" : (b.status === "Exchange") ? "btn-act-blue" : "btn-act-red";
         
         const driverLine = (b.driver && b.driver !== "Unassigned") ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
+        const fullAddress = buildAddress(b.street, b.city, b.state, b.zip);
         
         const noteHtml = b.notes ? 
           `<div class="notes-box"><strong>📝 DISPATCH NOTE:</strong><br>${b.notes}</div>` : '';
@@ -1197,7 +1259,7 @@
         return `<div class="box-card ${b.status || ""}" onclick="selectBox('${b.id}')">
           <h3>Box #${b.boxNum || "New"} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
-          <p><strong>Address:</strong> ${b.address || "N/A"}</p>
+          <p><strong>Address:</strong> ${fullAddress || "N/A"}</p>
           ${driverLine}
           ${noteHtml}
           <div style="margin-top:12px;" onclick="event.stopPropagation();">
@@ -1221,7 +1283,8 @@
         return;
       }
       
-      const message = `NIAM TRACK: Box #${box.boxNum} is ${statusLabel(box.status)} for ${box.customer || "Customer"} at ${box.address || "Address"}. ${box.notes ? "Note: " + box.notes : ""}`;
+      const fullAddress = buildAddress(box.street, box.city, box.state, box.zip);
+      const message = `NIAM TRACK: Box #${box.boxNum} is ${statusLabel(box.status)} for ${box.customer || "Customer"} at ${fullAddress || "Address"}. ${box.notes ? "Note: " + box.notes : ""}`;
       
       window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
       showToast("📱 Opening SMS...");
@@ -1245,12 +1308,11 @@
     }
 
     // ============================================================
-    // RENDER BOXES - HIDE "New" boxes AND make them clickable!
+    // RENDER BOXES - HIDE "New" boxes, show full address
     // ============================================================
     function renderBoxes() {
       const el = document.getElementById("boxesList");
       
-      // HIDE "New" boxes from the boxes tab
       const filteredBoxes = boxesData.filter(b => b.boxNum !== "New");
       
       if (filteredBoxes.length === 0) { 
@@ -1261,19 +1323,19 @@
       el.innerHTML = filteredBoxes.map(b => {
         const shouldShowDriver = (b.driver && b.driver !== "Unassigned" && (b.status !== "Available" && b.status !== "Customer"));
         const driverLine = shouldShowDriver ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
+        const fullAddress = buildAddress(b.street, b.city, b.state, b.zip);
         
-        // Each box is clickable and opens the detail panel
         return `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')" style="cursor:pointer;">
           <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
-          <p><strong>Address:</strong> ${b.address || "N/A"}</p>
+          <p><strong>Address:</strong> ${fullAddress || "N/A"}</p>
           ${driverLine}
         </div>`;
       }).join("");
     }
 
     // ============================================================
-    // RENDER CUSTOMERS - HIDE "New" boxes from customer cards
+    // RENDER CUSTOMERS
     // ============================================================
     function renderCustomers() {
       const el = document.getElementById("customersList");
@@ -1287,7 +1349,6 @@
       if (filtered.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No customers found</h3></div>'; return; }
       
       el.innerHTML = filtered.map(c => {
-        // HIDE "New" boxes from customer cards
         const customerBoxes = boxesData.filter(b => 
           (b.customer || "").toLowerCase() === c.name.toLowerCase() &&
           b.boxNum !== "New"
@@ -1349,6 +1410,10 @@
         size: customer.boxSize || "Not specified",
         customer: customer.name,
         driver: "Unassigned",
+        street: "",
+        city: "",
+        state: "",
+        zip: "",
         address: customer.address,
         lat: null, lng: null,
         status: "Delivery",
@@ -1473,26 +1538,22 @@
       }
       
       let lat = null, lng = null;
-      if (deliveryBox.address) {
-        const geo = await geocodeAddress(deliveryBox.address);
+      const customer = customersData.find(c => c.name === deliveryBox.customer);
+      if (customer && customer.address) {
+        const geo = await geocodeAddress(customer.address);
         if (geo) {
           lat = geo.lat;
           lng = geo.lng;
-        } else {
-          const customer = customersData.find(c => c.name === deliveryBox.customer);
-          if (customer && customer.address) {
-            const geo2 = await geocodeAddress(customer.address);
-            if (geo2) {
-              lat = geo2.lat;
-              lng = geo2.lng;
-            }
-          }
         }
       }
       
       const updateData = {
         customer: deliveryBox.customer || "",
-        address: deliveryBox.address || "",
+        street: "",
+        city: "",
+        state: "",
+        zip: "",
+        address: customer ? customer.address : "",
         status: "Customer",
         driver: "Unassigned",
         lat: lat,
@@ -1537,6 +1598,7 @@
       const activities = (box.activity || []).slice().reverse().slice(0, 6);
       currentPhotoURL = box.photoURL || null;
       const isAdmin = currentUserData && currentUserData.role === 'admin';
+      const fullAddress = buildAddress(box.street, box.city, box.state, box.zip);
 
       content.innerHTML = `
         <div class="detail-title"><span class="dot dot-${box.status || "Available"}"></span> BOX #${box.boxNum || "New"} <span class="badge badge-${box.status || "Available"}">${statusLabel(box.status)}</span></div>
@@ -1544,7 +1606,7 @@
           <div class="info-grid">
             <div><div class="info-label">Customer</div><div class="info-val">${box.customer || "—"}</div></div>
             <div><div class="info-label">Driver</div><div class="info-val">${box.driver || "Unassigned"}</div></div>
-            <div><div class="info-label">Address</div><div class="info-val">${box.address || "—"}</div></div>
+            <div><div class="info-label">Address</div><div class="info-val">${fullAddress || "—"}</div></div>
             <div><div class="info-label">Size</div><div class="info-val">${box.size || "—"} Yard</div></div>
             <div><div class="info-label">Notes</div><div class="info-val">${box.notes || "None"}</div></div>
           </div>
@@ -1572,23 +1634,18 @@
     }
 
     // ============================================================
-    // SELECT BOX - Fixed to work from ANY tab!
+    // SELECT BOX
     // ============================================================
     function selectBox(id) {
       activeBoxId = id;
       
-      // Show the detail panel on mobile
       if (window.innerWidth <= 900) {
         document.getElementById("detailPanel").classList.add("show");
       }
       
-      // Make sure detail panel is visible on desktop
       document.getElementById("detailPanel").style.display = "block";
-      
-      // Render the detail panel directly (doesn't depend on current view)
       renderDetail();
       
-      // If we're on the map view, also pan to the box
       if (currentView === "map") {
         const box = boxesData.find(b => b.id === id);
         if (box && gMap && box.lat != null && box.lng != null) {
@@ -1597,7 +1654,6 @@
         }
       }
       
-      // Close the sidebar drawer if open
       toggleDrawer(false);
     }
 
@@ -1612,12 +1668,20 @@
       if (newStatus === "Available") {
         if (yardData) {
           updateData.customer = "Yard";
+          updateData.street = yardData.street || "";
+          updateData.city = yardData.city || "";
+          updateData.state = yardData.state || "";
+          updateData.zip = yardData.zip || "";
           updateData.address = yardData.formattedAddress || buildAddress(yardData.street, yardData.city, yardData.state, yardData.zip);
           updateData.driver = "Unassigned";
           updateData.lat = yardData.lat;
           updateData.lng = yardData.lng;
         } else {
           updateData.customer = "Yard";
+          updateData.street = "";
+          updateData.city = "";
+          updateData.state = "";
+          updateData.zip = "";
           updateData.address = "Yard";
           updateData.driver = "Unassigned";
           updateData.lat = null;
@@ -1769,7 +1833,10 @@
       populateCustomerSelects();
       document.getElementById("newBoxNum").value = "";
       document.getElementById("newBoxCustomer").value = "";
-      document.getElementById("newBoxAddress").value = "";
+      document.getElementById("newBoxStreet").value = "";
+      document.getElementById("newBoxCity").value = "";
+      document.getElementById("newBoxState").value = "TX";
+      document.getElementById("newBoxZip").value = "";
       document.getElementById("newBoxNotes").value = "";
       document.getElementById("newBoxStatus").value = "Delivery";
       document.getElementById("newGeoStatus").textContent = "";
@@ -1780,6 +1847,9 @@
       openModal("addBoxModal");
     }
 
+    // ============================================================
+    // SAVE BOX - Uses split address fields
+    // ============================================================
     async function saveBox() {
       const boxNum = document.getElementById("newBoxNum").value.trim();
       if (!boxNum) return alert("Box number is required");
@@ -1787,14 +1857,28 @@
       const duplicateCheck = boxesData.some(b => b.boxNum === boxNum);
       if (duplicateCheck) return alert("A box with this number already exists!");
       
-      const address = document.getElementById("newBoxAddress").value.trim();
+      const street = document.getElementById("newBoxStreet").value.trim();
+      const city = document.getElementById("newBoxCity").value.trim();
+      const state = document.getElementById("newBoxState").value.trim();
+      const zip = document.getElementById("newBoxZip").value.trim();
+      
+      if (!street || !city || !state || !zip) {
+        return alert("Please complete the Street, City, State, and ZIP fields.");
+      }
+      
+      const fullAddress = buildAddress(street, city, state, zip);
+      
       const btn = document.getElementById("saveBoxBtn");
       btn.disabled = true; btn.textContent = "Saving...";
 
-      if (!pendingLatLng) {
-        const geo = await geocodeAddress(address);
+      let lat = pendingLatLng ? pendingLatLng.lat : null;
+      let lng = pendingLatLng ? pendingLatLng.lng : null;
+      
+      if (!lat || !lng) {
+        const geo = await geocodeAddress(fullAddress);
         if (geo) {
-          pendingLatLng = { lat: geo.lat, lng: geo.lng };
+          lat = geo.lat;
+          lng = geo.lng;
           document.getElementById("newGeoStatus").textContent = "✓ Address located!";
         }
       }
@@ -1806,9 +1890,13 @@
           size: document.getElementById("newBoxSize").value,
           customer: document.getElementById("newBoxCustomer").value || "Yard",
           driver: document.getElementById("newBoxDriver").value || "Unassigned",
-          address: address || "Yard",
-          lat: pendingLatLng ? pendingLatLng.lat : null,
-          lng: pendingLatLng ? pendingLatLng.lng : null,
+          street: street,
+          city: city,
+          state: state,
+          zip: zip,
+          address: fullAddress,
+          lat: lat,
+          lng: lng,
           status: document.getElementById("newBoxStatus").value,
           notes: document.getElementById("newBoxNotes").value.trim(),
           datePlaced: today,
@@ -1833,7 +1921,10 @@
       document.getElementById("editBoxStatus").value = box.status || "Available";
       document.getElementById("editBoxCustomer").value = box.customer || "";
       document.getElementById("editBoxDriver").value = box.driver || "";
-      document.getElementById("editBoxAddress").value = box.address || "";
+      document.getElementById("editBoxStreet").value = box.street || "";
+      document.getElementById("editBoxCity").value = box.city || "";
+      document.getElementById("editBoxState").value = box.state || "";
+      document.getElementById("editBoxZip").value = box.zip || "";
       document.getElementById("editBoxNotes").value = box.notes || "";
       document.getElementById("editGeoStatus").textContent = (box.lat != null) ? "Currently located on map" : "Location not set";
       document.getElementById("editBoxError").style.display = "none";
@@ -1846,8 +1937,18 @@
       if (!activeBoxId) return;
       
       const newBoxNum = document.getElementById("editBoxNum").value.trim();
-      const address = document.getElementById("editBoxAddress").value.trim();
+      const street = document.getElementById("editBoxStreet").value.trim();
+      const city = document.getElementById("editBoxCity").value.trim();
+      const state = document.getElementById("editBoxState").value.trim();
+      const zip = document.getElementById("editBoxZip").value.trim();
       const newStatus = document.getElementById("editBoxStatus").value;
+      
+      if (!street || !city || !state || !zip) {
+        return alert("Please complete the Street, City, State, and ZIP fields.");
+      }
+      
+      const fullAddress = buildAddress(street, city, state, zip);
+      
       const btn = document.getElementById("updateBoxBtn");
       btn.disabled = true; btn.textContent = "Updating...";
 
@@ -1857,10 +1958,14 @@
         return alert("A box with this number already exists!");
       }
 
-      if (!pendingLatLng) {
-        const geo = await geocodeAddress(address);
+      let lat = pendingLatLng ? pendingLatLng.lat : null;
+      let lng = pendingLatLng ? pendingLatLng.lng : null;
+      
+      if (!lat || !lng) {
+        const geo = await geocodeAddress(fullAddress);
         if (geo) {
-          pendingLatLng = { lat: geo.lat, lng: geo.lng };
+          lat = geo.lat;
+          lng = geo.lng;
           document.getElementById("editGeoStatus").textContent = "✓ Address located!";
         }
       }
@@ -1870,11 +1975,15 @@
         status: newStatus,
         customer: document.getElementById("editBoxCustomer").value || "Yard",
         driver: document.getElementById("editBoxDriver").value || "Unassigned",
-        address: address || "Yard",
+        street: street,
+        city: city,
+        state: state,
+        zip: zip,
+        address: fullAddress,
         notes: document.getElementById("editBoxNotes").value.trim(),
         activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Updated to " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Admin" })
       };
-      if (pendingLatLng) { updateData.lat = pendingLatLng.lat; updateData.lng = pendingLatLng.lng; }
+      if (lat && lng) { updateData.lat = lat; updateData.lng = lng; }
 
       try {
         await db.collection("boxes").doc(activeBoxId).update(updateData);
