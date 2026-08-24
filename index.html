@@ -124,8 +124,8 @@
     .customers-view, .drivers-view, .users-view, .boxes-view, .service-view, .jobs-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
     .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active, .service-view.active, .jobs-view.active { display: block; }
 
-    .box-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 8px solid #ccc; cursor: pointer; }
-    .box-card:hover { background: #f8fafc; }
+    .box-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 8px solid #ccc; cursor: pointer; transition: background 0.15s; }
+    .box-card:hover { background: #f0fdf4; }
     .box-card.Customer { border-left-color: #16a34a; }
     .box-card.Pickup { border-left-color: #d97706; }
     .box-card.Exchange { border-left-color: #2563eb; }
@@ -749,7 +749,7 @@
     let jobsData = [];
     let activeBoxId = null;
     let activeCustomerId = null;
-    let pendingJobId = null;           // Track which job is being completed
+    let pendingJobId = null;           
     let pendingActionBoxId = null;
     let pendingActionStatus = null;
     let pendingDeliveryCustomerId = null;
@@ -1182,12 +1182,16 @@
     function renderApp() {
       const search = (document.getElementById("searchInput").value || "").toLowerCase().trim();
       const filter = document.getElementById("statusFilter").value;
+      
+      // FILTER: Hide "New" boxes from the main list
       const filtered = boxesData.filter(b => {
+        if (b.boxNum === "New") return false;  // ← Hide dummy boxes
         if (filter !== "ALL" && b.status !== filter) return false;
         if (!search) return true;
         const hay = [b.boxNum, b.customer, b.address, b.driver, b.notes].join(" ").toLowerCase();
         return hay.includes(search);
       });
+      
       document.getElementById("boxCountTitle").textContent = "BOXES (" + filtered.length + ")";
       const listEl = document.getElementById("boxList");
       
@@ -1213,7 +1217,6 @@
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
       
-      // Only show pending jobs (not completed)
       const pendingJobs = jobsData.filter(j => j.status === "pending");
       
       if (pendingJobs.length === 0) {
@@ -1289,21 +1292,17 @@
       }
       
       if (jobType === "delivery") {
-        // For delivery, driver needs to enter a box number
         pendingJobId = jobId;
         openModal("boxNumberModal");
       } else {
-        // For pickup/exchange, just complete the job and update the box
         if (!confirm(`Complete this ${jobType} job for ${job.customer}?`)) return;
         
-        // Find the box associated with this job
         const box = boxesData.find(b => b.id === job.boxId);
         if (!box) {
           alert("Associated box not found");
           return;
         }
         
-        // Update the box status
         const newStatus = jobType === "pickup" ? "Available" : "Customer";
         db.collection("boxes").doc(job.boxId).update({
           status: newStatus,
@@ -1313,7 +1312,6 @@
             by: currentUser ? (currentUser.displayName || "User") : "Driver"
           })
         }).then(() => {
-          // Mark job as completed
           db.collection("jobs").doc(jobId).update({
             status: "completed",
             completedAt: new Date().toLocaleString(),
@@ -1346,7 +1344,6 @@
         return;
       }
 
-      // Check if box exists
       const boxExists = boxesData.some(b => b.boxNum === boxNum);
       
       if (!boxExists) {
@@ -1359,7 +1356,6 @@
         return;
       }
 
-      // Check if box is available
       const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
       
       if (!existingBox) {
@@ -1375,7 +1371,6 @@
 
       clearBoxErrors();
       
-      // Geocode the customer's address
       let lat = null, lng = null;
       if (job.address) {
         const geo = await geocodeAddress(job.address);
@@ -1385,7 +1380,6 @@
         }
       }
       
-      // Update the box with customer info
       const updateData = {
         customer: job.customer || "",
         address: job.address || "",
@@ -1404,7 +1398,6 @@
       try {
         await db.collection("boxes").doc(existingBox.id).update(updateData);
         
-        // Mark job as completed
         await db.collection("jobs").doc(pendingJobId).update({
           status: "completed",
           assignedBox: boxNum,
@@ -1423,7 +1416,7 @@
     }
 
     // ============================================================
-    // SEND FOR DELIVERY - Creates a job (NOT a dummy box!)
+    // SEND FOR DELIVERY - Creates a job
     // ============================================================
     function openDeliveryNotes(customerId) {
       const customer = customersData.find(c => c.id === customerId);
@@ -1448,7 +1441,6 @@
       
       const note = document.getElementById("deliveryNoteText").value.trim();
       
-      // Create a JOB (not a dummy box!)
       db.collection("jobs").add({
         customer: customer.name,
         address: customer.address,
@@ -1461,13 +1453,12 @@
         closeModal("deliveryNotesModal");
         pendingDeliveryCustomerId = null;
         showToast("✅ Delivery Scheduled!");
-        // Switch to service tab so dispatcher can see it
         switchView('service');
       }).catch(e => alert("Error: " + e.message));
     }
 
     // ============================================================
-    // EXISTING FUNCTIONS (mostly unchanged)
+    // EXISTING FUNCTIONS
     // ============================================================
     function openDispatchNotes(boxId, status) {
       const box = boxesData.find(b => b.id === boxId);
@@ -1476,10 +1467,8 @@
         return;
       }
       
-      // For existing boxes, create a job instead of updating directly
       const jobType = status === "Pickup" ? "pickup" : "exchange";
       
-      // Create a job for this box
       db.collection("jobs").add({
         customer: box.customer || "Unknown",
         address: box.address || "",
@@ -1491,7 +1480,6 @@
         createdAt: new Date().toLocaleString(),
         createdBy: currentUser ? (currentUser.displayName || "User") : "Office"
       }).then(() => {
-        // Update the box status
         db.collection("boxes").doc(boxId).update({
           status: status,
           activity: firebase.firestore.FieldValue.arrayUnion({
@@ -1506,15 +1494,27 @@
       }).catch(e => alert("Error creating job: " + e.message));
     }
 
+    // ============================================================
+    // RENDER BOXES - FIXED: Hide "New" boxes AND make them clickable!
+    // ============================================================
     function renderBoxes() {
       const el = document.getElementById("boxesList");
-      // Filter out "Completed" boxes from the main list
-      const activeBoxes = boxesData.filter(b => b.status !== "Completed");
-      if (activeBoxes.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>'; return; }
+      
+      // FILTER: Hide "New" boxes and "Completed" boxes
+      const activeBoxes = boxesData.filter(b => 
+        b.status !== "Completed" && b.boxNum !== "New"
+      );
+      
+      if (activeBoxes.length === 0) {
+        el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>';
+        return;
+      }
+      
       el.innerHTML = activeBoxes.map(b => {
         const shouldShowDriver = (b.driver && b.driver !== "Unassigned" && (b.status !== "Available" && b.status !== "Customer"));
         const driverLine = shouldShowDriver ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
         
+        // Make each box clickable - calls selectBox()
         return `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')">
           <h3>Box #${b.boxNum || "New"} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
