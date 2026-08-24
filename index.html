@@ -94,7 +94,6 @@
     .customers-view, .drivers-view, .users-view, .boxes-view, .service-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
     .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active, .service-view.active { display: block; }
 
-    /* Box Cards List */
     .box-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 8px solid #ccc; cursor: pointer; }
     .box-card:hover { background: #f8fafc; }
     .box-card.Customer { border-left-color: #16a34a; }
@@ -105,26 +104,20 @@
     .box-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 10px; }
     .box-card p { font-size: 0.9rem; color: #475569; margin-bottom: 6px; }
 
-    /* Service Alert Banner */
     .service-alert { background: #dc2626; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 1.1rem; font-weight: 800; }
 
-    /* Notes Section in Service Tab */
     .notes-box { background: #fef9c3; border: 1px solid #fde047; border-left: 5px solid #eab308; padding: 10px; border-radius: 6px; margin-top: 10px; margin-bottom: 10px; }
     .notes-box strong { color: #854d0e; }
     .notes-btn { background: #fef9c3; border: 1px dashed #eab308; color: #854d0e; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 0.8rem; margin-top: 8px; }
 
-    /* Customer Cards */
     .customer-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     .customer-card h3 { font-size: 1.1rem; font-weight: 800; }
     .customer-card p { font-size: 0.85rem; color: #64748b; }
 
-    /* Search Bar in Customers */
     .customer-search { width: 100%; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; }
 
-    /* Duplicate Error Message */
     .error-message { display: none; background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85rem; font-weight: 700; text-align: center; }
 
-    /* Toast Notification */
     .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #16a34a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; transition: transform 0.3s ease; opacity: 0; }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
@@ -159,6 +152,20 @@
     .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2999; }
     .mobile-overlay.active { display: block; }
 
+    /* FIX: Address row grid layout for modals */
+    .address-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 0.7fr 0.8fr;
+      gap: 8px;
+    }
+    .address-row-3 > div {
+      display: flex;
+      flex-direction: column;
+    }
+    .address-row-3 > div label {
+      margin-bottom: 4px;
+    }
+
     @media (max-width: 900px) {
       .menu-btn { display: block; }
       aside { position: fixed; left: -250px; top: 0; bottom: 0; transition: left 0.3s; z-index: 3001; }
@@ -172,6 +179,7 @@
       .detail-panel { position: absolute; top: 56px; left: 0; right: 0; bottom: 0; height: auto; max-height: none; z-index: 800; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease; }
       .detail-panel.show { transform: translateY(0); }
       .fab-menu { bottom: 20px; }
+      .address-row-3 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -251,7 +259,6 @@
         </div>
       </div>
 
-      <!-- Service View -->
       <div class="service-view" id="serviceView">
         <div id="serviceAlertContainer"></div>
         <div id="serviceList"></div>
@@ -432,7 +439,6 @@
     </div>
   </div>
 
-  <!-- DISPATCH NOTES MODAL -->
   <div id="dispatchNotesModal" class="modal-overlay">
     <div class="modal">
       <h3 id="dispatchModalTitle">Add Dispatch Notes</h3>
@@ -445,7 +451,6 @@
     </div>
   </div>
 
-  <!-- YARD SETTINGS MODAL -->
   <div id="yardSettingsModal" class="modal-overlay">
     <div class="modal">
       <h3>Set Yard Location</h3>
@@ -474,7 +479,6 @@
     </div>
   </div>
 
-  <!-- Box Number Input Modal -->
   <div id="boxNumberModal" class="modal-overlay">
     <div class="modal">
       <h3>Enter Box Number</h3>
@@ -1157,77 +1161,114 @@
       }
     }
 
-    // FIXED: Confirm delivery now geocodes the address and MOVES the pin!
-    function confirmCompleteDelivery() {
+    // ============================================================
+    // FIXED: confirmCompleteDelivery - NOW GEOCODES THE ADDRESS!
+    // ============================================================
+    async function confirmCompleteDelivery() {
       const boxNum = document.getElementById("deliveredBoxNum").value.trim();
       if (!boxNum) return alert("Please enter the box number");
       
-      if (pendingDeliveryBoxId) {
-        const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
-        
-        db.collection("boxes").doc(pendingDeliveryBoxId).delete().then(async () => {
-          const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
-          
-          if (existingBox) {
-            // Geocode the address so we can move the pin
-            let lat = null, lng = null;
-            if (deliveryBox && deliveryBox.address) {
-              const geo = await geocodeAddress(deliveryBox.address);
-              if (geo) {
-                lat = geo.lat;
-                lng = geo.lng;
-              }
-            }
-            
-            db.collection("boxes").doc(existingBox.id).update({
-              customer: deliveryBox ? deliveryBox.customer : "",
-              address: deliveryBox ? deliveryBox.address : "",
-              status: "Customer",
-              lat: lat, // Updates the pin's GPS coordinates!
-              lng: lng,
-              activity: firebase.firestore.FieldValue.arrayUnion({
-                time: new Date().toLocaleString(),
-                text: "Delivered Box #" + boxNum,
-                by: currentUser ? (currentUser.displayName || "User") : "Driver"
-              })
-            }).then(() => showToast("✅ Delivery Completed!")).catch(e => alert("Error updating box: " + e.message));
-          } else {
-            // If no physical box with that number exists, create a new one
-            let lat = null, lng = null;
-            if (deliveryBox && deliveryBox.address) {
-              const geo = await geocodeAddress(deliveryBox.address);
-              if (geo) {
-                lat = geo.lat;
-                lng = geo.lng;
-              }
-            }
-            
-            db.collection("boxes").add({
-              boxNum: boxNum,
-              size: deliveryBox ? deliveryBox.size : "",
-              customer: deliveryBox ? deliveryBox.customer : "",
-              driver: deliveryBox ? deliveryBox.driver : "Unassigned",
-              address: deliveryBox ? deliveryBox.address : "",
-              lat: lat, // Sets the pin's GPS coordinates!
-              lng: lng,
-              status: "Customer",
-              notes: deliveryBox ? deliveryBox.notes : "",
-              datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-              activity: [{
-                time: new Date().toLocaleString(),
-                text: "Delivered Box #" + boxNum,
-                by: currentUser ? (currentUser.displayName || "User") : "Driver"
-              }],
-              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              createdBy: currentUser ? currentUser.uid : null
-            }).then(() => showToast("✅ Delivery Completed!")).catch(e => alert("Error creating box: " + e.message));
-          }
-          
-          closeModal("boxNumberModal");
-          pendingDeliveryBoxId = null;
-          document.getElementById("deliveredBoxNum").value = "";
-        }).catch(e => alert("Error deleting temporary job: " + e.message));
+      if (!pendingDeliveryBoxId) return alert("No delivery in progress");
+      
+      const deliveryBox = boxesData.find(b => b.id === pendingDeliveryBoxId);
+      if (!deliveryBox) return alert("Delivery job not found");
+      
+      // 1️⃣ First, delete the delivery job
+      try {
+        await db.collection("boxes").doc(pendingDeliveryBoxId).delete();
+      } catch (e) {
+        alert("Error removing delivery job: " + e.message);
+        return;
       }
+      
+      // 2️⃣ Find the physical box (should be "Available")
+      const existingBox = boxesData.find(b => b.boxNum === boxNum && b.status === "Available");
+      
+      if (existingBox) {
+        // 3️⃣ Geocode the CUSTOMER's address to get the actual coordinates
+        let lat = null, lng = null;
+        if (deliveryBox.address) {
+          const geo = await geocodeAddress(deliveryBox.address);
+          if (geo) {
+            lat = geo.lat;
+            lng = geo.lng;
+          } else {
+            // Fallback: if geocoding fails, try using the customer's address from the customers collection
+            const customer = customersData.find(c => c.name === deliveryBox.customer);
+            if (customer && customer.address) {
+              const geo2 = await geocodeAddress(customer.address);
+              if (geo2) {
+                lat = geo2.lat;
+                lng = geo2.lng;
+              }
+            }
+          }
+        }
+        
+        // 4️⃣ Update the box with the customer info AND the new coordinates
+        const updateData = {
+          customer: deliveryBox.customer || "",
+          address: deliveryBox.address || "",
+          status: "Customer",
+          driver: "Unassigned",
+          lat: lat,
+          lng: lng,
+          notes: deliveryBox.notes || "",
+          activity: firebase.firestore.FieldValue.arrayUnion({
+            time: new Date().toLocaleString(),
+            text: "Delivered Box #" + boxNum + " to " + (deliveryBox.customer || "customer"),
+            by: currentUser ? (currentUser.displayName || "User") : "Driver"
+          })
+        };
+        
+        try {
+          await db.collection("boxes").doc(existingBox.id).update(updateData);
+          showToast("✅ Delivery Completed! Pin moved to customer address.");
+        } catch (e) {
+          alert("Error updating box: " + e.message);
+        }
+        
+      } else {
+        // No existing box with that number - create a new one
+        let lat = null, lng = null;
+        if (deliveryBox.address) {
+          const geo = await geocodeAddress(deliveryBox.address);
+          if (geo) {
+            lat = geo.lat;
+            lng = geo.lng;
+          }
+        }
+        
+        try {
+          await db.collection("boxes").add({
+            boxNum: boxNum,
+            size: deliveryBox.size || "",
+            customer: deliveryBox.customer || "",
+            driver: "Unassigned",
+            address: deliveryBox.address || "",
+            lat: lat,
+            lng: lng,
+            status: "Customer",
+            notes: deliveryBox.notes || "",
+            datePlaced: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            activity: [{
+              time: new Date().toLocaleString(),
+              text: "Delivered Box #" + boxNum + " to " + (deliveryBox.customer || "customer"),
+              by: currentUser ? (currentUser.displayName || "User") : "Driver"
+            }],
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdBy: currentUser ? currentUser.uid : null
+          });
+          showToast("✅ New Box Created at Customer Location!");
+        } catch (e) {
+          alert("Error creating box: " + e.message);
+        }
+      }
+      
+      // 5️⃣ Clean up
+      closeModal("boxNumberModal");
+      pendingDeliveryBoxId = null;
+      document.getElementById("deliveredBoxNum").value = "";
     }
 
     function renderDetail() {
