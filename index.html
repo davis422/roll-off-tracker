@@ -1785,35 +1785,66 @@
       openModal("addBoxModal");
     }
 
+    // ============================================================
+    // SAVE BOX - with auto-fill from customer
+    // ============================================================
     async function saveBox() {
       const boxNum = document.getElementById("newBoxNum").value.trim();
       if (!boxNum) return alert("Box number is required");
       const duplicateCheck = boxesData.some(b => b.boxNum === boxNum);
       if (duplicateCheck) return alert("A box with this number already exists!");
-      const street = document.getElementById("newBoxStreet").value.trim();
-      const city = document.getElementById("newBoxCity").value.trim();
-      const state = document.getElementById("newBoxState").value.trim();
-      const zip = document.getElementById("newBoxZip").value.trim();
+      
+      const customerName = document.getElementById("newBoxCustomer").value;
+      let street = document.getElementById("newBoxStreet").value.trim();
+      let city = document.getElementById("newBoxCity").value.trim();
+      let state = document.getElementById("newBoxState").value.trim();
+      let zip = document.getElementById("newBoxZip").value.trim();
+
+      // Auto-fill from customer if address fields are empty and customer is selected
+      if (customerName && (!street || !city || !state || !zip)) {
+        const customer = customersData.find(c => c.name === customerName);
+        if (customer && customer.address) {
+          const parts = customer.address.split(", ").map(s => s.trim());
+          street = parts[0] || "";
+          city = parts[1] || "";
+          state = parts[2] || "";
+          zip = parts[3] || "";
+          document.getElementById("newBoxStreet").value = street;
+          document.getElementById("newBoxCity").value = city;
+          document.getElementById("newBoxState").value = state;
+          document.getElementById("newBoxZip").value = zip;
+        }
+      }
+
       if (!street || !city || !state || !zip) {
         return alert("Please complete the Street, City, State, and ZIP fields.");
       }
+      
       const fullAddress = buildAddress(street, city, state, zip);
       const btn = document.getElementById("saveBoxBtn");
       btn.disabled = true; btn.textContent = "Saving...";
+
       let lat = pendingLatLng ? pendingLatLng.lat : null;
       let lng = pendingLatLng ? pendingLatLng.lng : null;
       if (!lat || !lng) {
         const geo = await geocodeAddress(fullAddress);
         if (geo) { lat = geo.lat; lng = geo.lng; document.getElementById("newGeoStatus").textContent = "✓ Address located!"; }
       }
+
       try {
         const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         await db.collection("boxes").add({
-          boxNum, size: document.getElementById("newBoxSize").value,
-          customer: document.getElementById("newBoxCustomer").value || "Yard",
+          boxNum: boxNum,
+          size: document.getElementById("newBoxSize").value,
+          customer: customerName || "Yard",
           driver: document.getElementById("newBoxDriver").value || "Unassigned",
-          street, city, state, zip, address: fullAddress,
-          lat, lng,
+          street: street,
+          city: city,
+          state: state,
+          zip: zip,
+          address: fullAddress,
+          lat: lat,
+          lng: lng,
           status: document.getElementById("newBoxStatus").value,
           notes: document.getElementById("newBoxNotes").value.trim(),
           datePlaced: today,
@@ -1829,6 +1860,9 @@
       finally { btn.disabled = false; btn.textContent = "Save Box"; }
     }
 
+    // ============================================================
+    // EDIT BOX - sync address from customer
+    // ============================================================
     function openEditModal() {
       const box = boxesData.find(b => b.id === activeBoxId);
       if (!box) return;
@@ -1850,43 +1884,87 @@
       openModal("editBoxModal");
     }
 
+    // ============================================================
+    // COMMIT BOX UPDATE - sync address from customer
+    // ============================================================
     async function commitBoxUpdate() {
       if (!activeBoxId) return;
+      
       const newBoxNum = document.getElementById("editBoxNum").value.trim();
-      const street = document.getElementById("editBoxStreet").value.trim();
-      const city = document.getElementById("editBoxCity").value.trim();
-      const state = document.getElementById("editBoxState").value.trim();
-      const zip = document.getElementById("editBoxZip").value.trim();
       const newStatus = document.getElementById("editBoxStatus").value;
-      if (!street || !city || !state || !zip) {
-        return alert("Please complete the Street, City, State, and ZIP fields.");
-      }
-      const fullAddress = buildAddress(street, city, state, zip);
+      const newCustomer = document.getElementById("editBoxCustomer").value;
+      const newDriver = document.getElementById("editBoxDriver").value;
+      const notes = document.getElementById("editBoxNotes").value.trim();
+      
       const btn = document.getElementById("updateBoxBtn");
       btn.disabled = true; btn.textContent = "Updating...";
+
       const duplicateCheck = boxesData.some(b => b.boxNum === newBoxNum && b.id !== activeBoxId);
       if (duplicateCheck) {
         btn.disabled = false; btn.textContent = "Update Box";
         return alert("A box with this number already exists!");
       }
-      let lat = pendingLatLng ? pendingLatLng.lat : null;
-      let lng = pendingLatLng ? pendingLatLng.lng : null;
-      if (!lat || !lng) {
-        const geo = await geocodeAddress(fullAddress);
-        if (geo) { lat = geo.lat; lng = geo.lng; document.getElementById("editGeoStatus").textContent = "✓ Address located!"; }
-      }
-      const updateData = {
-        boxNum: newBoxNum, status: newStatus,
-        customer: document.getElementById("editBoxCustomer").value || "Yard",
-        driver: document.getElementById("editBoxDriver").value || "Unassigned",
-        street, city, state, zip, address: fullAddress,
-        notes: document.getElementById("editBoxNotes").value.trim(),
-        activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Updated to " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Admin" })
+
+      let updateData = {
+        boxNum: newBoxNum,
+        status: newStatus,
+        customer: newCustomer || "Yard",
+        driver: newDriver || "Unassigned",
+        notes: notes,
+        activity: firebase.firestore.FieldValue.arrayUnion({
+          time: new Date().toLocaleString(),
+          text: "Updated to " + statusLabel(newStatus),
+          by: currentUser ? (currentUser.displayName || "User") : "Admin"
+        })
       };
-      if (lat && lng) { updateData.lat = lat; updateData.lng = lng; }
+
+      // If customer is set, sync address from that customer
+      if (newCustomer) {
+        const customer = customersData.find(c => c.name === newCustomer);
+        if (customer && customer.address) {
+          const parts = customer.address.split(", ").map(s => s.trim());
+          updateData.street = parts[0] || "";
+          updateData.city = parts[1] || "";
+          updateData.state = parts[2] || "";
+          updateData.zip = parts[3] || "";
+          updateData.address = customer.address;
+          // Geocode to get lat/lng
+          const geo = await geocodeAddress(customer.address);
+          if (geo) {
+            updateData.lat = geo.lat;
+            updateData.lng = geo.lng;
+          }
+        }
+      } else {
+        // If no customer, you might want to keep existing address or clear? We'll keep existing.
+        // But we should retain the existing street/city/state/zip/lat/lng from the form.
+        // Actually we need to keep the address fields as they are in the form.
+        // But we already have them in the form, so we should use them.
+        // However, we're not reading them from the form! Let's add that.
+        const street = document.getElementById("editBoxStreet").value.trim();
+        const city = document.getElementById("editBoxCity").value.trim();
+        const state = document.getElementById("editBoxState").value.trim();
+        const zip = document.getElementById("editBoxZip").value.trim();
+        updateData.street = street;
+        updateData.city = city;
+        updateData.state = state;
+        updateData.zip = zip;
+        updateData.address = buildAddress(street, city, state, zip);
+        // If lat/lng not set, geocode
+        if (!pendingLatLng) {
+          const geo = await geocodeAddress(updateData.address);
+          if (geo) {
+            updateData.lat = geo.lat;
+            updateData.lng = geo.lng;
+          }
+        } else {
+          updateData.lat = pendingLatLng.lat;
+          updateData.lng = pendingLatLng.lng;
+        }
+      }
+
       try {
         await db.collection("boxes").doc(activeBoxId).update(updateData);
-        pendingLatLng = null; placeMode = null;
         closeModal("editBoxModal");
         showToast("✅ Box Updated!");
       } catch (e) { alert("Error: " + e.message); }
@@ -2134,23 +2212,84 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
+    // ============================================================
+    // COMPLETE TASK - with address sync for Pickup (yard) and Exchange (customer)
+    // ============================================================
     function completeTask(id, newStatus, label, currentStatus) {
       if (!confirm(`Are you sure you want to mark this box as ${label}?`)) return;
+      
       if (currentStatus === "Delivery") {
         pendingDeliveryBoxId = id;
         openModal("boxNumberModal");
-      } else {
-        db.collection("boxes").doc(id).update({
-          status: newStatus,
-          activity: firebase.firestore.FieldValue.arrayUnion({
-            time: new Date().toLocaleString(),
-            text: "Task Complete → " + statusLabel(newStatus),
-            by: currentUser ? (currentUser.displayName || "User") : "Driver"
-          })
-        }).then(() => showToast("✅ Task Completed!")).catch(e => alert("Error: " + e.message));
+        return;
       }
+
+      let updateData = {
+        status: newStatus,
+        activity: firebase.firestore.FieldValue.arrayUnion({
+          time: new Date().toLocaleString(),
+          text: "Task Complete → " + statusLabel(newStatus),
+          by: currentUser ? (currentUser.displayName || "User") : "Driver"
+        })
+      };
+
+      // --- CASE 1: Moving to "Available" (Pickup complete) → set address to YARD ---
+      if (newStatus === "Available") {
+        if (yardData && yardData.lat) {
+          updateData.customer = "Yard";
+          updateData.street = yardData.street || "";
+          updateData.city = yardData.city || "";
+          updateData.state = yardData.state || "";
+          updateData.zip = yardData.zip || "";
+          updateData.address = yardData.formattedAddress || buildAddress(yardData.street, yardData.city, yardData.state, yardData.zip);
+          updateData.driver = "Unassigned";
+          updateData.lat = yardData.lat;
+          updateData.lng = yardData.lng;
+        } else {
+          // Fallback: clear address if yard not set
+          updateData.customer = "Yard";
+          updateData.street = "";
+          updateData.city = "";
+          updateData.state = "";
+          updateData.zip = "";
+          updateData.address = "Yard";
+          updateData.driver = "Unassigned";
+          updateData.lat = null;
+          updateData.lng = null;
+        }
+      }
+
+      // --- CASE 2: Moving to "Customer" (Exchange complete) → set address to CUSTOMER'S address ---
+      if (newStatus === "Customer") {
+        const box = boxesData.find(b => b.id === id);
+        if (box && box.customer) {
+          const customer = customersData.find(c => c.name === box.customer);
+          if (customer && customer.address) {
+            const parts = customer.address.split(", ").map(s => s.trim());
+            updateData.street = parts[0] || "";
+            updateData.city = parts[1] || "";
+            updateData.state = parts[2] || "";
+            updateData.zip = parts[3] || "";
+            updateData.address = customer.address;
+            // Geocode to get lat/lng (async)
+            geocodeAddress(customer.address).then(geo => {
+              if (geo) {
+                db.collection("boxes").doc(id).update({ lat: geo.lat, lng: geo.lng });
+              }
+            });
+          }
+        }
+      }
+
+      // --- Send update to Firestore ---
+      db.collection("boxes").doc(id).update(updateData)
+        .then(() => showToast("✅ Task Completed!"))
+        .catch(e => alert("Error: " + e.message));
     }
 
+    // ============================================================
+    // CONFIRM COMPLETE DELIVERY (unchanged)
+    // ============================================================
     async function confirmCompleteDelivery() {
       const boxNum = document.getElementById("deliveredBoxNum").value.trim();
       if (!boxNum) {
