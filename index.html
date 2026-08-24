@@ -1282,13 +1282,15 @@
       renderDetail();
     }
 
-    // SERVICE VIEW
+    // ============================================================
+    // SERVICE VIEW - FIXED: now includes "New" boxes (Delivery orders)
+    // ============================================================
     function renderService() {
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
       const serviceBoxes = boxesData.filter(b => 
-        (b.status === "Pickup" || b.status === "Exchange" || b.status === "Delivery") &&
-        b.boxNum !== "New"
+        (b.status === "Pickup" || b.status === "Exchange" || b.status === "Delivery")
+        // Removed: && b.boxNum !== "New"
       );
       
       if (serviceBoxes.length === 0) {
@@ -1310,8 +1312,11 @@
         const noteHtml = b.notes ? 
           `<div class="notes-box"><strong>📝 DISPATCH NOTE:</strong><br>${b.notes}</div>` : '';
         
+        // Show box number or "New Box (Delivery)" if not assigned
+        const boxDisplay = b.boxNum === "New" ? "New Box (Delivery)" : `#${b.boxNum}`;
+        
         return `<div class="box-card ${b.status || ""}" onclick="selectBox('${b.id}')">
-          <h3>Box #${b.boxNum || "New"} - ${statusLabel(b.status)}</h3>
+          <h3>${boxDisplay} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
           <p><strong>Address:</strong> ${fullAddress || "N/A"}</p>
           ${driverLine}
@@ -1936,11 +1941,7 @@
           }
         }
       } else {
-        // If no customer, you might want to keep existing address or clear? We'll keep existing.
-        // But we should retain the existing street/city/state/zip/lat/lng from the form.
-        // Actually we need to keep the address fields as they are in the form.
-        // But we already have them in the form, so we should use them.
-        // However, we're not reading them from the form! Let's add that.
+        // If no customer, keep existing address from the form
         const street = document.getElementById("editBoxStreet").value.trim();
         const city = document.getElementById("editBoxCity").value.trim();
         const state = document.getElementById("editBoxState").value.trim();
