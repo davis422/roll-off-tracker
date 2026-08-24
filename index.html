@@ -64,10 +64,6 @@
       height: 100%;
       width: 100%;
     }
-    
-    #mapView.active { 
-      display: grid !important; 
-    }
 
     .boxes-panel { background: #fff; border-right: 1px solid #cbd5e1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
     .panel-header { padding: 12px 16px; font-weight: 800; font-size: 0.9rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
@@ -99,7 +95,6 @@
     .badge-Exchange { background: #dbeafe; color: #2563eb; }
     .badge-Available { background: #f1f5f9; color: #475569; }
     .badge-Delivery { background: #fee2e2; color: #b91c1c; }
-    .badge-Completed { background: #e2e8f0; color: #475569; }
     .detail-layout { display: flex; gap: 24px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.85rem; flex: 1; }
     .info-label { color: #64748b; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
@@ -115,14 +110,13 @@
     .btn-act-blue { background: #2563eb; color: white; border: none; }
     .btn-act-orange { background: #d97706; color: white; border: none; }
     .btn-act-red { background: #dc2626; color: white; border: none; }
-    .btn-act-gray { background: #64748b; color: white; border: none; }
     .btn-sms { background: #6d28d9; color: white; border: none; }
     .activity-section { border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 8px; }
     .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
     .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
 
-    .customers-view, .drivers-view, .users-view, .boxes-view, .service-view, .jobs-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
-    .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active, .service-view.active, .jobs-view.active { display: block; }
+    .customers-view, .drivers-view, .users-view, .boxes-view, .service-view { display: none; flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; }
+    .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active, .service-view.active { display: block; }
 
     .box-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 8px solid #ccc; cursor: pointer; transition: background 0.15s; }
     .box-card:hover { background: #f0fdf4; }
@@ -131,7 +125,6 @@
     .box-card.Exchange { border-left-color: #2563eb; }
     .box-card.Available { border-left-color: #94a3b8; }
     .box-card.Delivery { border-left-color: #dc2626; }
-    .box-card.Completed { border-left-color: #94a3b8; opacity: 0.7; }
     .box-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 10px; }
     .box-card p { font-size: 0.9rem; color: #475569; margin-bottom: 6px; }
 
@@ -175,7 +168,6 @@
     .dot-Exchange { background: #2563eb; }
     .dot-Available { background: #94a3b8; }
     .dot-Delivery { background: #dc2626; }
-    .dot-Completed { background: #94a3b8; }
     .empty-msg { text-align: center; color: #94a3b8; padding: 40px 20px; }
     #loading { position: fixed; inset: 0; background: #f3f4f6; display: flex; align-items: center; justify-content: center; z-index: 9999; font-size: 1.1rem; color: #64748b; }
     
@@ -215,9 +207,6 @@
       box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important;
     }
 
-    /* ============================================================
-       MOBILE FIXES
-       ============================================================ */
     @media (max-width: 900px) {
       .menu-btn { display: block; }
       
@@ -355,7 +344,6 @@
     <ul class="nav-list">
       <li class="nav-item active" data-view="map" onclick="switchView('map')">🗺️ Map</li>
       <li class="nav-item" data-view="service" onclick="switchView('service')">📋 Service</li>
-      <li class="nav-item" data-view="jobs" onclick="switchView('jobs')">📋 Jobs</li>
       <li class="nav-item" data-view="boxes" onclick="switchView('boxes')">📦 Boxes</li>
       <li class="nav-item" data-view="customers" onclick="switchView('customers')">👥 Customers</li>
       <li class="nav-item" data-view="drivers" onclick="switchView('drivers')">🚛 Drivers</li>
@@ -415,26 +403,10 @@
         <div id="serviceList"></div>
       </div>
 
-      <div class="jobs-view" id="jobsView">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
-          <h2 style="font-size:1.3rem; font-weight:900;">Jobs</h2>
-          <div style="display:flex; gap:8px;">
-            <select id="jobFilter" onchange="renderJobs()" style="padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem;">
-              <option value="ALL">All Jobs</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-        </div>
-        <div id="jobsList"></div>
-      </div>
-
       <div class="boxes-view" id="boxesView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">All Boxes</h2>
-          <div style="display:flex; gap:8px;">
-            <button class="btn-act btn-act-primary" onclick="openAddBoxModal()">+ Add Box</button>
-          </div>
+          <button class="btn-act btn-act-primary" onclick="openAddBoxModal()">+ Add Box</button>
         </div>
         <div id="boxesList"></div>
       </div>
@@ -776,9 +748,6 @@
       switchView('map');
     });
 
-    // ============================================================
-    // TOGGLE / UI HELPERS
-    // ============================================================
     function toggleDrawer(open) {
       const sidebar = document.getElementById("sidebar");
       const overlay = document.getElementById("mobileOverlay");
@@ -811,7 +780,7 @@
     }
 
     function statusLabel(s) {
-      return { Delivery: "To Be Delivered", Customer: "At Customer", Pickup: "Ready for Pickup", Exchange: "Ready for Exchange", Available: "Available", Completed: "Completed" }[s] || s;
+      return { Delivery: "To Be Delivered", Customer: "At Customer", Pickup: "Ready for Pickup", Exchange: "Ready for Exchange", Available: "Available" }[s] || s;
     }
 
     function showToast(message) {
@@ -823,9 +792,6 @@
       }, 3000);
     }
 
-    // ============================================================
-    // AUTH
-    // ============================================================
     function signInWithGoogle() {
       document.getElementById("loginError").textContent = "";
       const provider = new firebase.auth.GoogleAuthProvider();
@@ -871,9 +837,6 @@
       }
     });
 
-    // ============================================================
-    // VALIDATION
-    // ============================================================
     function checkDuplicateBox() {
       const num = document.getElementById("newBoxNum").value.trim();
       const exists = boxesData.some(b => b.boxNum === num);
@@ -911,9 +874,6 @@
       });
     }
 
-    // ============================================================
-    // GOOGLE MAPS
-    // ============================================================
     function initGoogleMap() {
       gMap = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 29.7604, lng: -95.3698 },
@@ -1054,6 +1014,7 @@
       
       boxesData.forEach(b => {
         if (b.lat == null || b.lng == null) return;
+        if (b.boxNum === "New") return; // Skip dummy boxes on map
         
         if (b.status === "Available" && yardData && yardData.lat) {
           yardBoxes.push(b);
@@ -1109,9 +1070,6 @@
       }
     }
 
-    // ============================================================
-    // START APP - LISTENERS
-    // ============================================================
     function startApp() {
       switchView('map');
       
@@ -1123,7 +1081,6 @@
         renderBoxes();
         renderCustomers();
         renderService();
-        renderJobs();
         document.getElementById("loading").style.display = "none";
       });
 
@@ -1131,7 +1088,6 @@
         jobsData = [];
         snap.forEach(d => jobsData.push({ id: d.id, ...d.data() }));
         renderService();
-        renderJobs();
       });
 
       db.collection("drivers").onSnapshot(snap => {
@@ -1176,16 +1132,13 @@
       document.getElementById("editBoxCustomer").innerHTML = opts;
     }
 
-    // ============================================================
-    // RENDER FUNCTIONS
-    // ============================================================
     function renderApp() {
       const search = (document.getElementById("searchInput").value || "").toLowerCase().trim();
       const filter = document.getElementById("statusFilter").value;
       
       // FILTER: Hide "New" boxes from the main list
       const filtered = boxesData.filter(b => {
-        if (b.boxNum === "New") return false;  // ← Hide dummy boxes
+        if (b.boxNum === "New") return false;
         if (filter !== "ALL" && b.status !== filter) return false;
         if (!search) return true;
         const hay = [b.boxNum, b.customer, b.address, b.driver, b.notes].join(" ").toLowerCase();
@@ -1210,9 +1163,6 @@
       renderDetail();
     }
 
-    // ============================================================
-    // SERVICE TAB - Shows pending jobs
-    // ============================================================
     function renderService() {
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
@@ -1247,43 +1197,6 @@
       }).join("");
     }
 
-    // ============================================================
-    // JOBS TAB - Shows all jobs with filter
-    // ============================================================
-    function renderJobs() {
-      const el = document.getElementById("jobsList");
-      const filter = document.getElementById("jobFilter").value;
-      
-      let filtered = jobsData;
-      if (filter === "pending") filtered = jobsData.filter(j => j.status === "pending");
-      else if (filter === "completed") filtered = jobsData.filter(j => j.status === "completed");
-      
-      if (filtered.length === 0) {
-        el.innerHTML = '<div class="empty-msg"><h3>No jobs found</h3></div>';
-        return;
-      }
-      
-      el.innerHTML = filtered.map(job => {
-        const jobTypeLabel = job.type === "delivery" ? "Delivery" : (job.type === "pickup" ? "Pickup" : "Exchange");
-        const statusLabel2 = job.status === "pending" ? "⏳ Pending" : "✅ Completed";
-        const statusClass = job.status === "pending" ? "Delivery" : "Completed";
-        const assignedBoxInfo = job.assignedBox ? `<p><strong>Assigned Box:</strong> #${job.assignedBox}</p>` : '';
-        
-        return `<div class="job-card ${statusClass}">
-          <h3>${job.customer} - ${jobTypeLabel}</h3>
-          <p><strong>Address:</strong> ${job.address || "N/A"}</p>
-          <p><strong>Status:</strong> ${statusLabel2}</p>
-          ${assignedBoxInfo}
-          <p><strong>Created:</strong> ${job.createdAt || "N/A"}</p>
-          ${job.completedAt ? `<p><strong>Completed:</strong> ${job.completedAt}</p>` : ''}
-          ${job.notes ? `<div class="notes-box"><strong>📝 Notes:</strong><br>${job.notes}</div>` : ''}
-        </div>`;
-      }).join("");
-    }
-
-    // ============================================================
-    // COMPLETE JOB - Driver completes a job
-    // ============================================================
     function completeJob(jobId, jobType) {
       const job = jobsData.find(j => j.id === jobId);
       if (!job) {
@@ -1323,9 +1236,6 @@
       }
     }
 
-    // ============================================================
-    // CONFIRM DELIVERY - Driver enters box number
-    // ============================================================
     async function confirmCompleteDelivery() {
       const boxNum = document.getElementById("deliveredBoxNum").value.trim();
       if (!boxNum) {
@@ -1415,9 +1325,6 @@
       document.getElementById("deliveredBoxNum").value = "";
     }
 
-    // ============================================================
-    // SEND FOR DELIVERY - Creates a job
-    // ============================================================
     function openDeliveryNotes(customerId) {
       const customer = customersData.find(c => c.id === customerId);
       if (!customer) return;
@@ -1457,9 +1364,6 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
-    // ============================================================
-    // EXISTING FUNCTIONS
-    // ============================================================
     function openDispatchNotes(boxId, status) {
       const box = boxesData.find(b => b.id === boxId);
       if (!box) {
@@ -1495,15 +1399,13 @@
     }
 
     // ============================================================
-    // RENDER BOXES - FIXED: Hide "New" boxes AND make them clickable!
+    // RENDER BOXES - FIXED: Hide "New" boxes AND clickable!
     // ============================================================
     function renderBoxes() {
       const el = document.getElementById("boxesList");
       
-      // FILTER: Hide "New" boxes and "Completed" boxes
-      const activeBoxes = boxesData.filter(b => 
-        b.status !== "Completed" && b.boxNum !== "New"
-      );
+      // FILTER: Hide "New" boxes
+      const activeBoxes = boxesData.filter(b => b.boxNum !== "New");
       
       if (activeBoxes.length === 0) {
         el.innerHTML = '<div class="empty-msg"><h3>No boxes yet</h3></div>';
@@ -1514,9 +1416,9 @@
         const shouldShowDriver = (b.driver && b.driver !== "Unassigned" && (b.status !== "Available" && b.status !== "Customer"));
         const driverLine = shouldShowDriver ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
         
-        // Make each box clickable - calls selectBox()
-        return `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')">
-          <h3>Box #${b.boxNum || "New"} - ${statusLabel(b.status)}</h3>
+        // Make each box clickable!
+        return `<div class="box-card ${b.status || "Available"}" onclick="selectBox('${b.id}')" style="cursor:pointer;">
+          <h3>Box #${b.boxNum} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
           <p><strong>Address:</strong> ${b.address || "N/A"}</p>
           ${driverLine}
@@ -1537,7 +1439,7 @@
       
       el.innerHTML = filtered.map(c => {
         const customerBoxes = boxesData.filter(b => 
-          (b.customer || "").toLowerCase() === c.name.toLowerCase()
+          (b.customer || "").toLowerCase() === c.name.toLowerCase() && b.boxNum !== "New"
         );
         
         const isAdmin = currentUserData && currentUserData.role === 'admin';
@@ -2115,7 +2017,6 @@
       
       document.getElementById("mapView").style.display = "none";
       document.getElementById("serviceView").classList.remove("active");
-      document.getElementById("jobsView").classList.remove("active");
       document.getElementById("boxesView").classList.remove("active");
       document.getElementById("customersView").classList.remove("active");
       document.getElementById("driversView").classList.remove("active");
@@ -2139,9 +2040,6 @@
       } else if (view === "service") {
         document.getElementById("serviceView").classList.add("active");
         renderService();
-      } else if (view === "jobs") {
-        document.getElementById("jobsView").classList.add("active");
-        renderJobs();
       } else if (view === "boxes") {
         document.getElementById("boxesView").classList.add("active");
         renderBoxes();
