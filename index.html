@@ -455,11 +455,11 @@
         <div id="customersList"></div>
       </div>
 
-      <!-- DRIVERS VIEW - clean list, NO MAP -->
+      <!-- DRIVERS VIEW - clean list, NO MAP, no "Add Driver" button -->
       <div class="drivers-view" id="driversView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">Drivers</h2>
-          <button class="btn-act btn-act-primary" onclick="openAddDriverModal()">+ Add Driver</button>
+          <!-- Removed + Add Driver button -->
         </div>
         <div id="driversList"></div>
       </div>
@@ -1241,7 +1241,19 @@
     }
 
     function populateDriverSelects() {
-      const opts = '<option value="">— Unassigned —</option>' + driversData.map(d => `<option value="${d.name}">${d.name}</option>`).join("");
+      // Populate from users with role 'driver' and legacy drivers
+      const driverNames = [];
+      // Add users with role driver
+      usersData.filter(u => u.role === 'driver').forEach(u => {
+        const name = u.name || u.email || 'Unnamed';
+        if (!driverNames.includes(name)) driverNames.push(name);
+      });
+      // Add legacy drivers
+      driversData.forEach(d => {
+        const name = d.name || 'Unnamed';
+        if (!driverNames.includes(name)) driverNames.push(name);
+      });
+      const opts = '<option value="">— Unassigned —</option>' + driverNames.map(n => `<option value="${n}">${n}</option>`).join("");
       document.getElementById("newBoxDriver").innerHTML = opts;
       document.getElementById("editBoxDriver").innerHTML = opts;
     }
@@ -1419,15 +1431,55 @@
     }
 
     // ============================================================
-    // DRIVERS VIEW - CLEAN LIST, NO MAP
+    // DRIVERS VIEW - shows users with role 'driver' + legacy drivers
     // ============================================================
     function renderDrivers() {
       const el = document.getElementById("driversList");
-      if (driversData.length === 0) { 
-        el.innerHTML = '<div class="empty-msg"><h3>No drivers yet</h3></div>'; 
-        return; 
+      
+      // Get all users with role 'driver'
+      const driverUsers = usersData.filter(u => u.role === 'driver');
+      // Get all drivers from drivers collection
+      const allDrivers = driversData || [];
+      
+      // Build a combined list: start with driver users, then add any drivers not already present
+      const combinedDrivers = [];
+      const existingNames = new Set();
+      
+      // First add users with role 'driver'
+      driverUsers.forEach(u => {
+        const name = u.name || u.email || 'Unnamed';
+        combinedDrivers.push({
+          id: u.id,  // use user ID as primary key
+          name: name,
+          phone: u.phone || 'No phone',
+          source: 'user',
+          userData: u
+        });
+        existingNames.add(name);
+      });
+      
+      // Then add drivers from drivers collection that don't have a matching user
+      allDrivers.forEach(d => {
+        const name = d.name || 'Unnamed';
+        // Check if this driver already exists in the combined list (by name)
+        const exists = combinedDrivers.some(cd => cd.name === name && cd.source === 'user');
+        if (!exists) {
+          combinedDrivers.push({
+            id: d.id,        // driver document ID
+            name: name,
+            phone: d.phone || 'No phone',
+            source: 'driver-collection',
+            driverData: d
+          });
+        }
+      });
+      
+      if (combinedDrivers.length === 0) {
+        el.innerHTML = '<div class="empty-msg"><h3>No drivers yet</h3></div>';
+        return;
       }
-      el.innerHTML = driversData.map(driver => {
+      
+      el.innerHTML = combinedDrivers.map(driver => {
         const assignedBoxes = boxesData.filter(b => b.driver === driver.name && b.boxNum !== "New");
         const boxCount = assignedBoxes.length;
         let boxesList = '';
@@ -1438,16 +1490,22 @@
         } else {
           boxesList = '<span style="color:#94a3b8; font-size:0.8rem;">None assigned</span>';
         }
+        
+        const isUserSource = driver.source === 'user';
+        const deleteButton = isUserSource ? 
+          `<span style="font-size:0.75rem; color:#94a3b8;">(Managed via Users tab)</span>` :
+          `<button class="btn-act btn-act-danger" onclick="deleteDriver('${driver.id}')">🗑️ Delete</button>`;
+        
         return `
           <div class="driver-card" onclick="selectDriver('${driver.id}')" style="cursor:pointer;">
             <h3>🚛 ${driver.name}</h3>
-            <p><strong>Phone:</strong> ${driver.phone || "No phone"}</p>
+            <p><strong>Phone:</strong> ${driver.phone}</p>
             <p><strong>Assigned Boxes:</strong> ${boxCount}</p>
             <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">
               ${boxesList}
             </div>
             <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;" onclick="event.stopPropagation();">
-              <button class="btn-act btn-act-danger" onclick="deleteDriver('${driver.id}')">🗑️ Delete</button>
+              ${deleteButton}
             </div>
           </div>
         `;
@@ -1455,11 +1513,31 @@
     }
 
     // ============================================================
-    // SELECT DRIVER - show details with assigned boxes
+    // SELECT DRIVER - handles user IDs and driver IDs
     // ============================================================
     function selectDriver(driverId) {
-      const driver = driversData.find(d => d.id === driverId);
-      if (!driver) return;
+      // First try to find in driversData
+      let driver = driversData.find(d => d.id === driverId);
+      let source = 'driver-collection';
+      
+      // If not found, try to find a user with this ID (if ID matches user ID)
+      if (!driver) {
+        const user = usersData.find(u => u.id === driverId && u.role === 'driver');
+        if (user) {
+          driver = {
+            id: user.id,
+            name: user.name || user.email || 'Unnamed',
+            phone: user.phone || 'No phone'
+          };
+          source = 'user';
+        }
+      }
+      
+      if (!driver) {
+        alert('Driver not found');
+        return;
+      }
+      
       activeDriverId = driverId;
       activeBoxId = null;
       const assignedBoxes = boxesData.filter(b => b.driver === driver.name && b.boxNum !== "New");
@@ -1479,6 +1557,11 @@
           </div>`;
         }).join('');
       }
+      
+      const deleteButton = source === 'user' ? 
+        `<span style="font-size:0.75rem; color:#94a3b8;">Managed via Users tab</span>` :
+        `<button class="btn-act btn-act-danger" onclick="deleteDriver('${driver.id}')">🗑️ Delete Driver</button>`;
+      
       content.innerHTML = `
         <div class="detail-title" style="font-size:1.3rem;">🚛 ${driver.name}</div>
         <div class="detail-layout">
@@ -1492,9 +1575,10 @@
           ${boxesHtml}
         </div>
         <div class="actions-row" style="margin-top:16px;">
-          <button class="btn-act btn-act-danger" onclick="deleteDriver('${driver.id}')">🗑️ Delete Driver</button>
+          ${deleteButton}
         </div>
       `;
+      
       if (window.innerWidth <= 900) {
         document.getElementById("detailPanel").classList.add("show");
       }
@@ -2054,15 +2138,17 @@
     }
 
     // ============================================================
-    // DRIVER MODALS
+    // DRIVER MODALS - kept for legacy driver deletion, but no add button
     // ============================================================
     function openAddDriverModal() {
+      // This function is no longer called from UI, but kept for compatibility
       document.getElementById("newDriverName").value = "";
       document.getElementById("newDriverPhone").value = "";
       openModal("addDriverModal");
     }
 
     function saveDriver() {
+      // This function is no longer used, but kept for legacy
       const name = document.getElementById("newDriverName").value.trim();
       if (!name) return alert("Name required");
       db.collection("drivers").add({
@@ -2107,6 +2193,7 @@
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         if (role === 'driver') {
+          // Also create a driver document for backward compatibility
           db.collection("drivers").add({
             name: name || email,
             phone: phone,
@@ -2118,9 +2205,25 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
+    // ============================================================
+    // DELETE USER - also delete driver document if role was driver
+    // ============================================================
     function deleteUser(id) {
       if (!confirm("Delete this user?")) return;
-      db.collection("users").doc(id).delete().catch(e => alert(e.message));
+      
+      const user = usersData.find(u => u.id === id);
+      if (user && user.role === 'driver') {
+        // Find and delete the corresponding driver from drivers collection
+        const driverToDelete = driversData.find(d => d.name === user.name || d.name === user.email);
+        if (driverToDelete) {
+          db.collection("drivers").doc(driverToDelete.id).delete()
+            .catch(e => console.warn("Could not delete driver document:", e));
+        }
+      }
+      
+      db.collection("users").doc(id).delete()
+        .then(() => showToast("User Deleted"))
+        .catch(e => alert(e.message));
     }
 
     function renderUsers() {
