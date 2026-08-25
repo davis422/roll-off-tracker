@@ -234,6 +234,29 @@
       box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important;
     }
 
+    /* User list item styling */
+    .user-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .user-item .user-info {
+      flex: 1;
+      min-width: 150px;
+    }
+    .user-item .user-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     /* ============================================================
        MOBILE FIXES
        ============================================================ */
@@ -758,6 +781,28 @@
     </div>
   </div>
 
+  <!-- NEW: Edit User Modal -->
+  <div id="editUserModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Edit User</h3>
+      <label>Email (read-only)</label>
+      <input type="email" id="editUserEmail" disabled style="background:#f1f5f9;" />
+      <label>Name *</label>
+      <input type="text" id="editUserName" placeholder="e.g. Mike D." />
+      <label>Phone *</label>
+      <input type="text" id="editUserPhone" placeholder="(713) 555-0198" />
+      <label>Role</label>
+      <select id="editUserRole">
+        <option value="admin">Administrator</option>
+        <option value="driver">Driver</option>
+      </select>
+      <div class="modal-btns">
+        <button class="btn-save" id="updateUserBtn" onclick="commitUserUpdate()">Save Changes</button>
+        <button class="btn-cancel" onclick="closeModal('editUserModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" />
 
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -811,6 +856,7 @@
     let currentPhotoURL = null;
     let yardData = null;
     let activeDriverId = null;
+    let editingUserId = null; // for user edit modal
 
     let autocompleteNewBoxStreet = null;
     let autocompleteEditBoxStreet = null;
@@ -1247,14 +1293,11 @@
     }
 
     function populateDriverSelects() {
-      // Populate from users with role 'driver' and legacy drivers
       const driverNames = [];
-      // Add users with role driver
       usersData.filter(u => u.role === 'driver').forEach(u => {
         const name = u.name || u.email || 'Unnamed';
         if (!driverNames.includes(name)) driverNames.push(name);
       });
-      // Add legacy drivers
       driversData.forEach(d => {
         const name = d.name || 'Unnamed';
         if (!driverNames.includes(name)) driverNames.push(name);
@@ -1265,7 +1308,6 @@
     }
 
     function populateDispatchDriverSelect() {
-      // Populate dispatch driver dropdown (users with role 'driver' + legacy drivers)
       const driverNames = [];
       usersData.filter(u => u.role === 'driver').forEach(u => {
         const name = u.name || u.email || 'Unnamed';
@@ -1338,7 +1380,6 @@
         const nextLabel = (b.status === "Pickup") ? "Mark as Available" : (b.status === "Delivery") ? "Enter Box # & Complete" : "Complete";
         const btnClass = (b.status === "Pickup") ? "btn-act-orange" : (b.status === "Exchange") ? "btn-act-blue" : "btn-act-red";
         
-        // Show assigned driver prominently
         const driverLine = (b.driver && b.driver !== "Unassigned") ? 
           `<p><strong>🚛 Assigned Driver:</strong> ${b.driver}</p>` : 
           `<p><strong>🚛 Assigned Driver:</strong> <span style="color:#94a3b8;">None assigned</span></p>`;
@@ -1881,7 +1922,6 @@
     // ============================================================
     function openAddBoxModal() {
       populateCustomerSelects();
-      // No driver select in add box modal anymore
       document.getElementById("newBoxNum").value = "";
       document.getElementById("newBoxCustomer").value = "";
       document.getElementById("newBoxStreet").value = "";
@@ -1898,9 +1938,6 @@
       openModal("addBoxModal");
     }
 
-    // ============================================================
-    // SAVE BOX - with auto-fill from customer, NO driver assignment
-    // ============================================================
     async function saveBox() {
       const boxNum = document.getElementById("newBoxNum").value.trim();
       if (!boxNum) return alert("Box number is required");
@@ -1949,7 +1986,7 @@
           boxNum: boxNum,
           size: document.getElementById("newBoxSize").value,
           customer: customerName || "Yard",
-          driver: "Unassigned", // Always unassigned when created
+          driver: "Unassigned",
           street: street,
           city: city,
           state: state,
@@ -1973,7 +2010,7 @@
     }
 
     // ============================================================
-    // EDIT BOX - still has driver select for manual override
+    // EDIT BOX
     // ============================================================
     function openEditModal() {
       const box = boxesData.find(b => b.id === activeBoxId);
@@ -2163,28 +2200,10 @@
     }
 
     // ============================================================
-    // DRIVER MODALS - kept for legacy driver deletion, but no add button
+    // DRIVER MODALS - kept for legacy
     // ============================================================
-    function openAddDriverModal() {
-      // This function is no longer called from UI, but kept for compatibility
-      document.getElementById("newDriverName").value = "";
-      document.getElementById("newDriverPhone").value = "";
-      openModal("addDriverModal");
-    }
-
-    function saveDriver() {
-      // This function is no longer used, but kept for legacy
-      const name = document.getElementById("newDriverName").value.trim();
-      if (!name) return alert("Name required");
-      db.collection("drivers").add({
-        name, phone: document.getElementById("newDriverPhone").value.trim(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => {
-        closeModal("addDriverModal");
-        showToast("✅ Driver Added!");
-      }).catch(e => alert("Error: " + e.message));
-    }
-
+    function openAddDriverModal() { /* kept for compatibility */ }
+    function saveDriver() { /* kept for compatibility */ }
     function deleteDriver(id) {
       if (!confirm("Delete this driver?")) return;
       db.collection("drivers").doc(id).delete().then(() => {
@@ -2218,7 +2237,6 @@
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         if (role === 'driver') {
-          // Also create a driver document for backward compatibility
           db.collection("drivers").add({
             name: name || email,
             phone: phone,
@@ -2238,7 +2256,6 @@
       
       const user = usersData.find(u => u.id === id);
       if (user && user.role === 'driver') {
-        // Find and delete the corresponding driver from drivers collection
         const driverToDelete = driversData.find(d => d.name === user.name || d.name === user.email);
         if (driverToDelete) {
           db.collection("drivers").doc(driverToDelete.id).delete()
@@ -2251,15 +2268,92 @@
         .catch(e => alert(e.message));
     }
 
+    // ============================================================
+    // RENDER USERS - updated with Edit button and clean styling
+    // ============================================================
     function renderUsers() {
       const el = document.getElementById("usersList");
-      if (usersData.length === 0) { el.innerHTML = '<div class="empty-msg"><h3>No users yet</h3></div>'; return; }
-      el.innerHTML = usersData.map(u =>
-        `<div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-          <div><strong>${u.name || u.email}</strong><br><span style="font-size:0.8rem;color:#64748b">${u.email}</span><br><span style="font-size:0.8rem;color:#64748b">Phone: ${u.phone || "N/A"}</span><br><span style="font-size:0.8rem;color:#64748b">Role: ${u.role}</span></div>
-          <button class="btn-act btn-act-danger" onclick="deleteUser('${u.id}')">Delete</button>
-        </div>`
-      ).join("");
+      if (usersData.length === 0) {
+        el.innerHTML = '<div class="empty-msg"><h3>No users yet</h3></div>';
+        return;
+      }
+      el.innerHTML = usersData.map(u => `
+        <div class="user-item">
+          <div class="user-info">
+            <strong>${u.name || u.email}</strong><br>
+            <span style="font-size:0.8rem;color:#64748b">${u.email}</span><br>
+            <span style="font-size:0.8rem;color:#64748b">Phone: ${u.phone || "N/A"}</span><br>
+            <span style="font-size:0.8rem;color:#64748b">Role: ${u.role}</span>
+          </div>
+          <div class="user-actions">
+            <button class="btn-act btn-act-blue" onclick="openEditUserModal('${u.id}')">✏️ Edit</button>
+            <button class="btn-act btn-act-danger" onclick="deleteUser('${u.id}')">🗑️ Delete</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // ============================================================
+    // EDIT USER MODAL
+    // ============================================================
+    function openEditUserModal(id) {
+      const user = usersData.find(u => u.id === id);
+      if (!user) return;
+      editingUserId = id;
+      document.getElementById("editUserEmail").value = user.email || "";
+      document.getElementById("editUserName").value = user.name || "";
+      document.getElementById("editUserPhone").value = user.phone || "";
+      document.getElementById("editUserRole").value = user.role || "driver";
+      openModal("editUserModal");
+    }
+
+    async function commitUserUpdate() {
+      if (!editingUserId) return;
+      const name = document.getElementById("editUserName").value.trim();
+      const phone = document.getElementById("editUserPhone").value.trim();
+      const newRole = document.getElementById("editUserRole").value;
+      if (!name) return alert("Name is required");
+      
+      const user = usersData.find(u => u.id === editingUserId);
+      if (!user) return;
+
+      const oldRole = user.role;
+      
+      const updateData = {
+        name: name,
+        phone: phone,
+        role: newRole
+      };
+
+      try {
+        await db.collection("users").doc(editingUserId).update(updateData);
+        
+        if (oldRole === "driver" && newRole !== "driver") {
+          const driverToDelete = driversData.find(d => d.name === user.name || d.name === user.email);
+          if (driverToDelete) {
+            await db.collection("drivers").doc(driverToDelete.id).delete().catch(e => console.warn("Could not delete driver:", e));
+          }
+        } else if (oldRole !== "driver" && newRole === "driver") {
+          await db.collection("drivers").add({
+            name: name,
+            phone: phone,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(e => console.warn("Could not add driver:", e));
+        } else if (oldRole === "driver" && newRole === "driver") {
+          const driverToUpdate = driversData.find(d => d.name === user.name || d.name === user.email);
+          if (driverToUpdate) {
+            await db.collection("drivers").doc(driverToUpdate.id).update({
+              name: name,
+              phone: phone
+            }).catch(e => console.warn("Could not update driver:", e));
+          }
+        }
+        
+        closeModal("editUserModal");
+        showToast("✅ User Updated!");
+      } catch (e) {
+        alert("Error updating user: " + e.message);
+      }
     }
 
     // ============================================================
@@ -2305,24 +2399,21 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
-    // UPDATED: Open Dispatch Notes with driver dropdown populated
     function openDispatchNotes(boxId, status) {
       pendingActionBoxId = boxId;
       pendingActionStatus = status;
       const box = boxesData.find(b => b.id === boxId);
       if (!box) return;
       
-      // Populate driver dropdown
       populateDispatchDriverSelect();
       
       document.getElementById("dispatchModalTitle").textContent = status === "Exchange" ? "Schedule Exchange" : "Schedule Pickup";
       document.getElementById("dispatchBoxInfo").textContent = `Box #${box.boxNum} - ${box.customer}`;
       document.getElementById("dispatchNoteText").value = box.notes || "";
-      document.getElementById("dispatchDriverSelect").value = ""; // Default to unassigned
+      document.getElementById("dispatchDriverSelect").value = "";
       openModal("dispatchNotesModal");
     }
 
-    // UPDATED: Confirm Send to Service - includes driver assignment
     function confirmSendToService() {
       if (!pendingActionBoxId) return;
       
@@ -2350,7 +2441,7 @@
     }
 
     // ============================================================
-    // COMPLETE TASK - with address sync for Pickup (yard) and Exchange (customer)
+    // COMPLETE TASK
     // ============================================================
     function completeTask(id, newStatus, label, currentStatus) {
       if (!confirm(`Are you sure you want to mark this box as ${label}?`)) return;
@@ -2378,7 +2469,7 @@
           updateData.state = yardData.state || "";
           updateData.zip = yardData.zip || "";
           updateData.address = yardData.formattedAddress || buildAddress(yardData.street, yardData.city, yardData.state, yardData.zip);
-          updateData.driver = "Unassigned"; // Clear driver when box returns to yard
+          updateData.driver = "Unassigned";
           updateData.lat = yardData.lat;
           updateData.lng = yardData.lng;
         } else {
@@ -2405,7 +2496,6 @@
             updateData.state = parts[2] || "";
             updateData.zip = parts[3] || "";
             updateData.address = customer.address;
-            // Don't clear driver on Exchange completion (driver might still be assigned)
             geocodeAddress(customer.address).then(geo => {
               if (geo) {
                 db.collection("boxes").doc(id).update({ lat: geo.lat, lng: geo.lng });
@@ -2421,7 +2511,7 @@
     }
 
     // ============================================================
-    // CONFIRM COMPLETE DELIVERY - FIXED: populates street/city/state/zip
+    // CONFIRM COMPLETE DELIVERY
     // ============================================================
     async function confirmCompleteDelivery() {
       const boxNum = document.getElementById("deliveredBoxNum").value.trim();
@@ -2497,7 +2587,7 @@
         zip: zip,
         address: fullAddress,
         status: "Customer",
-        driver: "Unassigned", // Clear driver after delivery
+        driver: "Unassigned",
         lat: lat,
         lng: lng,
         notes: deliveryBox.notes || "",
