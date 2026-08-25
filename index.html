@@ -7,7 +7,7 @@
   
   <style>
     /* ============================================================
-       ALL CSS (same as before, with .user-item added)
+       ALL CSS (same as before)
        ============================================================ */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     
@@ -856,6 +856,11 @@
     const storage = firebase.storage();
 
     // ============================================================
+    // MASTER ADMIN PROTECTION
+    // ============================================================
+    const MASTER_ADMIN_EMAIL = "davis.patterson713@gmail.com";
+
+    // ============================================================
     // GLOBAL STATE
     // ============================================================
     let boxesData = [];
@@ -1590,7 +1595,7 @@
     }
 
     // ============================================================
-    // CUSTOMER DETAIL PANEL - uses customer's own activity
+    // CUSTOMER DETAIL PANEL
     // ============================================================
     function openCustomerDetail(customerId) {
       const customer = customersData.find(c => c.id === customerId);
@@ -1614,15 +1619,12 @@
       empty.style.display = "none";
       content.style.display = "block";
       
-      // Get all boxes for this customer (including "New")
       const customerBoxes = boxesData.filter(b => 
         b.customer && b.customer.toLowerCase() === customer.name.toLowerCase()
       );
       
-      // Use customer's own activity log (from the customer document)
       const customerActivities = (customer.activity || []).slice().reverse().slice(0, 10);
       
-      // Box list HTML
       let boxesHtml = '';
       if (customerBoxes.length === 0) {
         boxesHtml = '<p style="color:#94a3b8; font-size:0.85rem;">No boxes associated with this customer.</p>';
@@ -1641,7 +1643,6 @@
         }).join('');
       }
       
-      // Actions
       const isAdmin = currentUserData && currentUserData.role === 'admin';
       
       content.innerHTML = `
@@ -1682,7 +1683,7 @@
     }
 
     // ============================================================
-    // EXISTING FUNCTIONS (with customer activity logging added)
+    // EXISTING FUNCTIONS
     // ============================================================
     function sendSMS(boxId) {
       const box = boxesData.find(b => b.id === boxId);
@@ -1736,7 +1737,7 @@
     }
 
     // ============================================================
-    // RENDER CUSTOMERS - with click to open detail
+    // RENDER CUSTOMERS
     // ============================================================
     function renderCustomers() {
       const el = document.getElementById("customersList");
@@ -1926,7 +1927,6 @@
     // DETAIL PANEL - unified dispatcher
     // ============================================================
     function renderDetail() {
-      // Priority: customer detail > job detail > box detail
       if (activeCustomerIdForDetail) {
         const customer = customersData.find(c => c.id === activeCustomerIdForDetail);
         if (customer) {
@@ -1954,14 +1954,12 @@
           activeBoxId = null;
         }
       }
-      // Nothing active
       const empty = document.getElementById("detailEmpty");
       const content = document.getElementById("detailContent");
       empty.style.display = "block";
       content.style.display = "none";
     }
 
-    // Box detail renderer
     function renderBoxDetail(box) {
       const empty = document.getElementById("detailEmpty");
       const content = document.getElementById("detailContent");
@@ -2151,12 +2149,10 @@
           updateData.lat = null;
           updateData.lng = null;
         }
-        // If the box had a customer before, log customer activity for pickup
         if (customerName) {
           addCustomerActivity(customerName, `Box #${box.boxNum || 'New'} picked up (moved to yard)`, box.id);
         }
       } else {
-        // For status changes to Pickup or Exchange, log customer activity if customer exists
         if (customerName) {
           const actionText = newStatus === 'Pickup' ? 'marked for pickup' : 'marked for exchange';
           addCustomerActivity(customerName, `Box #${box.boxNum || 'New'} ${actionText}`, box.id);
@@ -2440,12 +2436,9 @@
         }
       }
 
-      // If customer changed, log customer activity
       const oldBox = boxesData.find(b => b.id === activeBoxId);
       if (oldBox && newCustomer && newCustomer !== oldBox.customer) {
-        // Log that the box was assigned to new customer (maybe as part of edit)
         addCustomerActivity(newCustomer, `Box #${newBoxNum} assigned to customer`, activeBoxId);
-        // Also if old customer existed, we could log removal, but optional.
       }
 
       try {
@@ -2489,7 +2482,7 @@
         phone: document.getElementById("newCustomerPhone").value.trim(),
         address: fullAddress,
         boxSize: document.getElementById("newCustomerBoxSize").value,
-        activity: [], // initialize empty activity array
+        activity: [],
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         closeModal("addCustomerModal");
@@ -2595,11 +2588,28 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
+    // ============================================================
+    // DELETE USER - with master admin protection
+    // ============================================================
     function deleteUser(id) {
-      if (!confirm("Delete this user?")) return;
+      // Prevent deleting your own account
+      if (currentUser && id === currentUser.uid) {
+        alert("⚠️ You cannot delete your own account.");
+        return;
+      }
       
       const user = usersData.find(u => u.id === id);
-      if (user && user.role === 'driver') {
+      if (!user) return;
+      
+      // Master admin protection – nobody can delete this account
+      if (user.email === MASTER_ADMIN_EMAIL) {
+        alert("🔒 This account is the master admin and cannot be deleted.");
+        return;
+      }
+      
+      if (!confirm(`Delete user "${user.name || user.email}"?`)) return;
+      
+      if (user.role === 'driver') {
         const driverToDelete = driversData.find(d => d.name === user.name || d.name === user.email);
         if (driverToDelete) {
           db.collection("drivers").doc(driverToDelete.id).delete()
@@ -2612,26 +2622,36 @@
         .catch(e => alert(e.message));
     }
 
+    // ============================================================
+    // RENDER USERS - with master admin protection
+    // ============================================================
     function renderUsers() {
       const el = document.getElementById("usersList");
       if (usersData.length === 0) {
         el.innerHTML = '<div class="empty-msg"><h3>No users yet</h3></div>';
         return;
       }
-      el.innerHTML = usersData.map(u => `
-        <div class="user-item">
-          <div class="user-info">
-            <strong>${u.name || u.email}</strong><br>
-            <span style="font-size:0.8rem;color:#64748b">${u.email}</span><br>
-            <span style="font-size:0.8rem;color:#64748b">Phone: ${u.phone || "N/A"}</span><br>
-            <span style="font-size:0.8rem;color:#64748b">Role: ${u.role}</span>
+      el.innerHTML = usersData.map(u => {
+        const isMaster = u.email === MASTER_ADMIN_EMAIL;
+        const deleteButton = isMaster
+          ? `<span style="font-size:0.75rem; color:#94a3b8; background:#f1f5f9; padding:4px 8px; border-radius:4px;">🔒 Protected</span>`
+          : `<button class="btn-act btn-act-danger" onclick="deleteUser('${u.id}')">🗑️ Delete</button>`;
+        
+        return `
+          <div class="user-item">
+            <div class="user-info">
+              <strong>${u.name || u.email}</strong><br>
+              <span style="font-size:0.8rem;color:#64748b">${u.email}</span><br>
+              <span style="font-size:0.8rem;color:#64748b">Phone: ${u.phone || "N/A"}</span><br>
+              <span style="font-size:0.8rem;color:#64748b">Role: ${u.role}</span>
+            </div>
+            <div class="user-actions">
+              <button class="btn-act btn-act-blue" onclick="openEditUserModal('${u.id}')">✏️ Edit</button>
+              ${deleteButton}
+            </div>
           </div>
-          <div class="user-actions">
-            <button class="btn-act btn-act-blue" onclick="openEditUserModal('${u.id}')">✏️ Edit</button>
-            <button class="btn-act btn-act-danger" onclick="deleteUser('${u.id}')">🗑️ Delete</button>
-          </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     function openEditUserModal(id) {
@@ -2717,7 +2737,6 @@
       const note = document.getElementById("deliveryNoteText").value.trim();
       const finalNotes = note || "New customer delivery";
       
-      // Add customer activity
       addCustomerActivity(customer.name, `Delivery scheduled (New box)`, null);
       
       db.collection("boxes").add({
@@ -2774,7 +2793,6 @@
         })
       };
       
-      // Add customer activity if box has a customer (not Yard)
       if (box && box.customer && box.customer !== "Yard") {
         const actionText = pendingActionStatus === 'Pickup' ? 'Pickup scheduled' : 'Exchange scheduled';
         addCustomerActivity(box.customer, `Box #${box.boxNum || 'New'} ${actionText}`, box.id);
@@ -2831,7 +2849,6 @@
           updateData.lat = null;
           updateData.lng = null;
         }
-        // If box had a customer, log pickup completed
         if (box && box.customer && box.customer !== "Yard") {
           addCustomerActivity(box.customer, `Box #${box.boxNum || 'New'} picked up (completed)`, box.id);
         }
@@ -2853,7 +2870,6 @@
               }
             });
           }
-          // Log exchange completed
           addCustomerActivity(box.customer, `Box #${box.boxNum || 'New'} exchange completed (at customer)`, box.id);
         }
       }
@@ -2948,7 +2964,6 @@
         })
       };
 
-      // Add customer activity for delivery completion
       if (deliveryBox.customer) {
         addCustomerActivity(deliveryBox.customer, `Box #${boxNum} delivered`, existingBox.id);
       }
