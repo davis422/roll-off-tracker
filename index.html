@@ -167,7 +167,8 @@
     .notes-box strong { color: #854d0e; }
     .notes-btn { background: #fef9c3; border: 1px dashed #eab308; color: #854d0e; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 0.8rem; margin-top: 8px; }
 
-    .customer-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .customer-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: background 0.15s; }
+    .customer-card:hover { background: #f0fdf4; }
     .customer-card h3 { font-size: 1.1rem; font-weight: 800; }
     .customer-card p { font-size: 0.85rem; color: #64748b; }
 
@@ -257,16 +258,19 @@
       flex-wrap: wrap;
     }
 
-    .job-detail-section {
+    .job-detail-section,
+    .customer-detail-section {
       margin-bottom: 16px;
       padding-bottom: 16px;
       border-bottom: 1px solid #e2e8f0;
     }
-    .job-detail-section:last-child {
+    .job-detail-section:last-child,
+    .customer-detail-section:last-child {
       border-bottom: none;
       margin-bottom: 0;
     }
-    .job-detail-section .section-title {
+    .job-detail-section .section-title,
+    .customer-detail-section .section-title {
       font-size: 0.8rem;
       font-weight: 800;
       color: #475569;
@@ -396,7 +400,7 @@
 <body>
 
   <!-- ============================================================
-       HTML STRUCTURE (same as before, with Edit User modal)
+       HTML STRUCTURE (same as before)
        ============================================================ -->
   <div id="toast" class="toast"></div>
 
@@ -518,14 +522,14 @@
       <!-- DETAIL PANEL -->
       <div class="detail-panel" id="detailPanel">
         <button class="close-sheet" onclick="closeDetailPanel()">✕</button>
-        <div class="empty-msg" id="detailEmpty">Select a box to view details</div>
+        <div class="empty-msg" id="detailEmpty">Select a customer, box, or job to view details</div>
         <div id="detailContent" style="display: none;"></div>
       </div>
     </div>
   </div>
 
   <!-- ============================================================
-       MODALS
+       MODALS (unchanged)
        ============================================================ -->
   <div id="addBoxModal" class="modal-overlay">
     <div class="modal">
@@ -693,7 +697,7 @@
     </div>
   </div>
 
-  <!-- DISPATCH NOTES MODAL (still used for quick notes from customers tab) -->
+  <!-- DISPATCH NOTES MODAL -->
   <div id="dispatchNotesModal" class="modal-overlay">
     <div class="modal">
       <h3 id="dispatchModalTitle">Add Dispatch Notes</h3>
@@ -859,8 +863,9 @@
     let customersData = [];
     let usersData = [];
     let activeBoxId = null;
-    let activeJobId = null;       // For job detail panel
+    let activeJobId = null;
     let activeCustomerId = null;
+    let activeCustomerIdForDetail = null; // separate for customer detail
     let pendingDeliveryBoxId = null;
     let pendingActionBoxId = null;
     let pendingActionStatus = null;
@@ -1047,7 +1052,7 @@
         }, 700);
       });
 
-      // Autocompletes
+      // Autocompletes (same as before)
       const newBoxStreetInput = document.getElementById("newBoxStreet");
       autocompleteNewBoxStreet = new google.maps.places.Autocomplete(newBoxStreetInput);
       autocompleteNewBoxStreet.addListener("place_changed", () => {
@@ -1379,7 +1384,7 @@
     }
 
     // ============================================================
-    // SERVICE VIEW - with click to open job detail
+    // SERVICE VIEW
     // ============================================================
     function renderService() {
       const el = document.getElementById("serviceList");
@@ -1412,7 +1417,6 @@
         
         const boxDisplay = b.boxNum === "New" ? "New Box (Delivery)" : `#${b.boxNum}`;
         
-        // Click the card to open job detail
         return `<div class="box-card ${b.status || ""}" onclick="openJobDetail('${b.id}')" style="cursor:pointer;">
           <h3>${boxDisplay} - ${statusLabel(b.status)}</h3>
           <p><strong>Customer:</strong> ${b.customer || "N/A"}</p>
@@ -1429,14 +1433,15 @@
     }
 
     // ============================================================
-    // JOB DETAIL PANEL - NEW
+    // JOB DETAIL PANEL
     // ============================================================
     function openJobDetail(jobId) {
       const box = boxesData.find(b => b.id === jobId);
       if (!box) return;
       
       activeJobId = jobId;
-      activeBoxId = null; // clear box detail
+      activeBoxId = null;
+      activeCustomerIdForDetail = null;
       renderJobDetail(box);
       
       if (window.innerWidth <= 900) {
@@ -1452,12 +1457,10 @@
       empty.style.display = "none";
       content.style.display = "block";
       
-      // Get customer info
       const customer = customersData.find(c => c.name === job.customer);
       const customerPhone = customer ? customer.phone : 'No phone';
       const fullAddress = buildAddress(job.street, job.city, job.state, job.zip);
       
-      // Get driver options
       const driverNames = [];
       usersData.filter(u => u.role === 'driver').forEach(u => {
         const name = u.name || u.email || 'Unnamed';
@@ -1471,7 +1474,6 @@
       const driverOptions = '<option value="">— Unassigned —</option>' + 
         driverNames.map(n => `<option value="${n}" ${job.driver === n ? 'selected' : ''}>${n}</option>`).join('');
       
-      // Activity
       const activities = (job.activity || []).slice().reverse().slice(0, 6);
       
       content.innerHTML = `
@@ -1535,13 +1537,9 @@
         </div>
       `;
       
-      // Store current job ID for photo upload
       activeBoxId = job.id; // reuse for photo
     }
 
-    // ============================================================
-    // SAVE JOB DRIVER
-    // ============================================================
     function saveJobDriver(jobId) {
       const newDriver = document.getElementById("jobDriverSelect").value;
       db.collection("boxes").doc(jobId).update({
@@ -1553,15 +1551,11 @@
         })
       }).then(() => {
         showToast("✅ Driver updated!");
-        // Refresh job detail
         const box = boxesData.find(b => b.id === jobId);
         if (box) renderJobDetail(box);
       }).catch(e => alert("Error: " + e.message));
     }
 
-    // ============================================================
-    // SAVE JOB NOTES
-    // ============================================================
     function saveJobNotes(jobId) {
       const notes = document.getElementById("jobNotesTextarea").value.trim();
       db.collection("boxes").doc(jobId).update({
@@ -1576,6 +1570,112 @@
         const box = boxesData.find(b => b.id === jobId);
         if (box) renderJobDetail(box);
       }).catch(e => alert("Error: " + e.message));
+    }
+
+    // ============================================================
+    // CUSTOMER DETAIL PANEL - NEW
+    // ============================================================
+    function openCustomerDetail(customerId) {
+      const customer = customersData.find(c => c.id === customerId);
+      if (!customer) return;
+      
+      activeCustomerIdForDetail = customerId;
+      activeBoxId = null;
+      activeJobId = null;
+      renderCustomerDetail(customer);
+      
+      if (window.innerWidth <= 900) {
+        document.getElementById("detailPanel").classList.add("show");
+      }
+      document.getElementById("detailPanel").style.display = "block";
+    }
+
+    function renderCustomerDetail(customer) {
+      const empty = document.getElementById("detailEmpty");
+      const content = document.getElementById("detailContent");
+      
+      empty.style.display = "none";
+      content.style.display = "block";
+      
+      // Get all boxes for this customer (including "New")
+      const customerBoxes = boxesData.filter(b => 
+        b.customer && b.customer.toLowerCase() === customer.name.toLowerCase()
+      );
+      
+      // Build combined activity from all boxes
+      let allActivities = [];
+      customerBoxes.forEach(box => {
+        if (box.activity) {
+          box.activity.forEach(act => {
+            allActivities.push({
+              time: act.time,
+              text: `Box #${box.boxNum || 'New'} — ${act.text}`,
+              by: act.by || ''
+            });
+          });
+        }
+      });
+      // Sort by time descending (newest first)
+      allActivities.sort((a, b) => new Date(b.time) - new Date(a.time));
+      const recentActivities = allActivities.slice(0, 10);
+      
+      // Box list HTML
+      let boxesHtml = '';
+      if (customerBoxes.length === 0) {
+        boxesHtml = '<p style="color:#94a3b8; font-size:0.85rem;">No boxes associated with this customer.</p>';
+      } else {
+        boxesHtml = customerBoxes.map(b => {
+          const fullAddress = buildAddress(b.street, b.city, b.state, b.zip);
+          const statusBadge = `<span class="badge badge-${b.status}" style="font-size:0.7rem;">${statusLabel(b.status)}</span>`;
+          const boxDisplay = b.boxNum === "New" ? "New Delivery" : `#${b.boxNum}`;
+          return `<div style="padding:8px 12px; background:#f8fafc; border-radius:6px; margin-bottom:6px; border-left:3px solid ${b.status === 'Delivery' ? '#dc2626' : b.status === 'Customer' ? '#16a34a' : b.status === 'Pickup' ? '#d97706' : b.status === 'Exchange' ? '#2563eb' : '#94a3b8'}; cursor:pointer;" onclick="selectBox('${b.id}')">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+              <strong>📦 ${boxDisplay}</strong>
+              ${statusBadge}
+            </div>
+            <div style="font-size:0.8rem; color:#64748b;">${fullAddress || 'No address'}</div>
+          </div>`;
+        }).join('');
+      }
+      
+      // Actions
+      const isAdmin = currentUserData && currentUserData.role === 'admin';
+      
+      content.innerHTML = `
+        <div class="customer-detail-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+            <span style="font-size:1.3rem; font-weight:900;">👤 ${customer.name}</span>
+            <span style="font-size:0.8rem; color:#64748b;">${customerBoxes.length} box${customerBoxes.length !== 1 ? 'es' : ''}</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.9rem;">
+            <div><span class="info-label">Phone</span><div class="info-val">${customer.phone || 'No phone'}</div></div>
+            <div><span class="info-label">Preferred Size</span><div class="info-val">${customer.boxSize || 'Not specified'}</div></div>
+            <div style="grid-column: span 2;"><span class="info-label">Address</span><div class="info-val">${customer.address || 'No address'}</div></div>
+          </div>
+        </div>
+        
+        <div class="customer-detail-section">
+          <div class="section-title">📦 Associated Boxes</div>
+          ${boxesHtml}
+        </div>
+        
+        <div class="customer-detail-section">
+          <div class="section-title">📋 Recent Activity</div>
+          ${recentActivities.length === 0 ? '<div style="font-size:0.85rem;color:#94a3b8;">No activity yet</div>' : 
+            recentActivities.map(a => `<div class="activity-row"><span>${a.time} — ${a.text}</span><span>${a.by || ''}</span></div>`).join('')}
+        </div>
+        
+        <div class="customer-detail-section" style="border-bottom:none;">
+          <div class="section-title">⚡ Actions</div>
+          <div class="actions-row" style="margin:0;">
+            <button class="btn-act btn-act-red" onclick="openDeliveryNotes('${customer.id}')">📦 Send for Delivery</button>
+            ${isAdmin ? `
+              <button class="btn-act btn-act-blue" onclick="openEditCustomerModal('${customer.id}')">✏️ Edit</button>
+              <button class="btn-act btn-act-danger" onclick="deleteCustomer('${customer.id}')">🗑️ Delete</button>
+            ` : ''}
+          </div>
+        </div>
+      `;
     }
 
     // ============================================================
@@ -1632,6 +1732,9 @@
       }).join("");
     }
 
+    // ============================================================
+    // RENDER CUSTOMERS - with click to open detail
+    // ============================================================
     function renderCustomers() {
       const el = document.getElementById("customersList");
       const search = (document.getElementById("customerSearch").value || "").toLowerCase().trim();
@@ -1647,13 +1750,13 @@
         );
         const isAdmin = currentUserData && currentUserData.role === 'admin';
         return `
-          <div class="customer-card">
+          <div class="customer-card" onclick="openCustomerDetail('${c.id}')">
             <h3>${c.name}</h3>
             <p>${c.phone || "No phone"}</p>
             <p>${c.address || "No address"}</p>
             <p><strong>Preferred Size:</strong> ${c.boxSize || "Not specified"}</p>
             <p style="margin-top: 8px;"><strong>Boxes:</strong> ${customerBoxes.length > 0 ? customerBoxes.length : "None assigned"}</p>
-            <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;" onclick="event.stopPropagation();">
               <button class="btn-act btn-act-red" onclick="openDeliveryNotes('${c.id}')">Send for Delivery</button>
               ${customerBoxes.map(b => `
                 <button class="btn-act" id="btn-${b.id}-Exchange" onclick="openDispatchNotes('${b.id}', 'Exchange')">Box #${b.boxNum}: Exchange</button>
@@ -1669,6 +1772,9 @@
       }).join("");
     }
 
+    // ============================================================
+    // DRIVERS VIEW
+    // ============================================================
     function renderDrivers() {
       const el = document.getElementById("driversList");
       
@@ -1766,6 +1872,7 @@
       activeDriverId = driverId;
       activeBoxId = null;
       activeJobId = null;
+      activeCustomerIdForDetail = null;
       const assignedBoxes = boxesData.filter(b => b.driver === driver.name && b.boxNum !== "New");
       const content = document.getElementById("detailContent");
       const empty = document.getElementById("detailEmpty");
@@ -1813,30 +1920,48 @@
     }
 
     // ============================================================
-    // DETAIL PANEL - for box details (unchanged)
+    // DETAIL PANEL - unified dispatcher
     // ============================================================
     function renderDetail() {
+      // Priority: customer detail > job detail > box detail
+      if (activeCustomerIdForDetail) {
+        const customer = customersData.find(c => c.id === activeCustomerIdForDetail);
+        if (customer) {
+          renderCustomerDetail(customer);
+          return;
+        } else {
+          activeCustomerIdForDetail = null;
+        }
+      }
       if (activeJobId) {
-        // If a job is active, render job detail instead
         const job = boxesData.find(b => b.id === activeJobId);
         if (job) {
           renderJobDetail(job);
           return;
         } else {
-          // Job no longer exists, clear
           activeJobId = null;
         }
       }
-      
+      if (activeBoxId) {
+        const box = boxesData.find(b => b.id === activeBoxId);
+        if (box) {
+          renderBoxDetail(box);
+          return;
+        } else {
+          activeBoxId = null;
+        }
+      }
+      // Nothing active
       const empty = document.getElementById("detailEmpty");
       const content = document.getElementById("detailContent");
-      if (!activeBoxId) {
-        empty.style.display = "block";
-        content.style.display = "none";
-        return;
-      }
-      const box = boxesData.find(b => b.id === activeBoxId);
-      if (!box) return;
+      empty.style.display = "block";
+      content.style.display = "none";
+    }
+
+    // Box detail renderer (extracted from old renderDetail)
+    function renderBoxDetail(box) {
+      const empty = document.getElementById("detailEmpty");
+      const content = document.getElementById("detailContent");
       empty.style.display = "none";
       content.style.display = "block";
       const activities = (box.activity || []).slice().reverse().slice(0, 6);
@@ -1882,6 +2007,7 @@
     function selectBox(id) {
       activeBoxId = id;
       activeJobId = null;
+      activeCustomerIdForDetail = null;
       if (window.innerWidth <= 900) {
         document.getElementById("detailPanel").classList.add("show");
       }
@@ -1901,6 +2027,7 @@
       document.getElementById("detailPanel").classList.remove("show");
       activeBoxId = null;
       activeJobId = null;
+      activeCustomerIdForDetail = null;
       activeDriverId = null;
       renderDetail();
     }
