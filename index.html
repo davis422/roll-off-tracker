@@ -493,8 +493,6 @@
       <select id="newBoxSize"><option value="10">10 Yard</option><option value="20">20 Yard</option><option value="30" selected>30 Yard</option><option value="40">40 Yard</option></select>
       <label>Customer</label>
       <select id="newBoxCustomer"><option value="">— No Customer —</option></select>
-      <label>Driver</label>
-      <select id="newBoxDriver"><option value="">— Unassigned —</option></select>
       <label>Street Address *</label>
       <input type="text" id="newBoxStreet" placeholder="Start typing address..." autocomplete="off" />
       <div class="address-row-3">
@@ -651,11 +649,16 @@
     </div>
   </div>
 
+  <!-- UPDATED: Dispatch Notes Modal with Driver Assignment -->
   <div id="dispatchNotesModal" class="modal-overlay">
     <div class="modal">
       <h3 id="dispatchModalTitle">Add Dispatch Notes</h3>
       <label id="dispatchBoxInfo">Box #</label>
       <textarea id="dispatchNoteText" rows="4" placeholder="Enter notes for the driver (Gate code, call before arriving, etc.)"></textarea>
+      <label>Assign Driver</label>
+      <select id="dispatchDriverSelect">
+        <option value="">— Unassigned —</option>
+      </select>
       <div class="modal-btns">
         <button class="btn-save" onclick="confirmSendToService()">Send to Service</button>
         <button class="btn-cancel" onclick="closeModal('dispatchNotesModal')">Cancel</button>
@@ -1202,6 +1205,7 @@
         driversData = [];
         snap.forEach(d => driversData.push({ id: d.id, ...d.data() }));
         populateDriverSelects();
+        populateDispatchDriverSelect();
         if (currentView === "drivers") renderDrivers();
       });
 
@@ -1215,6 +1219,8 @@
       db.collection("users").onSnapshot(snap => {
         usersData = [];
         snap.forEach(d => usersData.push({ id: d.id, ...d.data() }));
+        populateDriverSelects();
+        populateDispatchDriverSelect();
         if (currentView === "users") renderUsers();
       });
 
@@ -1258,6 +1264,21 @@
       document.getElementById("editBoxDriver").innerHTML = opts;
     }
 
+    function populateDispatchDriverSelect() {
+      // Populate dispatch driver dropdown (users with role 'driver' + legacy drivers)
+      const driverNames = [];
+      usersData.filter(u => u.role === 'driver').forEach(u => {
+        const name = u.name || u.email || 'Unnamed';
+        if (!driverNames.includes(name)) driverNames.push(name);
+      });
+      driversData.forEach(d => {
+        const name = d.name || 'Unnamed';
+        if (!driverNames.includes(name)) driverNames.push(name);
+      });
+      const opts = '<option value="">— Unassigned —</option>' + driverNames.map(n => `<option value="${n}">${n}</option>`).join("");
+      document.getElementById("dispatchDriverSelect").innerHTML = opts;
+    }
+
     // ============================================================
     // RENDER FUNCTIONS
     // ============================================================
@@ -1295,7 +1316,7 @@
     }
 
     // ============================================================
-    // SERVICE VIEW - shows "New" delivery boxes
+    // SERVICE VIEW - shows assigned driver
     // ============================================================
     function renderService() {
       const el = document.getElementById("serviceList");
@@ -1317,7 +1338,11 @@
         const nextLabel = (b.status === "Pickup") ? "Mark as Available" : (b.status === "Delivery") ? "Enter Box # & Complete" : "Complete";
         const btnClass = (b.status === "Pickup") ? "btn-act-orange" : (b.status === "Exchange") ? "btn-act-blue" : "btn-act-red";
         
-        const driverLine = (b.driver && b.driver !== "Unassigned") ? `<p><strong>Driver:</strong> ${b.driver}</p>` : '';
+        // Show assigned driver prominently
+        const driverLine = (b.driver && b.driver !== "Unassigned") ? 
+          `<p><strong>🚛 Assigned Driver:</strong> ${b.driver}</p>` : 
+          `<p><strong>🚛 Assigned Driver:</strong> <span style="color:#94a3b8;">None assigned</span></p>`;
+        
         const fullAddress = buildAddress(b.street, b.city, b.state, b.zip);
         
         const noteHtml = b.notes ? 
@@ -1855,8 +1880,8 @@
     // BOX MODALS
     // ============================================================
     function openAddBoxModal() {
-      populateDriverSelects();
       populateCustomerSelects();
+      // No driver select in add box modal anymore
       document.getElementById("newBoxNum").value = "";
       document.getElementById("newBoxCustomer").value = "";
       document.getElementById("newBoxStreet").value = "";
@@ -1874,7 +1899,7 @@
     }
 
     // ============================================================
-    // SAVE BOX - with auto-fill from customer
+    // SAVE BOX - with auto-fill from customer, NO driver assignment
     // ============================================================
     async function saveBox() {
       const boxNum = document.getElementById("newBoxNum").value.trim();
@@ -1924,7 +1949,7 @@
           boxNum: boxNum,
           size: document.getElementById("newBoxSize").value,
           customer: customerName || "Yard",
-          driver: document.getElementById("newBoxDriver").value || "Unassigned",
+          driver: "Unassigned", // Always unassigned when created
           street: street,
           city: city,
           state: state,
@@ -1948,7 +1973,7 @@
     }
 
     // ============================================================
-    // EDIT BOX
+    // EDIT BOX - still has driver select for manual override
     // ============================================================
     function openEditModal() {
       const box = boxesData.find(b => b.id === activeBoxId);
@@ -2280,34 +2305,48 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
+    // UPDATED: Open Dispatch Notes with driver dropdown populated
     function openDispatchNotes(boxId, status) {
       pendingActionBoxId = boxId;
       pendingActionStatus = status;
       const box = boxesData.find(b => b.id === boxId);
       if (!box) return;
+      
+      // Populate driver dropdown
+      populateDispatchDriverSelect();
+      
       document.getElementById("dispatchModalTitle").textContent = status === "Exchange" ? "Schedule Exchange" : "Schedule Pickup";
       document.getElementById("dispatchBoxInfo").textContent = `Box #${box.boxNum} - ${box.customer}`;
       document.getElementById("dispatchNoteText").value = box.notes || "";
+      document.getElementById("dispatchDriverSelect").value = ""; // Default to unassigned
       openModal("dispatchNotesModal");
     }
 
+    // UPDATED: Confirm Send to Service - includes driver assignment
     function confirmSendToService() {
       if (!pendingActionBoxId) return;
+      
       const note = document.getElementById("dispatchNoteText").value.trim();
-      db.collection("boxes").doc(pendingActionBoxId).update({
+      const assignedDriver = document.getElementById("dispatchDriverSelect").value;
+      
+      const updateData = {
         status: pendingActionStatus,
         notes: note || "",
+        driver: assignedDriver || "Unassigned",
         activity: firebase.firestore.FieldValue.arrayUnion({
           time: new Date().toLocaleString(),
-          text: "Status → " + statusLabel(pendingActionStatus) + (note ? " with note" : ""),
+          text: "Status → " + statusLabel(pendingActionStatus) + (note ? " with note" : "") + (assignedDriver ? " assigned to " + assignedDriver : ""),
           by: currentUser ? (currentUser.displayName || "User") : "Dispatch"
         })
-      }).then(() => {
-        closeModal("dispatchNotesModal");
-        pendingActionBoxId = null;
-        pendingActionStatus = null;
-        showToast("✅ Sent to Service!");
-      }).catch(e => alert("Error: " + e.message));
+      };
+      
+      db.collection("boxes").doc(pendingActionBoxId).update(updateData)
+        .then(() => {
+          closeModal("dispatchNotesModal");
+          pendingActionBoxId = null;
+          pendingActionStatus = null;
+          showToast("✅ Sent to Service!" + (assignedDriver ? " Driver: " + assignedDriver : ""));
+        }).catch(e => alert("Error: " + e.message));
     }
 
     // ============================================================
@@ -2339,7 +2378,7 @@
           updateData.state = yardData.state || "";
           updateData.zip = yardData.zip || "";
           updateData.address = yardData.formattedAddress || buildAddress(yardData.street, yardData.city, yardData.state, yardData.zip);
-          updateData.driver = "Unassigned";
+          updateData.driver = "Unassigned"; // Clear driver when box returns to yard
           updateData.lat = yardData.lat;
           updateData.lng = yardData.lng;
         } else {
@@ -2366,6 +2405,7 @@
             updateData.state = parts[2] || "";
             updateData.zip = parts[3] || "";
             updateData.address = customer.address;
+            // Don't clear driver on Exchange completion (driver might still be assigned)
             geocodeAddress(customer.address).then(geo => {
               if (geo) {
                 db.collection("boxes").doc(id).update({ lat: geo.lat, lng: geo.lng });
@@ -2457,7 +2497,7 @@
         zip: zip,
         address: fullAddress,
         status: "Customer",
-        driver: "Unassigned",
+        driver: "Unassigned", // Clear driver after delivery
         lat: lat,
         lng: lng,
         notes: deliveryBox.notes || "",
