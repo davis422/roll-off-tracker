@@ -864,8 +864,7 @@
     let usersData = [];
     let activeBoxId = null;
     let activeJobId = null;
-    let activeCustomerId = null;
-    let activeCustomerIdForDetail = null; // separate for customer detail
+    let activeCustomerIdForDetail = null;
     let pendingDeliveryBoxId = null;
     let pendingActionBoxId = null;
     let pendingActionStatus = null;
@@ -1024,6 +1023,24 @@
           }
         });
       });
+    }
+
+    // ============================================================
+    // CUSTOMER ACTIVITY HELPER
+    // ============================================================
+    function addCustomerActivity(customerName, text, boxId, by) {
+      if (!customerName) return;
+      const customer = customersData.find(c => c.name === customerName);
+      if (!customer) return;
+      const byUser = by || (currentUser ? (currentUser.displayName || "User") : "System");
+      db.collection("customers").doc(customer.id).update({
+        activity: firebase.firestore.FieldValue.arrayUnion({
+          time: new Date().toLocaleString(),
+          text: text,
+          boxId: boxId || null,
+          by: byUser
+        })
+      }).catch(e => console.warn("Could not add customer activity:", e));
     }
 
     // ============================================================
@@ -1573,7 +1590,7 @@
     }
 
     // ============================================================
-    // CUSTOMER DETAIL PANEL - NEW
+    // CUSTOMER DETAIL PANEL - uses customer's own activity
     // ============================================================
     function openCustomerDetail(customerId) {
       const customer = customersData.find(c => c.id === customerId);
@@ -1602,22 +1619,8 @@
         b.customer && b.customer.toLowerCase() === customer.name.toLowerCase()
       );
       
-      // Build combined activity from all boxes
-      let allActivities = [];
-      customerBoxes.forEach(box => {
-        if (box.activity) {
-          box.activity.forEach(act => {
-            allActivities.push({
-              time: act.time,
-              text: `Box #${box.boxNum || 'New'} — ${act.text}`,
-              by: act.by || ''
-            });
-          });
-        }
-      });
-      // Sort by time descending (newest first)
-      allActivities.sort((a, b) => new Date(b.time) - new Date(a.time));
-      const recentActivities = allActivities.slice(0, 10);
+      // Use customer's own activity log (from the customer document)
+      const customerActivities = (customer.activity || []).slice().reverse().slice(0, 10);
       
       // Box list HTML
       let boxesHtml = '';
@@ -1661,8 +1664,8 @@
         
         <div class="customer-detail-section">
           <div class="section-title">📋 Recent Activity</div>
-          ${recentActivities.length === 0 ? '<div style="font-size:0.85rem;color:#94a3b8;">No activity yet</div>' : 
-            recentActivities.map(a => `<div class="activity-row"><span>${a.time} — ${a.text}</span><span>${a.by || ''}</span></div>`).join('')}
+          ${customerActivities.length === 0 ? '<div style="font-size:0.85rem;color:#94a3b8;">No activity yet for this customer.</div>' : 
+            customerActivities.map(a => `<div class="activity-row"><span>${a.time} — ${a.text}</span><span>${a.by || ''}</span></div>`).join('')}
         </div>
         
         <div class="customer-detail-section" style="border-bottom:none;">
@@ -1679,7 +1682,7 @@
     }
 
     // ============================================================
-    // EXISTING FUNCTIONS (kept unchanged)
+    // EXISTING FUNCTIONS (with customer activity logging added)
     // ============================================================
     function sendSMS(boxId) {
       const box = boxesData.find(b => b.id === boxId);
@@ -1958,7 +1961,7 @@
       content.style.display = "none";
     }
 
-    // Box detail renderer (extracted from old renderDetail)
+    // Box detail renderer
     function renderBoxDetail(box) {
       const empty = document.getElementById("detailEmpty");
       const content = document.getElementById("detailContent");
@@ -2112,10 +2115,20 @@
 
     function quickStatus(newStatus) {
       if (!activeBoxId) return;
+      const box = boxesData.find(b => b.id === activeBoxId);
+      if (!box) return;
+      
       let updateData = {
         status: newStatus,
-        activity: firebase.firestore.FieldValue.arrayUnion({ time: new Date().toLocaleString(), text: "Status → " + statusLabel(newStatus), by: currentUser ? (currentUser.displayName || "User") : "Driver/Admin" })
+        activity: firebase.firestore.FieldValue.arrayUnion({ 
+          time: new Date().toLocaleString(), 
+          text: "Status → " + statusLabel(newStatus), 
+          by: currentUser ? (currentUser.displayName || "User") : "Driver/Admin" 
+        })
       };
+      
+      let customerName = box.customer && box.customer !== "Yard" ? box.customer : null;
+      
       if (newStatus === "Available") {
         if (yardData) {
           updateData.customer = "Yard";
@@ -2138,7 +2151,18 @@
           updateData.lat = null;
           updateData.lng = null;
         }
+        // If the box had a customer before, log customer activity for pickup
+        if (customerName) {
+          addCustomerActivity(customerName, `Box #${box.boxNum || 'New'} picked up (moved to yard)`, box.id);
+        }
+      } else {
+        // For status changes to Pickup or Exchange, log customer activity if customer exists
+        if (customerName) {
+          const actionText = newStatus === 'Pickup' ? 'marked for pickup' : 'marked for exchange';
+          addCustomerActivity(customerName, `Box #${box.boxNum || 'New'} ${actionText}`, box.id);
+        }
       }
+      
       db.collection("boxes").doc(activeBoxId).update(updateData).then(() => {
         showToast("✅ Status Updated!");
       }).catch(e => alert("Error: " + e.message));
@@ -2416,6 +2440,14 @@
         }
       }
 
+      // If customer changed, log customer activity
+      const oldBox = boxesData.find(b => b.id === activeBoxId);
+      if (oldBox && newCustomer && newCustomer !== oldBox.customer) {
+        // Log that the box was assigned to new customer (maybe as part of edit)
+        addCustomerActivity(newCustomer, `Box #${newBoxNum} assigned to customer`, activeBoxId);
+        // Also if old customer existed, we could log removal, but optional.
+      }
+
       try {
         await db.collection("boxes").doc(activeBoxId).update(updateData);
         closeModal("editBoxModal");
@@ -2453,9 +2485,11 @@
       const fullAddress = buildAddress(street, city, state, zip);
       if (!street || !city || !state || !zip) return alert("Please complete the Street, City, State, and ZIP fields.");
       db.collection("customers").add({
-        name, phone: document.getElementById("newCustomerPhone").value.trim(),
+        name: name,
+        phone: document.getElementById("newCustomerPhone").value.trim(),
         address: fullAddress,
         boxSize: document.getElementById("newCustomerBoxSize").value,
+        activity: [], // initialize empty activity array
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         closeModal("addCustomerModal");
@@ -2496,7 +2530,8 @@
       const fullAddress = buildAddress(street, city, state, zip);
       if (!street || !city || !state || !zip) return alert("Please complete the Street, City, State, and ZIP fields.");
       db.collection("customers").doc(activeCustomerId).update({
-        name, phone: document.getElementById("editCustomerPhone").value.trim(),
+        name: name,
+        phone: document.getElementById("editCustomerPhone").value.trim(),
         address: fullAddress,
         boxSize: document.getElementById("editCustomerBoxSize").value
       }).then(() => {
@@ -2681,6 +2716,10 @@
       if (!customer) return;
       const note = document.getElementById("deliveryNoteText").value.trim();
       const finalNotes = note || "New customer delivery";
+      
+      // Add customer activity
+      addCustomerActivity(customer.name, `Delivery scheduled (New box)`, null);
+      
       db.collection("boxes").add({
         boxNum: "New",
         size: customer.boxSize || "Not specified",
@@ -2722,6 +2761,7 @@
       
       const note = document.getElementById("dispatchNoteText").value.trim();
       const assignedDriver = document.getElementById("dispatchDriverSelect").value;
+      const box = boxesData.find(b => b.id === pendingActionBoxId);
       
       const updateData = {
         status: pendingActionStatus,
@@ -2733,6 +2773,12 @@
           by: currentUser ? (currentUser.displayName || "User") : "Dispatch"
         })
       };
+      
+      // Add customer activity if box has a customer (not Yard)
+      if (box && box.customer && box.customer !== "Yard") {
+        const actionText = pendingActionStatus === 'Pickup' ? 'Pickup scheduled' : 'Exchange scheduled';
+        addCustomerActivity(box.customer, `Box #${box.boxNum || 'New'} ${actionText}`, box.id);
+      }
       
       db.collection("boxes").doc(pendingActionBoxId).update(updateData)
         .then(() => {
@@ -2752,6 +2798,8 @@
         return;
       }
 
+      const box = boxesData.find(b => b.id === id);
+      
       let updateData = {
         status: newStatus,
         activity: firebase.firestore.FieldValue.arrayUnion({
@@ -2783,10 +2831,13 @@
           updateData.lat = null;
           updateData.lng = null;
         }
+        // If box had a customer, log pickup completed
+        if (box && box.customer && box.customer !== "Yard") {
+          addCustomerActivity(box.customer, `Box #${box.boxNum || 'New'} picked up (completed)`, box.id);
+        }
       }
 
       if (newStatus === "Customer") {
-        const box = boxesData.find(b => b.id === id);
         if (box && box.customer) {
           const customer = customersData.find(c => c.name === box.customer);
           if (customer && customer.address) {
@@ -2802,6 +2853,8 @@
               }
             });
           }
+          // Log exchange completed
+          addCustomerActivity(box.customer, `Box #${box.boxNum || 'New'} exchange completed (at customer)`, box.id);
         }
       }
 
@@ -2894,6 +2947,11 @@
           by: currentUser ? (currentUser.displayName || "User") : "Driver"
         })
       };
+
+      // Add customer activity for delivery completion
+      if (deliveryBox.customer) {
+        addCustomerActivity(deliveryBox.customer, `Box #${boxNum} delivered`, existingBox.id);
+      }
 
       try {
         await db.collection("boxes").doc(existingBox.id).update(updateData);
