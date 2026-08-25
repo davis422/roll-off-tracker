@@ -7,7 +7,7 @@
   
   <style>
     /* ============================================================
-       ALL CSS (same as before)
+       ALL CSS (same as before, with header updates)
        ============================================================ */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     
@@ -47,15 +47,59 @@
       overflow: hidden; 
     }
     
-    header { height: 56px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; gap: 12px; flex-shrink: 0; }
+    header { 
+      height: 56px; 
+      background: #fff; 
+      border-bottom: 1px solid #e2e8f0; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 0 16px; 
+      gap: 12px; 
+      flex-shrink: 0; 
+    }
+    
+    /* Brand + Current View */
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+    .header-brand {
+      font-weight: 900;
+      font-size: 1.05rem;
+      color: #16a34a;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-brand .brand-separator {
+      color: #cbd5e1;
+      font-weight: 300;
+      margin: 0 4px;
+    }
+    .header-current-view {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #334155;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .header-current-view .view-icon {
+      margin-right: 4px;
+    }
+
     .menu-btn { display: none; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #334155; }
-    .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; flex: 1; max-width: 360px; }
-    .search-box input { border: none; background: transparent; width: 100%; outline: none; font-size: 0.85rem; margin-left: 8px; }
+    
     .user-area { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
     .avatar { width: 32px; height: 32px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; overflow: hidden; }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
     .btn-logout { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; color: #475569; }
-    .settings-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #475569; }
+    .btn-logout:hover { background: #e2e8f0; }
 
     .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr; overflow: hidden; }
     
@@ -348,7 +392,9 @@
       }
 
       .detail-layout { flex-direction: column; }
-      .search-box { max-width: 150px; }
+      .header-current-view { font-size: 0.85rem; }
+      .header-brand { font-size: 0.9rem; }
+      .header-brand .brand-separator { display: none; }
       .user-area span { display: none; }
       
       .detail-panel {
@@ -385,6 +431,8 @@
       .box-item-title {
         font-size: 0.8rem;
       }
+      .header-brand { font-size: 0.8rem; }
+      .header-current-view { font-size: 0.75rem; }
     }
 
     @media (max-height: 500px) and (orientation: landscape) {
@@ -400,7 +448,7 @@
 <body>
 
   <!-- ============================================================
-       HTML STRUCTURE (same as before)
+       HTML STRUCTURE
        ============================================================ -->
   <div id="toast" class="toast"></div>
 
@@ -437,13 +485,14 @@
   <div class="main-wrapper">
     <header>
       <button class="menu-btn" onclick="toggleDrawer(true)">☰</button>
-      <div class="search-box">
-        🔍 <input type="text" id="searchInput" placeholder="Search box #..." oninput="renderApp()" />
+      <div class="header-left">
+        <span class="header-brand">♻️ NIAM TRACK</span>
+        <span class="brand-separator">|</span>
+        <span class="header-current-view" id="currentViewLabel">🗺️ Map</span>
       </div>
       <div class="user-area">
         <div class="avatar" id="userAvatar">?</div>
         <span id="userName">User</span>
-        <button class="settings-btn" onclick="switchView('users')" id="settingsGear">⚙️</button>
         <button class="btn-logout" onclick="signOut()">Sign Out</button>
       </div>
     </header>
@@ -943,6 +992,21 @@
     }
 
     // ============================================================
+    // VIEW LABEL UPDATER
+    // ============================================================
+    function updateCurrentViewLabel(view) {
+      const labels = {
+        'map': '🗺️ Map',
+        'service': '📋 Service',
+        'boxes': '📦 Boxes',
+        'customers': '👥 Customers',
+        'drivers': '🚛 Drivers',
+        'users': '👤 Manage Users'
+      };
+      document.getElementById('currentViewLabel').textContent = labels[view] || '🗺️ Map';
+    }
+
+    // ============================================================
     // AUTH
     // ============================================================
     function signInWithGoogle() {
@@ -970,10 +1034,8 @@
             currentUserData = snapshot.docs[0].data();
             if (currentUserData.role === 'admin') {
               document.getElementById("usersTab").style.display = "block";
-              document.getElementById("settingsGear").style.display = "block";
             } else {
               document.getElementById("usersTab").style.display = "none";
-              document.getElementById("settingsGear").style.display = "none";
             }
             startApp();
           } else {
@@ -2041,6 +2103,9 @@
       document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
       const nav = document.querySelector(`[data-view="${view}"]`);
       if (nav) nav.classList.add("active");
+      
+      // Update header label
+      updateCurrentViewLabel(view);
       
       const mapView = document.getElementById("mapView");
       mapView.classList.add("hidden");
