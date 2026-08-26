@@ -6,6 +6,9 @@
   <title>NIAM TRACK</title>
   
   <style>
+    /* ============================================================
+       ALL CSS (same as before)
+       ============================================================ */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     
     body { 
@@ -852,7 +855,6 @@
     </div>
   </div>
 
-  <!-- FIXED: Camera Input - allows camera roll selection -->
   <input type="file" id="cameraInput" accept="image/*" style="display: none;" />
 
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -1008,7 +1010,6 @@
         db.collection("users").where("email", "==", user.email).get().then(snapshot => {
           if (!snapshot.empty) {
             currentUserData = snapshot.docs[0].data();
-            // Check if user is admin
             const isAdmin = currentUserData && currentUserData.role === 'admin';
             if (isAdmin) {
               document.getElementById("usersTab").style.display = "block";
@@ -1021,7 +1022,6 @@
             auth.signOut();
           }
         }).catch(err => {
-          // Show a friendlier error message
           alert("Error checking user permissions: " + err.message + "\n\nPlease try signing out and back in, or contact your administrator.");
           auth.signOut();
         });
@@ -1390,7 +1390,8 @@
         if (!driverNames.includes(name)) driverNames.push(name);
       });
       const opts = '<option value="">— Unassigned —</option>' + driverNames.map(n => `<option value="${n}">${n}</option>`).join("");
-      document.getElementById("dispatchDriverSelect").innerHTML = opts;
+      const el = document.getElementById("dispatchDriverSelect");
+      if (el) el.innerHTML = opts;
     }
 
     function populateEditBoxDriverSelect() {
@@ -1404,7 +1405,8 @@
         if (!driverNames.includes(name)) driverNames.push(name);
       });
       const opts = '<option value="">— Unassigned —</option>' + driverNames.map(n => `<option value="${n}">${n}</option>`).join("");
-      document.getElementById("editBoxDriver").innerHTML = opts;
+      const el = document.getElementById("editBoxDriver");
+      if (el) el.innerHTML = opts;
     }
 
     // ============================================================
@@ -1412,15 +1414,13 @@
     // ============================================================
 
     function renderApp() {
-      const search = (document.getElementById("searchInput").value || "").toLowerCase().trim();
+      // Search removed - no longer needed
       const filter = document.getElementById("statusFilter").value;
       
       const filtered = boxesData.filter(b => {
         if (b.boxNum === "New") return false;
         if (filter !== "ALL" && b.status !== filter) return false;
-        if (!search) return true;
-        const hay = [b.boxNum, b.customer, b.street, b.city, b.state, b.zip, b.driver, b.notes].join(" ").toLowerCase();
-        return hay.includes(search);
+        return true;
       });
       
       document.getElementById("boxCountTitle").textContent = "BOXES (" + filtered.length + ")";
