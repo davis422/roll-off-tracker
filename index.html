@@ -7,7 +7,7 @@
   
   <style>
     /* ============================================================
-       ALL CSS (same as before, with simplified header)
+       ALL CSS
        ============================================================ */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     
@@ -20,12 +20,87 @@
       display: flex; 
     }
 
-    #loginScreen { position: fixed; inset: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; color: white; padding: 24px; }
+    #loginScreen { 
+      position: fixed; 
+      inset: 0; 
+      background: #0f172a; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 10000; 
+      color: white; 
+      padding: 24px; 
+    }
     #loginScreen.hidden { display: none; }
-    .login-logo { font-size: 1.8rem; font-weight: 900; color: #22c55e; margin-bottom: 8px; }
+    
+    .login-logo { font-size: 2.2rem; font-weight: 900; color: #22c55e; margin-bottom: 8px; }
     .login-sub { color: #94a3b8; margin-bottom: 32px; text-align: center; }
-    .btn-google { background: white; color: #334155; border: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+    
+    .btn-google { 
+      background: white; 
+      color: #334155; 
+      border: none; 
+      padding: 14px 28px; 
+      border-radius: 8px; 
+      font-weight: 700; 
+      font-size: 1rem; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      width: 100%;
+      max-width: 320px;
+      justify-content: center;
+    }
     .btn-google:hover { background: #f8fafc; }
+    
+    .demo-login {
+      width: 100%;
+      max-width: 320px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .demo-login .demo-label {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .demo-login input {
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: white;
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .demo-login input::placeholder {
+      color: #64748b;
+    }
+    .demo-login .btn-demo {
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
+    }
+    .demo-login .btn-demo:hover {
+      background: #15803d;
+    }
+
+    .login-error { color: #ef4444; margin-top: 12px; font-size: 0.85rem; text-align: center; }
 
     aside { width: 220px; background: #0f172a; color: #94a3b8; display: flex; flex-direction: column; flex-shrink: 0; z-index: 3000; }
     .brand { padding: 18px 16px; font-weight: 900; font-size: 1.05rem; color: #22c55e; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
@@ -47,7 +122,6 @@
       overflow: hidden; 
     }
     
-    /* SIMPLIFIED HEADER */
     header { 
       height: 56px; 
       background: #fff; 
@@ -420,21 +494,42 @@
   </style>
 </head>
 <body>
-  <div id="toast" class="toast"></div>
-
+  <!-- ============================================================
+       LOGIN SCREEN with Demo Login
+       ============================================================ -->
   <div id="loginScreen">
     <div class="login-logo" style="font-size: 2.2rem;">♻️ NIAM TRACK</div>
     <div class="login-sub">National Iron & Metals</div>
+    
     <button class="btn-google" onclick="signInWithGoogle()">
       <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       Sign in with Google
     </button>
+    
+    <div class="demo-login">
+      <div class="demo-label">— or try the demo —</div>
+      <input type="text" id="demoEmail" placeholder="Email" value="demo@test.com" />
+      <input type="password" id="demoPassword" placeholder="Password" value="test123" />
+      <button class="btn-demo" onclick="demoLogin()">🚀 Demo Login</button>
+    </div>
+    
     <div class="login-error" id="loginError"></div>
   </div>
 
+  <!-- ============================================================
+       TOAST
+       ============================================================ -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ============================================================
+       LOADING
+       ============================================================ -->
   <div id="loading" style="display:none;">Loading Roll-Off Tracker...</div>
   <div id="mobileOverlay" class="mobile-overlay" onclick="toggleDrawer(false)"></div>
 
+  <!-- ============================================================
+       SIDEBAR
+       ============================================================ -->
   <aside id="sidebar">
     <div class="brand">♻️ NIAM TRACK <span class="close-drawer" onclick="toggleDrawer(false)">✕</span></div>
     <ul class="nav-list">
@@ -452,6 +547,9 @@
     </div>
   </aside>
 
+  <!-- ============================================================
+       MAIN WRAPPER
+       ============================================================ -->
   <div class="main-wrapper">
     <header>
       <button class="menu-btn" onclick="toggleDrawer(true)">☰</button>
@@ -466,6 +564,7 @@
     </header>
 
     <div class="dashboard-grid">
+      <!-- MAP VIEW -->
       <div id="mapView" class="active">
         <div class="map-panel">
           <div id="map"></div>
@@ -493,11 +592,13 @@
         </div>
       </div>
 
+      <!-- SERVICE VIEW -->
       <div class="service-view" id="serviceView">
         <div id="serviceAlertContainer"></div>
         <div id="serviceList"></div>
       </div>
 
+      <!-- BOXES VIEW -->
       <div class="boxes-view" id="boxesView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">All Boxes</h2>
@@ -506,6 +607,7 @@
         <div id="boxesList"></div>
       </div>
 
+      <!-- CUSTOMERS VIEW -->
       <div class="customers-view" id="customersView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">Customers</h2>
@@ -515,6 +617,7 @@
         <div id="customersList"></div>
       </div>
 
+      <!-- DRIVERS VIEW -->
       <div class="drivers-view" id="driversView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">Drivers</h2>
@@ -522,6 +625,7 @@
         <div id="driversList"></div>
       </div>
 
+      <!-- USERS VIEW -->
       <div class="users-view" id="usersView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.2rem; font-weight:900;">Manage Users</h2>
@@ -530,6 +634,7 @@
         <div id="usersList"></div>
       </div>
 
+      <!-- DETAIL PANEL -->
       <div class="detail-panel" id="detailPanel">
         <button class="close-sheet" onclick="closeDetailPanel()">✕</button>
         <div class="empty-msg" id="detailEmpty">Select a customer, box, or job to view details</div>
@@ -538,7 +643,9 @@
     </div>
   </div>
 
-  <!-- MODALS (unchanged) -->
+  <!-- ============================================================
+       MODALS
+       ============================================================ -->
   <div id="addBoxModal" class="modal-overlay">
     <div class="modal">
       <h3>Add New Box</h3>
@@ -902,6 +1009,96 @@
     let autocompleteYardStreet = null;
 
     // ============================================================
+    // DEMO LOGIN FUNCTION
+    // ============================================================
+    function demoLogin() {
+      const email = document.getElementById("demoEmail").value.trim();
+      const password = document.getElementById("demoPassword").value.trim();
+      
+      if (password === "test123" && email === "demo@test.com") {
+        currentUser = {
+          uid: "demo-user-123",
+          displayName: "Demo User",
+          email: email,
+          photoURL: null
+        };
+        
+        currentUserData = {
+          email: email,
+          role: "admin",
+          name: "Demo User",
+          phone: "N/A"
+        };
+        
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("loading").style.display = "flex";
+        document.getElementById("userName").textContent = "Demo User";
+        document.getElementById("usersTab").style.display = "block";
+        
+        startApp();
+      } else {
+        document.getElementById("loginError").textContent = "❌ Invalid demo credentials. Use demo@test.com / test123";
+      }
+    }
+
+    // ============================================================
+    // AUTH
+    // ============================================================
+    function signInWithGoogle() {
+      document.getElementById("loginError").textContent = "";
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => {
+        document.getElementById("loginError").textContent = err.message;
+      });
+    }
+
+    function signOut() { 
+      if (currentUser && currentUser.uid === "demo-user-123") {
+        location.reload();
+        return;
+      }
+      auth.signOut(); 
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (currentUser && currentUser.uid === "demo-user-123") return;
+      
+      if (user) {
+        currentUser = user;
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("loading").style.display = "flex";
+        document.getElementById("userName").textContent = user.displayName || user.email || "User";
+        const avatar = document.getElementById("userAvatar");
+        if (user.photoURL) avatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
+        else avatar.textContent = (user.displayName || "U").charAt(0).toUpperCase();
+
+        db.collection("users").where("email", "==", user.email).get().then(snapshot => {
+          if (!snapshot.empty) {
+            currentUserData = snapshot.docs[0].data();
+            const isAdmin = currentUserData && currentUserData.role === 'admin';
+            if (isAdmin) {
+              document.getElementById("usersTab").style.display = "block";
+            } else {
+              document.getElementById("usersTab").style.display = "none";
+            }
+            startApp();
+          } else {
+            alert("You are not authorized to use this app. Please contact your administrator.");
+            auth.signOut();
+          }
+        }).catch(err => {
+          alert("Error checking user permissions: " + err.message + "\n\nPlease try signing out and back in, or contact your administrator.");
+          auth.signOut();
+        });
+      } else {
+        if (!currentUser || currentUser.uid !== "demo-user-123") {
+          document.getElementById("loginScreen").classList.remove("hidden");
+          document.getElementById("loading").style.display = "none";
+        }
+      }
+    });
+
+    // ============================================================
     // DOM HELPERS
     // ============================================================
     function toggleDrawer(open) {
@@ -947,53 +1144,6 @@
         toast.classList.remove("show");
       }, 3000);
     }
-
-    // ============================================================
-    // AUTH
-    // ============================================================
-    function signInWithGoogle() {
-      document.getElementById("loginError").textContent = "";
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(err => {
-        document.getElementById("loginError").textContent = err.message;
-      });
-    }
-
-    function signOut() { auth.signOut(); }
-
-    auth.onAuthStateChanged(user => {
-      currentUser = user;
-      if (user) {
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("loading").style.display = "flex";
-        document.getElementById("userName").textContent = user.displayName || user.email || "User";
-        const avatar = document.getElementById("userAvatar");
-        if (user.photoURL) avatar.innerHTML = '<img src="' + user.photoURL + '" alt="">';
-        else avatar.textContent = (user.displayName || "U").charAt(0).toUpperCase();
-
-        db.collection("users").where("email", "==", user.email).get().then(snapshot => {
-          if (!snapshot.empty) {
-            currentUserData = snapshot.docs[0].data();
-            const isAdmin = currentUserData && currentUserData.role === 'admin';
-            if (isAdmin) {
-              document.getElementById("usersTab").style.display = "block";
-            } else {
-              document.getElementById("usersTab").style.display = "none";
-            }
-            startApp();
-          } else {
-            alert("You are not authorized to use this app. Please contact your administrator.");
-            auth.signOut();
-          }
-        }).catch(err => {
-          alert("Error checking user permissions: " + err.message + "\n\nPlease try signing out and back in, or contact your administrator.");
-          auth.signOut();
-        });
-      } else {
-        document.getElementById("loginScreen").classList.remove("hidden");
-        document.getElementById("loading").style.display = "none";
-      }
-    });
 
     // ============================================================
     // UTILITY
@@ -1405,9 +1555,6 @@
       renderDetail();
     }
 
-    // ============================================================
-    // SERVICE VIEW
-    // ============================================================
     function renderService() {
       const el = document.getElementById("serviceList");
       const alertContainer = document.getElementById("serviceAlertContainer");
@@ -1454,9 +1601,6 @@
       }).join("");
     }
 
-    // ============================================================
-    // JOB DETAIL PANEL
-    // ============================================================
     function openJobDetail(jobId) {
       const box = boxesData.find(b => b.id === jobId);
       if (!box) return;
@@ -1594,9 +1738,6 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
-    // ============================================================
-    // CUSTOMER DETAIL PANEL
-    // ============================================================
     function openCustomerDetail(customerId) {
       const customer = customersData.find(c => c.id === customerId);
       if (!customer) return;
@@ -1682,9 +1823,6 @@
       `;
     }
 
-    // ============================================================
-    // EXISTING FUNCTIONS
-    // ============================================================
     function sendSMS(boxId) {
       const box = boxesData.find(b => b.id === boxId);
       if (!box) return;
@@ -1736,9 +1874,6 @@
       }).join("");
     }
 
-    // ============================================================
-    // RENDER CUSTOMERS
-    // ============================================================
     function renderCustomers() {
       const el = document.getElementById("customersList");
       const search = (document.getElementById("customerSearch").value || "").toLowerCase().trim();
@@ -1776,9 +1911,6 @@
       }).join("");
     }
 
-    // ============================================================
-    // DRIVERS VIEW
-    // ============================================================
     function renderDrivers() {
       const el = document.getElementById("driversList");
       
@@ -1923,9 +2055,6 @@
       toggleDrawer(false);
     }
 
-    // ============================================================
-    // DETAIL PANEL - unified dispatcher
-    // ============================================================
     function renderDetail() {
       if (activeCustomerIdForDetail) {
         const customer = customersData.find(c => c.id === activeCustomerIdForDetail);
@@ -2033,9 +2162,6 @@
       renderDetail();
     }
 
-    // ============================================================
-    // VIEW SWITCHING
-    // ============================================================
     function switchView(view) {
       currentView = view;
       document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
@@ -2096,9 +2222,6 @@
       drivers.classList.add("hidden");
     }
 
-    // ============================================================
-    // CONFIRM QUICK STATUS & QUICK STATUS
-    // ============================================================
     function confirmQuickStatus(newStatus) {
       const statusLabels = {
         'Pickup': 'Ready for Pickup',
@@ -2164,9 +2287,6 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
-    // ============================================================
-    // TAKE PHOTO
-    // ============================================================
     function takePhoto() {
       if (!activeBoxId) return;
       document.getElementById("cameraInput").click();
