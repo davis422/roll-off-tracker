@@ -7,7 +7,7 @@
   
   <style>
     /* ============================================================
-       ALL CSS
+       ALL CSS (same as before)
        ============================================================ */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     
@@ -98,6 +98,10 @@
     }
     .demo-login .btn-demo:hover {
       background: #15803d;
+    }
+    .demo-login .btn-demo:disabled {
+      background: #86efac;
+      cursor: wait;
     }
 
     .login-error { color: #ef4444; margin-top: 12px; font-size: 0.85rem; text-align: center; }
@@ -510,20 +514,16 @@
       <div class="demo-label">— or try the demo —</div>
       <input type="text" id="demoEmail" placeholder="Email" value="demo@test.com" />
       <input type="password" id="demoPassword" placeholder="Password" value="test123" />
-      <button class="btn-demo" onclick="demoLogin()">🚀 Demo Login</button>
+      <button class="btn-demo" id="demoLoginBtn" onclick="demoLogin()">🚀 Demo Login</button>
     </div>
     
     <div class="login-error" id="loginError"></div>
   </div>
 
   <!-- ============================================================
-       TOAST
+       TOAST & LOADING
        ============================================================ -->
   <div id="toast" class="toast"></div>
-
-  <!-- ============================================================
-       LOADING
-       ============================================================ -->
   <div id="loading" style="display:none;">Loading Roll-Off Tracker...</div>
   <div id="mobileOverlay" class="mobile-overlay" onclick="toggleDrawer(false)"></div>
 
@@ -644,7 +644,7 @@
   </div>
 
   <!-- ============================================================
-       MODALS
+       MODALS (unchanged)
        ============================================================ -->
   <div id="addBoxModal" class="modal-overlay">
     <div class="modal">
@@ -1009,36 +1009,53 @@
     let autocompleteYardStreet = null;
 
     // ============================================================
-    // DEMO LOGIN FUNCTION
+    // DEMO LOGIN FUNCTION - FIXED with anonymous auth
     // ============================================================
     function demoLogin() {
       const email = document.getElementById("demoEmail").value.trim();
       const password = document.getElementById("demoPassword").value.trim();
+      const btn = document.getElementById("demoLoginBtn");
       
-      if (password === "test123" && email === "demo@test.com") {
-        currentUser = {
-          uid: "demo-user-123",
-          displayName: "Demo User",
-          email: email,
-          photoURL: null
-        };
-        
-        currentUserData = {
-          email: email,
-          role: "admin",
-          name: "Demo User",
-          phone: "N/A"
-        };
-        
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("loading").style.display = "flex";
-        document.getElementById("userName").textContent = "Demo User";
-        document.getElementById("usersTab").style.display = "block";
-        
-        startApp();
-      } else {
+      if (password !== "test123" || email !== "demo@test.com") {
         document.getElementById("loginError").textContent = "❌ Invalid demo credentials. Use demo@test.com / test123";
+        return;
       }
+      
+      // Disable button and show loading
+      btn.disabled = true;
+      btn.textContent = "⏳ Signing in...";
+      document.getElementById("loginError").textContent = "";
+      
+      // Sign in anonymously to Firebase Auth first
+      auth.signInAnonymously()
+        .then(() => {
+          // Now we're authenticated, set up the demo user
+          currentUser = {
+            uid: "demo-user-123",
+            displayName: "Demo User",
+            email: email,
+            photoURL: null
+          };
+          
+          currentUserData = {
+            email: email,
+            role: "admin",
+            name: "Demo User",
+            phone: "N/A"
+          };
+          
+          document.getElementById("loginScreen").classList.add("hidden");
+          document.getElementById("loading").style.display = "flex";
+          document.getElementById("userName").textContent = "Demo User";
+          document.getElementById("usersTab").style.display = "block";
+          
+          startApp();
+        })
+        .catch(err => {
+          document.getElementById("loginError").textContent = "❌ Demo login failed: " + err.message;
+          btn.disabled = false;
+          btn.textContent = "🚀 Demo Login";
+        });
     }
 
     // ============================================================
@@ -1054,13 +1071,17 @@
 
     function signOut() { 
       if (currentUser && currentUser.uid === "demo-user-123") {
-        location.reload();
+        // Sign out from Firebase Auth
+        auth.signOut().then(() => {
+          location.reload();
+        });
         return;
       }
       auth.signOut(); 
     }
 
     auth.onAuthStateChanged(user => {
+      // Skip if already logged in as demo
       if (currentUser && currentUser.uid === "demo-user-123") return;
       
       if (user) {
@@ -1091,15 +1112,21 @@
           auth.signOut();
         });
       } else {
+        // Only show login if not already in demo mode
         if (!currentUser || currentUser.uid !== "demo-user-123") {
           document.getElementById("loginScreen").classList.remove("hidden");
           document.getElementById("loading").style.display = "none";
+          
+          // Re-enable demo button if it was disabled
+          const btn = document.getElementById("demoLoginBtn");
+          btn.disabled = false;
+          btn.textContent = "🚀 Demo Login";
         }
       }
     });
 
     // ============================================================
-    // DOM HELPERS
+    // DOM HELPERS (rest of the code unchanged)
     // ============================================================
     function toggleDrawer(open) {
       const sidebar = document.getElementById("sidebar");
@@ -1229,6 +1256,7 @@
         }, 700);
       });
 
+      // Autocomplete for address fields
       const newBoxStreetInput = document.getElementById("newBoxStreet");
       autocompleteNewBoxStreet = new google.maps.places.Autocomplete(newBoxStreetInput);
       autocompleteNewBoxStreet.addListener("place_changed", () => {
@@ -1601,6 +1629,9 @@
       }).join("");
     }
 
+    // ============================================================
+    // JOB DETAIL PANEL
+    // ============================================================
     function openJobDetail(jobId) {
       const box = boxesData.find(b => b.id === jobId);
       if (!box) return;
@@ -1738,6 +1769,9 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
+    // ============================================================
+    // CUSTOMER DETAIL PANEL
+    // ============================================================
     function openCustomerDetail(customerId) {
       const customer = customersData.find(c => c.id === customerId);
       if (!customer) return;
@@ -1823,6 +1857,9 @@
       `;
     }
 
+    // ============================================================
+    // EXISTING FUNCTIONS
+    // ============================================================
     function sendSMS(boxId) {
       const box = boxesData.find(b => b.id === boxId);
       if (!box) return;
@@ -2055,6 +2092,9 @@
       toggleDrawer(false);
     }
 
+    // ============================================================
+    // DETAIL PANEL - unified dispatcher
+    // ============================================================
     function renderDetail() {
       if (activeCustomerIdForDetail) {
         const customer = customersData.find(c => c.id === activeCustomerIdForDetail);
@@ -2162,6 +2202,9 @@
       renderDetail();
     }
 
+    // ============================================================
+    // VIEW SWITCHING
+    // ============================================================
     function switchView(view) {
       currentView = view;
       document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
@@ -2222,6 +2265,9 @@
       drivers.classList.add("hidden");
     }
 
+    // ============================================================
+    // CONFIRM QUICK STATUS & QUICK STATUS
+    // ============================================================
     function confirmQuickStatus(newStatus) {
       const statusLabels = {
         'Pickup': 'Ready for Pickup',
@@ -2287,6 +2333,9 @@
       }).catch(e => alert("Error: " + e.message));
     }
 
+    // ============================================================
+    // TAKE PHOTO
+    // ============================================================
     function takePhoto() {
       if (!activeBoxId) return;
       document.getElementById("cameraInput").click();
