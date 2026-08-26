@@ -1026,6 +1026,13 @@
     let activeDriverId = null;
     let editingUserId = null;
 
+    // ---------- NEW: Firestore unsubscribe functions ----------
+    let unsubBoxes = null;
+    let unsubDrivers = null;
+    let unsubCustomers = null;
+    let unsubUsers = null;
+    let isSigningOut = false;
+
     let autocompleteNewBoxStreet = null;
     let autocompleteEditBoxStreet = null;
     let autocompleteNewCustomerStreet = null;
@@ -1103,8 +1110,16 @@
     // FORCE SIGN OUT
     // ============================================================
     function forceSignOut() {
-      auth.signOut().then(() => {
-        location.reload();
+      // Unsubscribe first, then sign out, and finally reload
+      if (isSigningOut) return;
+      isSigningOut = true;
+      if (unsubBoxes) unsubBoxes();
+      if (unsubDrivers) unsubDrivers();
+      if (unsubCustomers) unsubCustomers();
+      if (unsubUsers) unsubUsers();
+      auth.signOut().finally(() => {
+        isSigningOut = false;
+        location.reload(); // ensures clean state
       });
     }
 
@@ -1112,6 +1127,8 @@
     // SHOW LOADING ERROR
     // ============================================================
     function showLoadingError(message) {
+      // Do not show if we're in the middle of signing out
+      if (isSigningOut) return;
       document.getElementById("loading").style.display = "none";
       document.getElementById("loadingErrorMsg").textContent = message || "The app failed to load. Please try signing out and logging in again.";
       document.getElementById("loadingError").classList.add("show");
@@ -1128,8 +1145,17 @@
       });
     }
 
-    function signOut() { 
-      auth.signOut(); 
+    function signOut() {
+      if (isSigningOut) return;
+      isSigningOut = true;
+      // Unsubscribe all listeners before signing out
+      if (unsubBoxes) unsubBoxes();
+      if (unsubDrivers) unsubDrivers();
+      if (unsubCustomers) unsubCustomers();
+      if (unsubUsers) unsubUsers();
+      auth.signOut().finally(() => {
+        isSigningOut = false;
+      });
     }
 
     auth.onAuthStateChanged(user => {
@@ -1536,7 +1562,14 @@
     function startApp() {
       switchView('map');
       
-      db.collection("boxes").onSnapshot(snap => {
+      // Unsubscribe any previous listeners if they exist (should not happen)
+      if (unsubBoxes) unsubBoxes();
+      if (unsubDrivers) unsubDrivers();
+      if (unsubCustomers) unsubCustomers();
+      if (unsubUsers) unsubUsers();
+
+      // Boxes listener
+      unsubBoxes = db.collection("boxes").onSnapshot(snap => {
         boxesData = [];
         snap.forEach(d => boxesData.push({ id: d.id, ...d.data() }));
         document.getElementById("syncTime").textContent = "Last sync: " + new Date().toLocaleTimeString();
@@ -1547,33 +1580,40 @@
         renderDrivers();
         document.getElementById("loading").style.display = "none";
       }, error => {
+        if (isSigningOut) return;  // ignore during sign-out
         showLoadingError("Firestore error: " + error.message);
       });
 
-      db.collection("drivers").onSnapshot(snap => {
+      // Drivers listener
+      unsubDrivers = db.collection("drivers").onSnapshot(snap => {
         driversData = [];
         snap.forEach(d => driversData.push({ id: d.id, ...d.data() }));
         populateDispatchDriverSelect();
         if (currentView === "drivers") renderDrivers();
       }, error => {
+        if (isSigningOut) return;
         showLoadingError("Firestore error: " + error.message);
       });
 
-      db.collection("customers").onSnapshot(snap => {
+      // Customers listener
+      unsubCustomers = db.collection("customers").onSnapshot(snap => {
         customersData = [];
         snap.forEach(d => customersData.push({ id: d.id, ...d.data() }));
         populateCustomerSelects();
         if (currentView === "customers") renderCustomers();
       }, error => {
+        if (isSigningOut) return;
         showLoadingError("Firestore error: " + error.message);
       });
 
-      db.collection("users").onSnapshot(snap => {
+      // Users listener
+      unsubUsers = db.collection("users").onSnapshot(snap => {
         usersData = [];
         snap.forEach(d => usersData.push({ id: d.id, ...d.data() }));
         populateDispatchDriverSelect();
         if (currentView === "users") renderUsers();
       }, error => {
+        if (isSigningOut) return;
         showLoadingError("Firestore error: " + error.message);
       });
 
