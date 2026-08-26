@@ -7,7 +7,7 @@
   
   <style>
     /* ============================================================
-       ALL CSS (same as before)
+       ALL CSS (same as before, with simplified header)
        ============================================================ */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     
@@ -47,6 +47,7 @@
       overflow: hidden; 
     }
     
+    /* SIMPLIFIED HEADER */
     header { 
       height: 56px; 
       background: #fff; 
@@ -62,7 +63,6 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 12px;
       flex: 1;
       min-width: 0;
     }
@@ -71,22 +71,6 @@
       font-size: 1.05rem;
       color: #16a34a;
       white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .header-brand .brand-separator {
-      color: #cbd5e1;
-      font-weight: 300;
-      margin: 0 4px;
-    }
-    .header-current-view {
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: #334155;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .menu-btn { display: none; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #334155; }
@@ -385,9 +369,7 @@
       }
 
       .detail-layout { flex-direction: column; }
-      .header-current-view { font-size: 0.85rem; }
       .header-brand { font-size: 0.9rem; }
-      .header-brand .brand-separator { display: none; }
       .user-area span { display: none; }
       
       .detail-panel {
@@ -425,7 +407,6 @@
         font-size: 0.8rem;
       }
       .header-brand { font-size: 0.8rem; }
-      .header-current-view { font-size: 0.75rem; }
     }
 
     @media (max-height: 500px) and (orientation: landscape) {
@@ -476,8 +457,6 @@
       <button class="menu-btn" onclick="toggleDrawer(true)">☰</button>
       <div class="header-left">
         <span class="header-brand">♻️ NIAM TRACK</span>
-        <span class="brand-separator">|</span>
-        <span class="header-current-view" id="currentViewLabel">🗺️ Map</span>
       </div>
       <div class="user-area">
         <div class="avatar" id="userAvatar">?</div>
@@ -559,7 +538,7 @@
     </div>
   </div>
 
-  <!-- MODALS -->
+  <!-- MODALS (unchanged) -->
   <div id="addBoxModal" class="modal-overlay">
     <div class="modal">
       <h3>Add New Box</h3>
@@ -967,21 +946,6 @@
       setTimeout(() => {
         toast.classList.remove("show");
       }, 3000);
-    }
-
-    // ============================================================
-    // VIEW LABEL UPDATER
-    // ============================================================
-    function updateCurrentViewLabel(view) {
-      const labels = {
-        'map': '🗺️ Map',
-        'service': '📋 Service',
-        'boxes': '📦 Boxes',
-        'customers': '👥 Customers',
-        'drivers': '🚛 Drivers',
-        'users': '👤 Manage Users'
-      };
-      document.getElementById('currentViewLabel').textContent = labels[view] || '🗺️ Map';
     }
 
     // ============================================================
@@ -1414,7 +1378,6 @@
     // ============================================================
 
     function renderApp() {
-      // Search removed - no longer needed
       const filter = document.getElementById("statusFilter").value;
       
       const filtered = boxesData.filter(b => {
@@ -2078,8 +2041,6 @@
       document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
       const nav = document.querySelector(`[data-view="${view}"]`);
       if (nav) nav.classList.add("active");
-      
-      updateCurrentViewLabel(view);
       
       const mapView = document.getElementById("mapView");
       mapView.classList.add("hidden");
