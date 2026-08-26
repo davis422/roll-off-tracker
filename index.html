@@ -1026,7 +1026,7 @@
     let activeDriverId = null;
     let editingUserId = null;
 
-    // ---------- NEW: Firestore unsubscribe functions ----------
+    // ---------- Firestore unsubscribe functions ----------
     let unsubBoxes = null;
     let unsubDrivers = null;
     let unsubCustomers = null;
@@ -1110,16 +1110,16 @@
     // FORCE SIGN OUT
     // ============================================================
     function forceSignOut() {
-      // Unsubscribe first, then sign out, and finally reload
       if (isSigningOut) return;
       isSigningOut = true;
+      // Unsubscribe all listeners
       if (unsubBoxes) unsubBoxes();
       if (unsubDrivers) unsubDrivers();
       if (unsubCustomers) unsubCustomers();
       if (unsubUsers) unsubUsers();
       auth.signOut().finally(() => {
         isSigningOut = false;
-        location.reload(); // ensures clean state
+        location.reload(); // clean state
       });
     }
 
@@ -1127,8 +1127,8 @@
     // SHOW LOADING ERROR
     // ============================================================
     function showLoadingError(message) {
-      // Do not show if we're in the middle of signing out
-      if (isSigningOut) return;
+      // Do not show if we're signing out or no user is logged in
+      if (isSigningOut || !auth.currentUser) return;
       document.getElementById("loading").style.display = "none";
       document.getElementById("loadingErrorMsg").textContent = message || "The app failed to load. Please try signing out and logging in again.";
       document.getElementById("loadingError").classList.add("show");
@@ -1562,7 +1562,7 @@
     function startApp() {
       switchView('map');
       
-      // Unsubscribe any previous listeners if they exist (should not happen)
+      // Clean up any previous listeners
       if (unsubBoxes) unsubBoxes();
       if (unsubDrivers) unsubDrivers();
       if (unsubCustomers) unsubCustomers();
@@ -1580,7 +1580,8 @@
         renderDrivers();
         document.getElementById("loading").style.display = "none";
       }, error => {
-        if (isSigningOut) return;  // ignore during sign-out
+        // Ignore if signing out or no user
+        if (isSigningOut || !auth.currentUser) return;
         showLoadingError("Firestore error: " + error.message);
       });
 
@@ -1591,7 +1592,7 @@
         populateDispatchDriverSelect();
         if (currentView === "drivers") renderDrivers();
       }, error => {
-        if (isSigningOut) return;
+        if (isSigningOut || !auth.currentUser) return;
         showLoadingError("Firestore error: " + error.message);
       });
 
@@ -1602,7 +1603,7 @@
         populateCustomerSelects();
         if (currentView === "customers") renderCustomers();
       }, error => {
-        if (isSigningOut) return;
+        if (isSigningOut || !auth.currentUser) return;
         showLoadingError("Firestore error: " + error.message);
       });
 
@@ -1613,7 +1614,7 @@
         populateDispatchDriverSelect();
         if (currentView === "users") renderUsers();
       }, error => {
-        if (isSigningOut) return;
+        if (isSigningOut || !auth.currentUser) return;
         showLoadingError("Firestore error: " + error.message);
       });
 
