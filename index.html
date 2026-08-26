@@ -20,17 +20,866 @@
       display: flex; 
     }
 
-    /* ... (same CSS as before — unchanged) ... */
-    /* To keep this message manageable, I'll include the full working code below. */
+    #loginScreen { position: fixed; inset: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; color: white; padding: 24px; }
+    #loginScreen.hidden { display: none; }
+    .login-logo { font-size: 1.8rem; font-weight: 900; color: #22c55e; margin-bottom: 8px; }
+    .login-sub { color: #94a3b8; margin-bottom: 32px; text-align: center; }
+    .btn-google { background: white; color: #334155; border: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+    .btn-google:hover { background: #f8fafc; }
+
+    aside { width: 220px; background: #0f172a; color: #94a3b8; display: flex; flex-direction: column; flex-shrink: 0; z-index: 3000; }
+    .brand { padding: 18px 16px; font-weight: 900; font-size: 1.05rem; color: #22c55e; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
+    .nav-list { list-style: none; padding: 12px 8px; flex: 1; }
+    .nav-item { padding: 10px 12px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; margin-bottom: 4px; }
+    .nav-item:hover { background: #1e293b; color: #fff; }
+    .nav-item.active { background: #16a34a; color: #fff; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid #1e293b; font-size: 0.75rem; color: #64748b; }
+    .yard-settings-btn { padding: 14px 12px; background: #1e293b; color: #fff; border: none; text-align: left; width: 100%; cursor: pointer; font-size: 0.85rem; font-weight: 700; }
+    .yard-settings-btn:hover { background: #334155; }
+    .close-drawer { display: none; cursor: pointer; color: white; font-size: 1.2rem; }
+
+    .main-wrapper { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      height: 100vh;        
+      height: 100dvh;       
+      overflow: hidden; 
+    }
+    
+    header { 
+      height: 56px; 
+      background: #fff; 
+      border-bottom: 1px solid #e2e8f0; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 0 16px; 
+      gap: 12px; 
+      flex-shrink: 0; 
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+    .header-brand {
+      font-weight: 900;
+      font-size: 1.05rem;
+      color: #16a34a;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-brand .brand-separator {
+      color: #cbd5e1;
+      font-weight: 300;
+      margin: 0 4px;
+    }
+    .header-current-view {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #334155;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .header-current-view .view-icon {
+      margin-right: 4px;
+    }
+
+    .menu-btn { display: none; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #334155; }
+    
+    .user-area { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+    .avatar { width: 32px; height: 32px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; overflow: hidden; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .btn-logout { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; color: #475569; }
+    .btn-logout:hover { background: #e2e8f0; }
+
+    .dashboard-grid { flex: 1; display: grid; grid-template-rows: 1fr; overflow: hidden; }
+    
+    #mapView { 
+      display: none; 
+      grid-template-columns: 320px 1fr; 
+      overflow: hidden; 
+      position: relative; 
+      height: 100%;
+      width: 100%;
+    }
+    #mapView.hidden { 
+      display: none !important; 
+    }
+    #mapView.active { 
+      display: grid !important; 
+    }
+
+    .boxes-panel { background: #fff; border-right: 1px solid #cbd5e1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .panel-header { padding: 12px 16px; font-weight: 800; font-size: 0.9rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .box-list { flex: 1; overflow-y: auto; min-height: 0; }
+    .box-item { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+    .box-item:hover, .box-item.active { background: #f0fdf4; }
+    .box-item-title { font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+    .box-item-addr { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+    .box-item-status { font-size: 0.75rem; font-weight: 700; margin-top: 4px; }
+
+    .map-panel { position: relative; width: 100%; height: 100%; background: #e2e8f0; min-height: 0; }
+    #map { width: 100%; height: 100%; }
+    
+    .fab-menu { position: absolute; bottom: 20px; right: 20px; z-index: 550; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+    .fab-btn { display: flex; align-items: center; gap: 8px; background: white; border: none; padding: 10px 16px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-weight: 700; cursor: pointer; font-size: 0.85rem; color: #111827; }
+    .fab-btn:hover { background: #f8fafc; }
+    .fab-btn.hidden { display: none; }
+    .fab-add { width: 52px; height: 52px; background: #16a34a; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; border: none; }
+
+    #placeModeBanner { display: none; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: #1e40af; color: white; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; z-index: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3); white-space: nowrap; }
+    #placeModeBanner.active { display: block; }
+
+    .detail-panel { background: #fff; padding: 20px 24px; overflow-y: auto; border-top: 2px solid #e2e8f0; position: relative; max-height: 50vh; }
+    .close-sheet { position: absolute; top: 15px; right: 15px; background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: 800; cursor: pointer; color: #475569; font-size: 1rem; display: block; z-index: 10; }
+    .detail-title { font-size: 1.2rem; font-weight: 900; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; }
+    .badge-Customer { background: #dcfce7; color: #15803d; }
+    .badge-Pickup { background: #fef3c7; color: #d97706; }
+    .badge-Exchange { background: #dbeafe; color: #2563eb; }
+    .badge-Available { background: #f1f5f9; color: #475569; }
+    .badge-Delivery { background: #fee2e2; color: #b91c1c; }
+    .detail-layout { display: flex; gap: 24px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.85rem; flex: 1; }
+    .info-label { color: #64748b; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
+    .info-val { font-weight: 700; margin-top: 2px; word-break: break-word; }
+    .photo-section { margin-top: 16px; }
+    .box-photo { width: 100%; max-width: 300px; height: 200px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; font-weight: 600; overflow: hidden; }
+    .box-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+    .actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+    .btn-act { padding: 8px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: 1px solid #cbd5e1; background: #fff; }
+    .btn-act-primary { background: #16a34a; color: white; border: none; }
+    .btn-act-danger { color: #dc2626; border-color: #fca5a5; }
+    .btn-act-blue { background: #2563eb; color: white; border: none; }
+    .btn-act-orange { background: #d97706; color: white; border: none; }
+    .btn-act-red { background: #dc2626; color: white; border: none; }
+    .btn-sms { background: #6d28d9; color: white; border: none; }
+    .btn-success { background: #16a34a; color: white; border: none; }
+    .activity-section { border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 8px; }
+    .activity-title { font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
+    .activity-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; gap: 8px; }
+
+    .driver-card { 
+      background: white; 
+      border-radius: 12px; 
+      padding: 20px; 
+      margin-bottom: 12px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+      border-left: 8px solid #2563eb; 
+      cursor: pointer; 
+      transition: background 0.15s; 
+    }
+    .driver-card:hover { background: #f0fdf4; }
+    .driver-card h3 { font-size: 1.2rem; font-weight: 900; margin-bottom: 6px; color: #0f172a; }
+    .driver-card p { font-size: 0.85rem; color: #475569; }
+
+    .customers-view, .drivers-view, .users-view, .boxes-view, .service-view { 
+      display: none; 
+      flex: 1; 
+      overflow-y: auto; 
+      padding: 20px; 
+      background: #f8fafc;
+      height: 100%;
+    }
+    .customers-view.active, .drivers-view.active, .users-view.active, .boxes-view.active, .service-view.active { 
+      display: block; 
+    }
+
+    .box-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 8px solid #ccc; cursor: pointer; transition: background 0.15s; }
+    .box-card:hover { background: #f0fdf4; }
+    .box-card.Customer { border-left-color: #16a34a; }
+    .box-card.Pickup { border-left-color: #d97706; }
+    .box-card.Exchange { border-left-color: #2563eb; }
+    .box-card.Available { border-left-color: #94a3b8; }
+    .box-card.Delivery { border-left-color: #dc2626; }
+    .box-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 10px; }
+    .box-card p { font-size: 0.9rem; color: #475569; margin-bottom: 6px; }
+
+    .service-alert { background: #dc2626; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 1.1rem; font-weight: 800; }
+
+    .notes-box { background: #fef9c3; border: 1px solid #fde047; border-left: 5px solid #eab308; padding: 10px; border-radius: 6px; margin-top: 10px; margin-bottom: 10px; }
+    .notes-box strong { color: #854d0e; }
+    .notes-btn { background: #fef9c3; border: 1px dashed #eab308; color: #854d0e; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 0.8rem; margin-top: 8px; }
+
+    .customer-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: background 0.15s; }
+    .customer-card:hover { background: #f0fdf4; }
+    .customer-card h3 { font-size: 1.1rem; font-weight: 800; }
+    .customer-card p { font-size: 0.85rem; color: #64748b; }
+
+    .customer-search { width: 100%; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; }
+
+    .error-message { display: none; background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85rem; font-weight: 700; text-align: center; }
+
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #16a34a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; transition: transform 0.3s ease; opacity: 0; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; border-radius: 12px; padding: 22px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-size: 1.15rem; font-weight: 800; }
+    .modal label { font-size: 0.75rem; font-weight: 700; color: #475569; }
+    .modal input, .modal select, .modal textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .modal-btns button { flex: 1; min-width: 120px; padding: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; border: none; }
+    .btn-save { background: #16a34a; color: white; }
+    .btn-cancel { background: #e2e8f0; color: #475569; }
+    .btn-save:disabled { background: #86efac; cursor: wait; }
+    .geo-status { font-size: 0.75rem; color: #64748b; min-height: 18px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-Customer { background: #16a34a; }
+    .dot-Pickup { background: #d97706; }
+    .dot-Exchange { background: #2563eb; }
+    .dot-Available { background: #94a3b8; }
+    .dot-Delivery { background: #dc2626; }
+    .empty-msg { text-align: center; color: #94a3b8; padding: 40px 20px; }
+    #loading { position: fixed; inset: 0; background: #f3f4f6; display: flex; align-items: center; justify-content: center; z-index: 9999; font-size: 1.1rem; color: #64748b; }
+    
+    .custom-pill-marker { color: white; font-weight: 800; font-size: 0.75rem; padding: 3px 9px; border-radius: 12px; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align: center; white-space: nowrap; }
+    .pill-Customer { background: #16a34a; }
+    .pill-Pickup { background: #d97706; }
+    .pill-Exchange { background: #2563eb; }
+    .pill-Available { background: #64748b; }
+    .pill-Delivery { background: #dc2626; }
+
+    .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2999; }
+    .mobile-overlay.active { display: block; }
+
+    .address-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 0.7fr 0.8fr;
+      gap: 8px;
+    }
+    .address-row-3 > div {
+      display: flex;
+      flex-direction: column;
+    }
+    .address-row-3 > div label {
+      margin-bottom: 4px;
+    }
+
+    .pac-container {
+      z-index: 99999 !important;
+    }
+
+    .input-error {
+      border-color: #dc2626 !important;
+      background-color: #fef2f2 !important;
+    }
+    .input-error:focus {
+      border-color: #dc2626 !important;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important;
+    }
+
+    .user-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .user-item .user-info {
+      flex: 1;
+      min-width: 150px;
+    }
+    .user-item .user-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .job-detail-section,
+    .customer-detail-section {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .job-detail-section:last-child,
+    .customer-detail-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    .job-detail-section .section-title,
+    .customer-detail-section .section-title {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #475569;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ============================================================
+       MOBILE FIXES
+       ============================================================ */
+    @media (max-width: 900px) {
+      .menu-btn { display: block; }
+      
+      aside { position: fixed; left: -250px; top: 0; bottom: 0; transition: left 0.3s; z-index: 3001; }
+      aside.open { left: 0; }
+      .close-drawer { display: block; }
+
+      #mapView.active { 
+        display: flex !important;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      .map-panel {
+        flex: 1;
+        min-height: 150px;
+        height: auto;
+        overflow: hidden;
+        width: 100%;
+      }
+
+      .boxes-panel {
+        height: 45vh;
+        min-height: 120px;
+        border-right: none;
+        border-top: 1px solid #cbd5e1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        flex-shrink: 0;
+        width: 100%;
+      }
+
+      .panel-header {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+      }
+
+      .box-list {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+      }
+
+      .box-item {
+        padding: 10px 12px;
+      }
+
+      .box-item-title {
+        font-size: 0.85rem;
+      }
+
+      .box-item-addr {
+        font-size: 0.75rem;
+      }
+
+      .box-item-status {
+        font-size: 0.7rem;
+      }
+
+      .detail-layout { flex-direction: column; }
+      .header-current-view { font-size: 0.85rem; }
+      .header-brand { font-size: 0.9rem; }
+      .header-brand .brand-separator { display: none; }
+      .user-area span { display: none; }
+      
+      .detail-panel {
+        position: absolute;
+        top: 56px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: auto;
+        max-height: none;
+        z-index: 800;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+      }
+      .detail-panel.show { transform: translateY(0); }
+      
+      .fab-menu { bottom: 20px; }
+      .address-row-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 400px) {
+      .boxes-panel {
+        height: 40vh;
+        min-height: 100px;
+      }
+      .panel-header {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+      }
+      .box-item {
+        padding: 8px 10px;
+      }
+      .box-item-title {
+        font-size: 0.8rem;
+      }
+      .header-brand { font-size: 0.8rem; }
+      .header-current-view { font-size: 0.75rem; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+      .boxes-panel {
+        height: 55vh;
+      }
+      .map-panel {
+        min-height: 100px;
+      }
+    }
   </style>
 </head>
 <body>
 
   <!-- ============================================================
-       HTML STRUCTURE (same as before)
+       HTML STRUCTURE
        ============================================================ -->
-  <!-- ... (same HTML as before — unchanged) ... -->
-  <!-- The key change is in the JavaScript section below. -->
+  <div id="toast" class="toast"></div>
+
+  <div id="loginScreen">
+    <div class="login-logo" style="font-size: 2.2rem;">♻️ NIAM TRACK</div>
+    <div class="login-sub">National Iron & Metals</div>
+    <button class="btn-google" onclick="signInWithGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Sign in with Google
+    </button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+
+  <div id="loading" style="display:none;">Loading Roll-Off Tracker...</div>
+  <div id="mobileOverlay" class="mobile-overlay" onclick="toggleDrawer(false)"></div>
+
+  <aside id="sidebar">
+    <div class="brand">♻️ NIAM TRACK <span class="close-drawer" onclick="toggleDrawer(false)">✕</span></div>
+    <ul class="nav-list">
+      <li class="nav-item active" data-view="map" onclick="switchView('map')">🗺️ Map</li>
+      <li class="nav-item" data-view="service" onclick="switchView('service')">📋 Service</li>
+      <li class="nav-item" data-view="boxes" onclick="switchView('boxes')">📦 Boxes</li>
+      <li class="nav-item" data-view="customers" onclick="switchView('customers')">👥 Customers</li>
+      <li class="nav-item" data-view="drivers" onclick="switchView('drivers')">🚛 Drivers</li>
+      <li class="nav-item" data-view="users" onclick="switchView('users')" id="usersTab" style="display:none;">👤 Manage Users</li>
+    </ul>
+    <button class="yard-settings-btn" onclick="openYardSettingsModal()">🏠 Set Yard Location</button>
+    <div class="sidebar-footer">
+      Live Firebase<br>
+      <span id="syncTime">—</span>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header>
+      <button class="menu-btn" onclick="toggleDrawer(true)">☰</button>
+      <div class="header-left">
+        <span class="header-brand">♻️ NIAM TRACK</span>
+        <span class="brand-separator">|</span>
+        <span class="header-current-view" id="currentViewLabel">🗺️ Map</span>
+      </div>
+      <div class="user-area">
+        <div class="avatar" id="userAvatar">?</div>
+        <span id="userName">User</span>
+        <button class="btn-logout" onclick="signOut()">Sign Out</button>
+      </div>
+    </header>
+
+    <div class="dashboard-grid">
+      <!-- MAP VIEW -->
+      <div id="mapView" class="active">
+        <div class="map-panel">
+          <div id="map"></div>
+          <div id="placeModeBanner">Tap the map to set the box location</div>
+          <div class="fab-menu" id="fabMenu">
+            <button class="fab-btn hidden" id="btnAddBox" onclick="openAddBoxModal()">➕ Add Box</button>
+            <button class="fab-btn hidden" id="btnCustomers" onclick="switchView('customers')">👥 Customers</button>
+            <button class="fab-btn hidden" id="btnDrivers" onclick="switchView('drivers')">🚛 Drivers</button>
+            <button class="fab-add" onclick="toggleFabMenu()">+</button>
+          </div>
+        </div>
+        <div class="boxes-panel">
+          <div class="panel-header">
+            <span id="boxCountTitle">BOXES (0)</span>
+            <select id="statusFilter" onchange="renderApp()" style="border:none; font-weight:700; font-size:0.8rem;">
+              <option value="ALL">All</option>
+              <option value="Delivery">To Be Delivered</option>
+              <option value="Customer">At Customer</option>
+              <option value="Pickup">Ready for Pickup</option>
+              <option value="Exchange">Ready for Exchange</option>
+              <option value="Available">Available</option>
+            </select>
+          </div>
+          <div class="box-list" id="boxList"></div>
+        </div>
+      </div>
+
+      <!-- SERVICE VIEW -->
+      <div class="service-view" id="serviceView">
+        <div id="serviceAlertContainer"></div>
+        <div id="serviceList"></div>
+      </div>
+
+      <!-- BOXES VIEW -->
+      <div class="boxes-view" id="boxesView">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+          <h2 style="font-size:1.3rem; font-weight:900;">All Boxes</h2>
+          <button class="btn-act btn-act-primary" onclick="openAddBoxModal()">+ Add Box</button>
+        </div>
+        <div id="boxesList"></div>
+      </div>
+
+      <!-- CUSTOMERS VIEW -->
+      <div class="customers-view" id="customersView">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+          <h2 style="font-size:1.3rem; font-weight:900;">Customers</h2>
+          <button class="btn-act btn-act-primary" onclick="openAddCustomerModal()">+ Add Customer</button>
+        </div>
+        <input type="text" id="customerSearch" class="customer-search" placeholder="Search customers by name..." oninput="renderCustomers()" />
+        <div id="customersList"></div>
+      </div>
+
+      <!-- DRIVERS VIEW -->
+      <div class="drivers-view" id="driversView">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+          <h2 style="font-size:1.3rem; font-weight:900;">Drivers</h2>
+        </div>
+        <div id="driversList"></div>
+      </div>
+
+      <!-- USERS VIEW -->
+      <div class="users-view" id="usersView">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+          <h2 style="font-size:1.2rem; font-weight:900;">Manage Users</h2>
+          <button class="btn-act btn-act-primary" onclick="openAddUserModal()">+ Add User</button>
+        </div>
+        <div id="usersList"></div>
+      </div>
+
+      <!-- DETAIL PANEL -->
+      <div class="detail-panel" id="detailPanel">
+        <button class="close-sheet" onclick="closeDetailPanel()">✕</button>
+        <div class="empty-msg" id="detailEmpty">Select a customer, box, or job to view details</div>
+        <div id="detailContent" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODALS (unchanged)
+       ============================================================ -->
+  <div id="addBoxModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add New Box</h3>
+      <div class="error-message" id="addBoxError">⚠️ A box with this number already exists!</div>
+      <label>Box Number *</label>
+      <input type="text" id="newBoxNum" placeholder="e.g. 247" oninput="checkDuplicateBox()" />
+      <label>Size</label>
+      <select id="newBoxSize"><option value="10">10 Yard</option><option value="20">20 Yard</option><option value="30" selected>30 Yard</option><option value="40">40 Yard</option></select>
+      <label>Customer</label>
+      <select id="newBoxCustomer"><option value="">— No Customer —</option></select>
+      <label>Street Address *</label>
+      <input type="text" id="newBoxStreet" placeholder="Start typing address..." autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="newBoxCity" placeholder="Katy" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="newBoxState" placeholder="TX" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="newBoxZip" placeholder="77493" />
+        </div>
+      </div>
+      <div class="geo-status" id="newGeoStatus"></div>
+      <label>Status</label>
+      <select id="newBoxStatus">
+        <option value="Delivery">To Be Delivered</option>
+        <option value="Available">Available</option>
+        <option value="Customer">At Customer</option>
+        <option value="Pickup">Ready for Pickup</option>
+        <option value="Exchange">Ready for Exchange</option>
+      </select>
+      <label>Notes</label>
+      <textarea id="newBoxNotes" rows="2" placeholder="Gate code, waste type, etc."></textarea>
+      <div class="modal-btns">
+        <button class="btn-save" id="saveBoxBtn" onclick="saveBox()">Save Box</button>
+        <button class="btn-cancel" onclick="closeModal('addBoxModal')">Cancel</button>
+      </div>
+      <button class="btn-act btn-act-blue" style="width:100%;margin-top:4px;" onclick="startPlaceOnMap('new')">📍 Or set location by tapping the map</button>
+    </div>
+  </div>
+
+  <div id="editBoxModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Update Box</h3>
+      <div class="error-message" id="editBoxError">⚠️ A box with this number already exists!</div>
+      <label>Box Number</label>
+      <input type="text" id="editBoxNum" oninput="checkDuplicateEditBox()" />
+      <label>Status</label>
+      <select id="editBoxStatus">
+        <option value="Delivery">To Be Delivered</option>
+        <option value="Customer">At Customer</option>
+        <option value="Pickup">Ready for Pickup</option>
+        <option value="Exchange">Ready for Exchange</option>
+        <option value="Available">Available</option>
+      </select>
+      <label>Customer</label>
+      <select id="editBoxCustomer"><option value="">— No Customer —</option></select>
+      <label>Driver</label>
+      <select id="editBoxDriver"><option value="">— Unassigned —</option></select>
+      <label>Street Address *</label>
+      <input type="text" id="editBoxStreet" autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="editBoxCity" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="editBoxState" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="editBoxZip" />
+        </div>
+      </div>
+      <div class="geo-status" id="editGeoStatus"></div>
+      <label>Notes</label>
+      <textarea id="editBoxNotes" rows="2"></textarea>
+      <div class="modal-btns">
+        <button class="btn-save" id="updateBoxBtn" onclick="commitBoxUpdate()">Update Box</button>
+        <button class="btn-cancel" onclick="closeModal('editBoxModal')">Cancel</button>
+      </div>
+      <button class="btn-act btn-act-blue" style="width:100%;margin-top:4px;" onclick="startPlaceOnMap('edit')">📍 Set location by tapping the map</button>
+    </div>
+  </div>
+
+  <div id="addCustomerModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add Customer</h3>
+      <label>Name *</label>
+      <input type="text" id="newCustomerName" placeholder="ABC Construction" />
+      <label>Phone</label>
+      <input type="text" id="newCustomerPhone" placeholder="(713) 555-0198" />
+      <label>Street Address *</label>
+      <input type="text" id="newCustomerStreet" placeholder="Start typing address..." autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="newCustomerCity" placeholder="Katy" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="newCustomerState" placeholder="TX" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="newCustomerZip" placeholder="77493" />
+        </div>
+      </div>
+      <label>Box Size</label>
+      <select id="newCustomerBoxSize">
+        <option value="">— Not Specified —</option>
+        <option value="10">10 Yard</option>
+        <option value="20">20 Yard</option>
+        <option value="30">30 Yard</option>
+        <option value="40">40 Yard</option>
+      </select>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="saveCustomer()">Save Customer</button>
+        <button class="btn-cancel" onclick="closeModal('addCustomerModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editCustomerModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Edit Customer</h3>
+      <label>Name *</label>
+      <input type="text" id="editCustomerName" />
+      <label>Phone</label>
+      <input type="text" id="editCustomerPhone" />
+      <label>Street Address *</label>
+      <input type="text" id="editCustomerStreet" autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="editCustomerCity" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="editCustomerState" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="editCustomerZip" />
+        </div>
+      </div>
+      <label>Preferred Box Size</label>
+      <select id="editCustomerBoxSize">
+        <option value="">— Not Specified —</option>
+        <option value="10">10 Yard</option>
+        <option value="20">20 Yard</option>
+        <option value="30">30 Yard</option>
+        <option value="40">40 Yard</option>
+      </select>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="commitCustomerUpdate()">Save Changes</button>
+        <button class="btn-cancel" onclick="closeModal('editCustomerModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISPATCH NOTES MODAL -->
+  <div id="dispatchNotesModal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="dispatchModalTitle">Add Dispatch Notes</h3>
+      <label id="dispatchBoxInfo">Box #</label>
+      <textarea id="dispatchNoteText" rows="4" placeholder="Enter notes for the driver (Gate code, call before arriving, etc.)"></textarea>
+      <label>Assign Driver</label>
+      <select id="dispatchDriverSelect">
+        <option value="">— Unassigned —</option>
+      </select>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="confirmSendToService()">Send to Service</button>
+        <button class="btn-cancel" onclick="closeModal('dispatchNotesModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="deliveryNotesModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Send for Delivery</h3>
+      <label id="deliveryCustomerInfo">Customer: </label>
+      <label>Dispatch Notes</label>
+      <textarea id="deliveryNoteText" rows="4" placeholder="Gate code, special instructions, waste type, etc."></textarea>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="confirmSendForDelivery()">Send for Delivery</button>
+        <button class="btn-cancel" onclick="closeModal('deliveryNotesModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="yardSettingsModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Set Yard Location</h3>
+      <p style="font-size: 0.85rem; color: #475569;">This is where boxes will appear on the map when marked as "Available" in the yard.</p>
+      <label>Street Address *</label>
+      <input type="text" id="yardStreet" placeholder="Start typing address..." autocomplete="off" />
+      <div class="address-row-3">
+        <div>
+          <label>City *</label>
+          <input type="text" id="yardCity" placeholder="Katy" />
+        </div>
+        <div>
+          <label>State *</label>
+          <input type="text" id="yardState" placeholder="TX" maxlength="2" />
+        </div>
+        <div>
+          <label>ZIP *</label>
+          <input type="text" id="yardZip" placeholder="77493" />
+        </div>
+      </div>
+      <div class="geo-status" id="yardGeoStatus"></div>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="saveYardSettings()">Save Yard Location</button>
+        <button class="btn-cancel" onclick="closeModal('yardSettingsModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="boxNumberModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Enter Box Number</h3>
+      <div class="error-message" id="deliveryBoxError">⚠️ A box with this number already exists!</div>
+      <div id="boxNotFoundError" class="error-message" style="display:none; background:#fee2e2; color:#b91c1c; padding:10px; border-radius:6px; margin-bottom:10px; font-size:0.85rem; font-weight:700; text-align:center;">
+        ❌ Box #<span id="missingBoxNum"></span> not found. Please check the number.
+      </div>
+      <div id="boxNotAvailableError" class="error-message" style="display:none; background:#fee2e2; color:#b91c1c; padding:10px; border-radius:6px; margin-bottom:10px; font-size:0.85rem; font-weight:700; text-align:center;">
+        ❌ Box #<span id="unavailableBoxNum"></span> is not available. It may already be in use.
+      </div>
+      <label>Box # Delivered</label>
+      <input type="text" id="deliveredBoxNum" placeholder="e.g. 52" oninput="clearBoxErrors()" />
+      <div class="modal-btns">
+        <button class="btn-save" id="confirmDeliveryBtn" onclick="confirmCompleteDelivery()">Confirm</button>
+        <button class="btn-cancel" onclick="closeModal('boxNumberModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="addDriverModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add Driver</h3>
+      <label>Full Name *</label>
+      <input type="text" id="newDriverName" placeholder="Mike D." />
+      <label>Phone</label>
+      <input type="text" id="newDriverPhone" placeholder="(713) 555-0198" />
+      <div class="modal-btns">
+        <button class="btn-save" onclick="saveDriver()">Save Driver</button>
+        <button class="btn-cancel" onclick="closeModal('addDriverModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="addUserModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Add User</h3>
+      <label>Email *</label>
+      <input type="email" id="newUserEmail" placeholder="driver@email.com" />
+      <label>Name *</label>
+      <input type="text" id="newUserName" placeholder="e.g. Mike D." />
+      <label>Phone *</label>
+      <input type="text" id="newUserPhone" placeholder="(713) 555-0198" />
+      <label>Role</label>
+      <select id="newUserRole"><option value="admin">Administrator</option><option value="driver">Driver</option></select>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="saveUser()">Save User</button>
+        <button class="btn-cancel" onclick="closeModal('addUserModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT USER MODAL -->
+  <div id="editUserModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Edit User</h3>
+      <label>Email (read-only)</label>
+      <input type="email" id="editUserEmail" disabled style="background:#f1f5f9;" />
+      <label>Name *</label>
+      <input type="text" id="editUserName" placeholder="e.g. Mike D." />
+      <label>Phone *</label>
+      <input type="text" id="editUserPhone" placeholder="(713) 555-0198" />
+      <label>Role</label>
+      <select id="editUserRole">
+        <option value="admin">Administrator</option>
+        <option value="driver">Driver</option>
+      </select>
+      <div class="modal-btns">
+        <button class="btn-save" id="updateUserBtn" onclick="commitUserUpdate()">Save Changes</button>
+        <button class="btn-cancel" onclick="closeModal('editUserModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       FIXED: Camera Input - allows camera roll selection
+       ============================================================ -->
+  <input type="file" id="cameraInput" accept="image/*" style="display: none;" />
 
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -514,7 +1363,6 @@
       db.collection("drivers").onSnapshot(snap => {
         driversData = [];
         snap.forEach(d => driversData.push({ id: d.id, ...d.data() }));
-        // Note: populateDriverSelects is no longer called here (removed)
         populateDispatchDriverSelect();
         if (currentView === "drivers") renderDrivers();
       });
@@ -529,7 +1377,6 @@
       db.collection("users").onSnapshot(snap => {
         usersData = [];
         snap.forEach(d => usersData.push({ id: d.id, ...d.data() }));
-        // Note: populateDriverSelects is no longer called here (removed)
         populateDispatchDriverSelect();
         if (currentView === "users") renderUsers();
       });
@@ -557,7 +1404,7 @@
     }
 
     // ============================================================
-    // POPULATE DISPATCH DRIVER SELECT (used in dispatch modal)
+    // POPULATE DISPATCH DRIVER SELECT
     // ============================================================
     function populateDispatchDriverSelect() {
       const driverNames = [];
@@ -574,7 +1421,7 @@
     }
 
     // ============================================================
-    // POPULATE EDIT BOX DRIVER SELECT (used in edit box modal)
+    // POPULATE EDIT BOX DRIVER SELECT
     // ============================================================
     function populateEditBoxDriverSelect() {
       const driverNames = [];
