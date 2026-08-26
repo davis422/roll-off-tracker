@@ -31,7 +31,8 @@
     }
     #loginScreen.hidden { display: none; }
     
-    .login-logo { font-size: 2.2rem; font-weight: 900; color: #22c55e; margin-bottom: 8px; }
+    .login-logo { font-size: 2.2rem; font-weight: 900; color: #22c55e; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    .login-logo svg { width: 40px; height: 40px; stroke: #22c55e; fill: none; }
     .login-sub { color: #94a3b8; margin-bottom: 32px; text-align: center; }
     
     .btn-google { 
@@ -122,7 +123,9 @@
     #loadingError .btn-signout { background: #ef4444; color: white; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; }
 
     aside { width: 220px; background: #0f172a; color: #94a3b8; display: flex; flex-direction: column; flex-shrink: 0; z-index: 3000; }
-    .brand { padding: 18px 16px; font-weight: 900; font-size: 1.05rem; color: #22c55e; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
+    .brand { padding: 18px 16px; font-weight: 900; font-size: 1.05rem; color: #22c55e; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .brand svg { width: 24px; height: 24px; stroke: #22c55e; fill: none; flex-shrink: 0; }
+    .brand-text { display: flex; align-items: center; gap: 8px; }
     .nav-list { list-style: none; padding: 12px 8px; flex: 1; }
     .nav-item { padding: 10px 12px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; margin-bottom: 4px; }
     .nav-item:hover { background: #1e293b; color: #fff; }
@@ -164,6 +167,16 @@
       font-size: 1.05rem;
       color: #16a34a;
       white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-brand svg {
+      width: 22px;
+      height: 22px;
+      stroke: #16a34a;
+      fill: none;
+      flex-shrink: 0;
     }
 
     .menu-btn { display: none; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #334155; }
@@ -517,7 +530,23 @@
        LOGIN SCREEN
        ============================================================ -->
   <div id="loginScreen">
-    <div class="login-logo" style="font-size: 2.2rem;">♻️ Roll-Off Commander 5000</div>
+    <div class="login-logo">
+      <!-- Roll‑off container clipart -->
+      <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Container body (trapezoid) -->
+        <polygon points="6,10 10,34 30,34 34,10" />
+        <!-- Top opening -->
+        <line x1="10" y1="10" x2="30" y2="10" />
+        <!-- Interior depth lines -->
+        <line x1="12" y1="16" x2="28" y2="16" />
+        <line x1="14" y1="22" x2="26" y2="22" />
+        <line x1="16" y1="28" x2="24" y2="28" />
+        <!-- Roll‑off rails at bottom -->
+        <rect x="7" y="34" width="6" height="3" />
+        <rect x="27" y="34" width="6" height="3" />
+      </svg>
+      <span>Roll-Off Commander 5000</span>
+    </div>
     <div class="login-sub">Command Your Fleet. Conquer Your Yard.</div>
     
     <button class="btn-google" onclick="signInWithGoogle()">
@@ -555,7 +584,21 @@
        SIDEBAR
        ============================================================ -->
   <aside id="sidebar">
-    <div class="brand">♻️ Roll-Off Commander 5000 <span class="close-drawer" onclick="toggleDrawer(false)">✕</span></div>
+    <div class="brand">
+      <span class="brand-text">
+        <!-- Roll‑off container clipart (small) -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="4,6 7,20 17,20 20,6" />
+          <line x1="7" y1="6" x2="17" y2="6" />
+          <line x1="8" y1="11" x2="16" y2="11" />
+          <line x1="9" y1="16" x2="15" y2="16" />
+          <rect x="5" y="20" width="4" height="2" />
+          <rect x="15" y="20" width="4" height="2" />
+        </svg>
+        Roll-Off Commander 5000
+      </span>
+      <span class="close-drawer" onclick="toggleDrawer(false)">✕</span>
+    </div>
     <ul class="nav-list">
       <li class="nav-item active" data-view="map" onclick="switchView('map')">🗺️ Map</li>
       <li class="nav-item" data-view="service" onclick="switchView('service')">📋 Service</li>
@@ -578,7 +621,18 @@
     <header>
       <button class="menu-btn" onclick="toggleDrawer(true)">☰</button>
       <div class="header-left">
-        <span class="header-brand">♻️ Roll-Off Commander 5000</span>
+        <span class="header-brand">
+          <!-- Roll‑off container clipart (small) -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="4,6 7,20 17,20 20,6" />
+            <line x1="7" y1="6" x2="17" y2="6" />
+            <line x1="8" y1="11" x2="16" y2="11" />
+            <line x1="9" y1="16" x2="15" y2="16" />
+            <rect x="5" y="20" width="4" height="2" />
+            <rect x="15" y="20" width="4" height="2" />
+          </svg>
+          Roll-Off Commander 5000
+        </span>
       </div>
       <div class="user-area">
         <div class="avatar" id="userAvatar">?</div>
