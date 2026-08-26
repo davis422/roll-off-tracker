@@ -6,9 +6,6 @@
   <title>NIAM TRACK</title>
   
   <style>
-    /* ============================================================
-       ALL CSS (same as before)
-       ============================================================ */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     
     body { 
@@ -87,9 +84,6 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-    .header-current-view .view-icon {
-      margin-right: 4px;
     }
 
     .menu-btn { display: none; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #334155; }
@@ -322,9 +316,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* ============================================================
-       MOBILE FIXES
-       ============================================================ */
     @media (max-width: 900px) {
       .menu-btn { display: block; }
       
@@ -445,10 +436,6 @@
   </style>
 </head>
 <body>
-
-  <!-- ============================================================
-       HTML STRUCTURE
-       ============================================================ -->
   <div id="toast" class="toast"></div>
 
   <div id="loginScreen">
@@ -497,7 +484,6 @@
     </header>
 
     <div class="dashboard-grid">
-      <!-- MAP VIEW -->
       <div id="mapView" class="active">
         <div class="map-panel">
           <div id="map"></div>
@@ -525,13 +511,11 @@
         </div>
       </div>
 
-      <!-- SERVICE VIEW -->
       <div class="service-view" id="serviceView">
         <div id="serviceAlertContainer"></div>
         <div id="serviceList"></div>
       </div>
 
-      <!-- BOXES VIEW -->
       <div class="boxes-view" id="boxesView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">All Boxes</h2>
@@ -540,7 +524,6 @@
         <div id="boxesList"></div>
       </div>
 
-      <!-- CUSTOMERS VIEW -->
       <div class="customers-view" id="customersView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">Customers</h2>
@@ -550,7 +533,6 @@
         <div id="customersList"></div>
       </div>
 
-      <!-- DRIVERS VIEW -->
       <div class="drivers-view" id="driversView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.3rem; font-weight:900;">Drivers</h2>
@@ -558,7 +540,6 @@
         <div id="driversList"></div>
       </div>
 
-      <!-- USERS VIEW -->
       <div class="users-view" id="usersView">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
           <h2 style="font-size:1.2rem; font-weight:900;">Manage Users</h2>
@@ -567,7 +548,6 @@
         <div id="usersList"></div>
       </div>
 
-      <!-- DETAIL PANEL -->
       <div class="detail-panel" id="detailPanel">
         <button class="close-sheet" onclick="closeDetailPanel()">✕</button>
         <div class="empty-msg" id="detailEmpty">Select a customer, box, or job to view details</div>
@@ -576,9 +556,7 @@
     </div>
   </div>
 
-  <!-- ============================================================
-       MODALS (unchanged)
-       ============================================================ -->
+  <!-- MODALS -->
   <div id="addBoxModal" class="modal-overlay">
     <div class="modal">
       <h3>Add New Box</h3>
@@ -745,7 +723,6 @@
     </div>
   </div>
 
-  <!-- DISPATCH NOTES MODAL -->
   <div id="dispatchNotesModal" class="modal-overlay">
     <div class="modal">
       <h3 id="dispatchModalTitle">Add Dispatch Notes</h3>
@@ -854,7 +831,6 @@
     </div>
   </div>
 
-  <!-- EDIT USER MODAL -->
   <div id="editUserModal" class="modal-overlay">
     <div class="modal">
       <h3>Edit User</h3>
@@ -876,9 +852,7 @@
     </div>
   </div>
 
-  <!-- ============================================================
-       FIXED: Camera Input - allows camera roll selection
-       ============================================================ -->
+  <!-- FIXED: Camera Input - allows camera roll selection -->
   <input type="file" id="cameraInput" accept="image/*" style="display: none;" />
 
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -1034,7 +1008,9 @@
         db.collection("users").where("email", "==", user.email).get().then(snapshot => {
           if (!snapshot.empty) {
             currentUserData = snapshot.docs[0].data();
-            if (currentUserData.role === 'admin') {
+            // Check if user is admin
+            const isAdmin = currentUserData && currentUserData.role === 'admin';
+            if (isAdmin) {
               document.getElementById("usersTab").style.display = "block";
             } else {
               document.getElementById("usersTab").style.display = "none";
@@ -1045,7 +1021,8 @@
             auth.signOut();
           }
         }).catch(err => {
-          alert("Error checking user permissions: " + err.message);
+          // Show a friendlier error message
+          alert("Error checking user permissions: " + err.message + "\n\nPlease try signing out and back in, or contact your administrator.");
           auth.signOut();
         });
       } else {
@@ -1138,7 +1115,6 @@
         }, 700);
       });
 
-      // Autocompletes (same as before)
       const newBoxStreetInput = document.getElementById("newBoxStreet");
       autocompleteNewBoxStreet = new google.maps.places.Autocomplete(newBoxStreetInput);
       autocompleteNewBoxStreet.addListener("place_changed", () => {
@@ -1403,9 +1379,6 @@
       document.getElementById("editBoxCustomer").innerHTML = opts;
     }
 
-    // ============================================================
-    // POPULATE DISPATCH DRIVER SELECT
-    // ============================================================
     function populateDispatchDriverSelect() {
       const driverNames = [];
       usersData.filter(u => u.role === 'driver').forEach(u => {
@@ -1420,9 +1393,6 @@
       document.getElementById("dispatchDriverSelect").innerHTML = opts;
     }
 
-    // ============================================================
-    // POPULATE EDIT BOX DRIVER SELECT
-    // ============================================================
     function populateEditBoxDriverSelect() {
       const driverNames = [];
       usersData.filter(u => u.role === 'driver').forEach(u => {
@@ -1626,7 +1596,7 @@
         </div>
       `;
       
-      activeBoxId = job.id; // reuse for photo
+      activeBoxId = job.id;
     }
 
     function saveJobDriver(jobId) {
@@ -2109,7 +2079,6 @@
       const nav = document.querySelector(`[data-view="${view}"]`);
       if (nav) nav.classList.add("active");
       
-      // Update header label
       updateCurrentViewLabel(view);
       
       const mapView = document.getElementById("mapView");
@@ -2662,7 +2631,6 @@
     // DELETE USER - with master admin protection
     // ============================================================
     function deleteUser(id) {
-      // Prevent deleting your own account
       if (currentUser && id === currentUser.uid) {
         alert("⚠️ You cannot delete your own account.");
         return;
@@ -2671,7 +2639,6 @@
       const user = usersData.find(u => u.id === id);
       if (!user) return;
       
-      // Master admin protection – nobody can delete this account
       if (user.email === MASTER_ADMIN_EMAIL) {
         alert("🔒 This account is the master admin and cannot be deleted.");
         return;
