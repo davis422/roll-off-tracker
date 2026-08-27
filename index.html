@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Roll-Off Commander 5000</title>
+  <title>Yard Commander 5000</title>
   
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -167,7 +167,6 @@
       font-size: 1.05rem;
       color: #16a34a;
       white-space: nowrap;
-      /* Icon removed — just text */
     }
 
     .menu-btn { display: none; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #334155; }
@@ -522,7 +521,7 @@
        ============================================================ -->
   <div id="loginScreen">
     <div class="login-logo">
-      <!-- Roll‑off container clipart (kept on login page) -->
+      <!-- Roll‑off container clipart -->
       <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="6,10 10,34 30,34 34,10" />
         <line x1="10" y1="10" x2="30" y2="10" />
@@ -532,7 +531,7 @@
         <rect x="7" y="34" width="6" height="3" />
         <rect x="27" y="34" width="6" height="3" />
       </svg>
-      <span>Roll-Off Commander 5000</span>
+      <span>Yard Commander 5000</span>
     </div>
     <div class="login-sub">Command Your Fleet. Conquer Your Yard.</div>
     
@@ -564,7 +563,7 @@
        TOAST & LOADING
        ============================================================ -->
   <div id="toast" class="toast"></div>
-  <div id="loading" style="display:none;">Loading Roll-Off Commander 5000...</div>
+  <div id="loading" style="display:none;">Loading Yard Commander 5000...</div>
   <div id="mobileOverlay" class="mobile-overlay" onclick="toggleDrawer(false)"></div>
 
   <!-- ============================================================
@@ -573,7 +572,7 @@
   <aside id="sidebar">
     <div class="brand">
       <span class="brand-text">
-        <!-- Roll‑off container clipart (kept on sidebar) -->
+        <!-- Roll‑off container clipart (small) -->
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="4,6 7,20 17,20 20,6" />
           <line x1="7" y1="6" x2="17" y2="6" />
@@ -582,7 +581,7 @@
           <rect x="5" y="20" width="4" height="2" />
           <rect x="15" y="20" width="4" height="2" />
         </svg>
-        Roll-Off Commander 5000
+        Yard Commander 5000
       </span>
       <span class="close-drawer" onclick="toggleDrawer(false)">✕</span>
     </div>
@@ -608,8 +607,7 @@
     <header>
       <button class="menu-btn" onclick="toggleDrawer(true)">☰</button>
       <div class="header-left">
-        <!-- HEADER: ICON REMOVED, only text remains -->
-        <span class="header-brand">Roll-Off Commander 5000</span>
+        <span class="header-brand">Yard Commander 5000</span>
       </div>
       <div class="user-area">
         <div class="avatar" id="userAvatar">?</div>
@@ -2011,7 +2009,7 @@
         return;
       }
       const fullAddress = buildAddress(box.street, box.city, box.state, box.zip);
-      const message = `Roll-Off Commander 5000: Box #${box.boxNum} is ${statusLabel(box.status)} for ${box.customer || "Customer"} at ${fullAddress || "Address"}. ${box.notes ? "Note: " + box.notes : ""}`;
+      const message = `Yard Commander 5000: Box #${box.boxNum} is ${statusLabel(box.status)} for ${box.customer || "Customer"} at ${fullAddress || "Address"}. ${box.notes ? "Note: " + box.notes : ""}`;
       window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
       showToast("📱 Opening SMS...");
     }
