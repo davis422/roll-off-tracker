@@ -15,15 +15,126 @@
     overflow: hidden;
   }
 
-  .app {
-    display: flex;
+  .screen {
+    display: none;
     flex-direction: column;
     height: 100%;
     max-width: 720px;
     margin: 0 auto;
   }
+  .screen.active { display: flex; }
 
-  /* ---------- TOP BAR ---------- */
+  /* ============================================================
+     SETTINGS SCREEN
+     ============================================================ */
+  .settings-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 20px 30px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .start-btn {
+    width: 100%;
+    background: #b8dce8;
+    border: none;
+    border-radius: 14px;
+    padding: 22px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 1px;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  .start-btn:active { background: #a3cfdd; transform: scale(0.99); }
+
+  .settings-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 22px;
+    color: #0f172a;
+  }
+
+  .setting-group {
+    margin-bottom: 22px;
+  }
+
+  .setting-label {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .option-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .option-btn {
+    flex: 1;
+    min-width: 70px;
+    background: #ffffff;
+    border: 2px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 14px 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #94a3b8;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .option-btn:active { transform: scale(0.97); }
+  .option-btn.selected {
+    background: #b8dce8;
+    border-color: #0f172a;
+    color: #0f172a;
+    font-weight: 700;
+  }
+  .option-btn.full {
+    flex: 0 1 48%;
+  }
+  .option-btn.narrow {
+    flex: 0 1 calc(25% - 6px);
+    min-width: 60px;
+  }
+
+  .lang-select {
+    display: flex;
+    justify-content: center;
+  }
+  .lang-select select {
+    background: #ffffff;
+    border: 2px solid #0f172a;
+    border-radius: 12px;
+    padding: 12px 28px 12px 18px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: inherit;
+    color: #0f172a;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+  }
+
+  /* ============================================================
+     GAME SCREEN
+     ============================================================ */
   .topbar {
     background: #b8dce8;
     color: #0f172a;
@@ -37,7 +148,6 @@
   }
   .topbar:active { background: #a3cfdd; }
 
-  /* ---------- STATS ROW ---------- */
   .stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -59,7 +169,6 @@
     margin-top: 4px;
   }
 
-  /* ---------- STAFF ---------- */
   .staff-area {
     flex: 1;
     display: flex;
@@ -68,25 +177,18 @@
     padding: 10px;
     min-height: 0;
   }
-  svg.staff {
-    width: 100%;
-    max-width: 520px;
-    height: auto;
-  }
+  svg.staff { width: 100%; max-width: 520px; height: auto; }
 
-  /* ---------- KEYS ---------- */
   .keys-area {
     padding: 10px 10px 20px;
     flex-shrink: 0;
   }
-
   .keys-row {
     display: flex;
     justify-content: center;
     gap: 6px;
     margin-bottom: 8px;
   }
-
   .key {
     background: #b8dce8;
     border: none;
@@ -99,34 +201,12 @@
     transition: background 0.1s, transform 0.05s;
     padding: 0;
   }
-  .key:active {
-    transform: scale(0.96);
-    background: #a3cfdd;
-  }
+  .key:active { transform: scale(0.96); background: #a3cfdd; }
+  .key.sharp { width: 54px; height: 54px; }
+  .key.natural { width: 62px; height: 62px; font-size: 1.15rem; }
+  .key.correct { background: #22c55e !important; color: white !important; }
+  .key.wrong { background: #ef4444 !important; color: white !important; }
 
-  /* Sharp keys (top row) — smaller, centered over pairs */
-  .key.sharp {
-    width: 54px;
-    height: 54px;
-  }
-  /* Natural keys (bottom row) — wider */
-  .key.natural {
-    width: 62px;
-    height: 62px;
-    font-size: 1.15rem;
-  }
-
-  /* Correct / wrong flashes */
-  .key.correct {
-    background: #22c55e !important;
-    color: white !important;
-  }
-  .key.wrong {
-    background: #ef4444 !important;
-    color: white !important;
-  }
-
-  /* ---------- FEEDBACK ---------- */
   .feedback {
     text-align: center;
     font-size: 0.9rem;
@@ -134,12 +214,13 @@
     min-height: 22px;
     color: #9ca3af;
     margin-bottom: 8px;
-    transition: color 0.15s;
   }
   .feedback.correct { color: #16a34a; }
   .feedback.wrong { color: #dc2626; }
 
-  /* ---------- MODAL ---------- */
+  /* ============================================================
+     MODAL
+     ============================================================ */
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -176,9 +257,10 @@
     cursor: pointer;
     font-family: inherit;
   }
-  .modal .btn:hover { background: #15803d; }
 
-  /* ---------- CONFETTI ---------- */
+  /* ============================================================
+     CONFETTI
+     ============================================================ */
   .confetti {
     position: fixed;
     top: -10px;
@@ -194,12 +276,13 @@
     100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
   }
 
-  /* ---------- SMALL SCREENS ---------- */
   @media (max-width: 480px) {
     .key.sharp { width: 46px; height: 46px; font-size: 0.9rem; }
     .key.natural { width: 52px; height: 52px; font-size: 1rem; }
     .stat-val { font-size: 1.5rem; }
     .stat-label { font-size: 0.62rem; }
+    .option-btn { font-size: 0.85rem; padding: 12px 6px; }
+    .settings-title { font-size: 1.3rem; }
   }
   @media (max-width: 380px) {
     .key.sharp { width: 42px; height: 42px; font-size: 0.82rem; }
@@ -208,12 +291,118 @@
 </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- TOP BAR -->
+<!-- ============================================================
+     SETTINGS SCREEN
+     ============================================================ -->
+<div class="screen active" id="settingsScreen">
+  <div class="settings-scroll">
+    <button class="start-btn" id="startBtn">START</button>
+
+    <h1 class="settings-title">Settings</h1>
+
+    <!-- ROUND LENGTH -->
+    <div class="setting-group">
+      <div class="setting-label">Round Length</div>
+      <div class="option-row" data-setting="roundLength">
+        <button class="option-btn" data-value="20">20 s</button>
+        <button class="option-btn" data-value="60">1 min</button>
+        <button class="option-btn selected" data-value="300">5 min</button>
+        <button class="option-btn" data-value="0">Infinite</button>
+      </div>
+    </div>
+
+    <!-- NOTE INPUT -->
+    <div class="setting-group">
+      <div class="setting-label">Note Input</div>
+      <div class="option-row" data-setting="noteInput">
+        <button class="option-btn selected" data-value="buttons">Buttons</button>
+        <button class="option-btn" data-value="piano">Piano</button>
+        <button class="option-btn" data-value="midi">MIDI</button>
+      </div>
+    </div>
+
+    <!-- CLEF -->
+    <div class="setting-group">
+      <div class="setting-label">Clef</div>
+      <div class="option-row" data-setting="clef">
+        <button class="option-btn selected" data-value="treble">Treble</button>
+        <button class="option-btn" data-value="bass">Bass</button>
+        <button class="option-btn" data-value="alto">Alto</button>
+        <button class="option-btn" data-value="tenor">Tenor</button>
+      </div>
+    </div>
+
+    <!-- DIFFICULTY -->
+    <div class="setting-group">
+      <div class="setting-label">Difficulty</div>
+      <div class="option-row" data-setting="difficulty">
+        <button class="option-btn" data-value="easy">Easy</button>
+        <button class="option-btn selected" data-value="normal">Normal</button>
+        <button class="option-btn" data-value="hard">Hard</button>
+      </div>
+    </div>
+
+    <!-- ACCIDENTALS -->
+    <div class="setting-group">
+      <div class="setting-label">Accidentals</div>
+      <div class="option-row" data-setting="accidentals">
+        <button class="option-btn selected" data-value="none">None</button>
+        <button class="option-btn narrow" data-value="sharp">♯</button>
+        <button class="option-btn narrow" data-value="flat">♭</button>
+        <button class="option-btn narrow" data-value="both">♯ and ♭</button>
+      </div>
+    </div>
+
+    <!-- SOUND -->
+    <div class="setting-group">
+      <div class="setting-label">Sound</div>
+      <div class="option-row" data-setting="sound">
+        <button class="option-btn full" data-value="off">Off</button>
+        <button class="option-btn full selected" data-value="on">On</button>
+      </div>
+    </div>
+
+    <!-- VIBRATION -->
+    <div class="setting-group">
+      <div class="setting-label">Vibration</div>
+      <div class="option-row" data-setting="vibration">
+        <button class="option-btn full" data-value="off">Off</button>
+        <button class="option-btn full selected" data-value="on">On</button>
+      </div>
+    </div>
+
+    <!-- DISPLAY CORRECT NOTE -->
+    <div class="setting-group">
+      <div class="setting-label">Display Correct Note</div>
+      <div class="option-row" data-setting="displayCorrect">
+        <button class="option-btn full" data-value="off">Off</button>
+        <button class="option-btn full selected" data-value="on">On</button>
+      </div>
+    </div>
+
+    <!-- LANGUAGE -->
+    <div class="setting-group">
+      <div class="setting-label">Language</div>
+      <div class="lang-select">
+        <select id="langSelect">
+          <option value="EN">EN</option>
+          <option value="ES">ES</option>
+          <option value="FR">FR</option>
+          <option value="DE">DE</option>
+        </select>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     GAME SCREEN
+     ============================================================ -->
+<div class="screen" id="gameScreen">
   <div class="topbar" id="topbar">ABORT</div>
 
-  <!-- STATS -->
   <div class="stats">
     <div>
       <div class="stat-val" id="statTime">0:00</div>
@@ -233,34 +422,18 @@
     </div>
   </div>
 
-  <!-- STAFF -->
   <div class="staff-area">
     <svg class="staff" viewBox="0 0 500 300" preserveAspectRatio="xMidYMid meet">
-      <!-- Staff lines -->
-      <g stroke="#1f2937" stroke-width="2" stroke-linecap="round">
-        <line x1="80" y1="100" x2="470" y2="100" />
-        <line x1="80" y1="128" x2="470" y2="128" />
-        <line x1="80" y1="156" x2="470" y2="156" />
-        <line x1="80" y1="184" x2="470" y2="184" />
-        <line x1="80" y1="212" x2="470" y2="212" />
-      </g>
-
-      <!-- Treble clef (unicode glyph, scaled nicely) -->
-      <text x="115" y="215" font-size="180" font-family="Georgia, 'Times New Roman', serif"
+      <g id="staffLines" stroke="#1f2937" stroke-width="2" stroke-linecap="round"></g>
+      <text id="clefGlyph" x="115" y="215" font-size="180" font-family="Georgia, 'Times New Roman', serif"
             fill="#1f2937" text-anchor="middle">𝄞</text>
-
-      <!-- Ledger lines container -->
       <g id="ledgerLines" stroke="#1f2937" stroke-width="2" stroke-linecap="round"></g>
-
-      <!-- The note -->
       <g id="noteGroup">
         <ellipse id="noteHead" cx="300" cy="156" rx="15" ry="11"
                  fill="#1f2937" transform="rotate(-20 300 156)"/>
         <line id="noteStem" x1="315" y1="156" x2="315" y2="90"
               stroke="#1f2937" stroke-width="3" stroke-linecap="round"/>
       </g>
-
-      <!-- Accidental (sharp) -->
       <text id="accidental" x="272" y="168" font-size="40" font-weight="700"
             fill="#1f2937" text-anchor="middle" style="display:none;">♯</text>
     </svg>
@@ -268,18 +441,10 @@
 
   <div class="feedback" id="feedback">&nbsp;</div>
 
-  <!-- KEYS -->
   <div class="keys-area">
-    <!-- Top row: sharps only (positioned with spacers to sit between naturals) -->
-    <div class="keys-row" id="sharpRow">
-      <!-- Filled by JS -->
-    </div>
-    <!-- Bottom row: naturals -->
-    <div class="keys-row" id="naturalRow">
-      <!-- Filled by JS -->
-    </div>
+    <div class="keys-row" id="sharpRow"></div>
+    <div class="keys-row" id="naturalRow"></div>
   </div>
-
 </div>
 
 <!-- MODAL -->
@@ -295,46 +460,122 @@
 
 <script>
 /* ============================================================
-   NOTE DEFINITIONS
-   Steps: 0 = E4 (bottom line), 1 = F4, ... 8 = F5
-   Middle C (C4) is step -2 with a ledger line below the staff.
-   Each staff line/space = 1 step = 28/2 = 14px on the viewBox.
+   SETTINGS STATE
+   ============================================================ */
+const settings = {
+  roundLength: 300,     // seconds; 0 = infinite
+  noteInput: "buttons",
+  clef: "treble",
+  difficulty: "normal",
+  accidentals: "none",
+  sound: "on",
+  vibration: "on",
+  displayCorrect: "on",
+  language: "EN",
+};
+
+/* ============================================================
+   SETTINGS UI — attach click handlers
+   ============================================================ */
+document.querySelectorAll(".option-row").forEach(row => {
+  const key = row.dataset.setting;
+  row.querySelectorAll(".option-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      row.querySelectorAll(".option-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      let val = btn.dataset.value;
+      if (key === "roundLength") val = parseInt(val, 10);
+      settings[key] = val;
+    });
+  });
+});
+
+document.getElementById("langSelect").addEventListener("change", (e) => {
+  settings.language = e.target.value;
+});
+
+/* ============================================================
+   SCREEN SWITCHING
+   ============================================================ */
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+document.getElementById("startBtn").addEventListener("click", () => {
+  showScreen("gameScreen");
+  startGame();
+});
+
+/* ============================================================
+   NOTE DEFINITIONS PER CLEF
+   Each clef has its own set of "steps" on the staff.
    ============================================================ */
 
-// Map a step to a y-coordinate on the staff
-// Bottom line (E4) = y 212; each diatonic step = 14 units
+// Helper: y for a given diatonic step, where 0 = bottom line
 function yForStep(step) {
   return 212 - step * 14;
 }
 
-// All natural notes C4..C5 plus we'll add sharps
-const NATURAL_NOTES = [
-  { name: "C", octave: 4, step: -2, accidental: null },
-  { name: "D", octave: 4, step: -1, accidental: null },
-  { name: "E", octave: 4, step: 0,  accidental: null },
-  { name: "F", octave: 4, step: 1,  accidental: null },
-  { name: "G", octave: 4, step: 2,  accidental: null },
-  { name: "A", octave: 4, step: 3,  accidental: null },
-  { name: "B", octave: 4, step: 4,  accidental: null },
-  { name: "C", octave: 5, step: 5,  accidental: null },
-  { name: "D", octave: 5, step: 6,  accidental: null },
-  { name: "E", octave: 5, step: 7,  accidental: null },
-  { name: "F", octave: 5, step: 8,  accidental: null },
-];
+// Note name → diatonic step offset from C
+const LETTER_STEP = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
 
-// Sharps sit on the same step as their lower natural, with an accidental
-const SHARP_NOTES = [
-  { name: "C", octave: 4, step: -2, accidental: "sharp" }, // C#4
-  { name: "D", octave: 4, step: -1, accidental: "sharp" }, // D#4
-  { name: "F", octave: 4, step: 1,  accidental: "sharp" }, // F#4
-  { name: "G", octave: 4, step: 2,  accidental: "sharp" }, // G#4
-  { name: "A", octave: 4, step: 3,  accidental: "sharp" }, // A#4
-];
+// Natural notes relative to the bottom staff line for each clef
+// Treble: bottom line = E4, so E4 has step 0.
+// Bass:   bottom line = G2, so G2 has step 0.
+// Alto:   bottom line = F3, so F3 has step 0.
+// Tenor:  bottom line = D3, so D3 has step 0.
+const CLEF_BOTTOM = {
+  treble: { letter: "E", octave: 4 },
+  bass:   { letter: "G", octave: 2 },
+  alto:   { letter: "F", octave: 3 },
+  tenor:  { letter: "D", octave: 3 },
+};
 
-const ALL_NOTES = [...NATURAL_NOTES, ...SHARP_NOTES];
+// Build a list of natural notes spanning ~2 octaves from the bottom line
+function buildNotesForClef(clef, difficulty) {
+  const order = ["C", "D", "E", "F", "G", "A", "B"];
+  const bottom = CLEF_BOTTOM[clef];
+  let idx = order.indexOf(bottom.letter);
+  let octave = bottom.octave;
+  const notes = [];
+  // Range: easy = 1 octave (8 notes), normal = ~1.5 octaves, hard = 2 octaves
+  const rangeMap = { easy: 8, normal: 12, hard: 15 };
+  const total = rangeMap[difficulty] || 12;
+  for (let step = 0; step < total; step++) {
+    notes.push({
+      name: order[idx],
+      octave: octave,
+      step: step,
+      accidental: null,
+    });
+    idx++;
+    if (idx >= 7) { idx = 0; octave++; }
+  }
+  return notes;
+}
+
+// Add sharp or flat variants
+function expandAccidentals(naturalNotes, accidentalSetting) {
+  if (accidentalSetting === "none") return naturalNotes;
+  const expanded = [];
+  naturalNotes.forEach(n => {
+    expanded.push(n);
+    // Don't add sharp to B or E (they'd become C and F)
+    const noSharp = (n.name === "B" || n.name === "E");
+    const noFlat = (n.name === "C" || n.name === "F");
+    if ((accidentalSetting === "sharp" || accidentalSetting === "both") && !noSharp) {
+      expanded.push({ ...n, accidental: "sharp" });
+    }
+    if ((accidentalSetting === "flat" || accidentalSetting === "both") && !noFlat) {
+      expanded.push({ ...n, accidental: "flat" });
+    }
+  });
+  return expanded;
+}
 
 /* ============================================================
-   STATE
+   GAME STATE
    ============================================================ */
 let currentNote = null;
 let correct = 0;
@@ -343,11 +584,14 @@ let score = 0;
 let streak = 0;
 let bestStreak = 0;
 let locked = false;
-let startTime = Date.now();
+let startTime = 0;
 let timerHandle = null;
+let roundEndsAt = 0;
+let allNotes = [];
+let lastNote = null;
 
 /* ============================================================
-   DOM
+   DOM REFS
    ============================================================ */
 const $ = id => document.getElementById(id);
 const noteHead = $("noteHead");
@@ -355,21 +599,43 @@ const noteStem = $("noteStem");
 const ledgerLines = $("ledgerLines");
 const accidentalEl = $("accidental");
 const feedbackEl = $("feedback");
+const staffLinesEl = $("staffLines");
+const clefGlyph = $("clefGlyph");
 
 /* ============================================================
-   BUILD KEY ROWS
-   Bottom row: C D E F G A B
-   Top row: C# D#    F# G# A#
-   (The gap after D# is intentional, matching a real piano layout.)
+   DRAW STAFF (adjusts for clef if desired — treble only for now)
+   ============================================================ */
+function drawStaff() {
+  staffLinesEl.innerHTML = "";
+  const ys = [100, 128, 156, 184, 212];
+  ys.forEach(y => {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", 80);
+    line.setAttribute("y1", y);
+    line.setAttribute("x2", 470);
+    line.setAttribute("y2", y);
+    staffLinesEl.appendChild(line);
+  });
+
+  // Swap clef glyph based on settings
+  const glyphMap = { treble: "𝄞", bass: "𝄢", alto: "𝄡", tenor: "𝄡" };
+  const yMap = { treble: 215, bass: 178, alto: 198, tenor: 198 };
+  clefGlyph.textContent = glyphMap[settings.clef] || "𝄞";
+  clefGlyph.setAttribute("y", yMap[settings.clef] || 215);
+}
+
+/* ============================================================
+   BUILD KEYBOARD
    ============================================================ */
 function buildKeys() {
   const naturalRow = $("naturalRow");
   const sharpRow = $("sharpRow");
+  naturalRow.innerHTML = "";
+  sharpRow.innerHTML = "";
 
   const naturals = ["C", "D", "E", "F", "G", "A", "B"];
-  const sharps = ["C#", "D#", "—", "F#", "G#", "A#"]; // "—" is a spacer
+  const sharps = ["C#", "D#", "—", "F#", "G#", "A#"];
 
-  // Natural keys
   naturals.forEach(n => {
     const btn = document.createElement("button");
     btn.className = "key natural";
@@ -380,7 +646,6 @@ function buildKeys() {
     naturalRow.appendChild(btn);
   });
 
-  // Sharp keys with a spacer
   sharps.forEach(s => {
     if (s === "—") {
       const spacer = document.createElement("div");
@@ -401,18 +666,16 @@ function buildKeys() {
 }
 
 /* ============================================================
-   RENDER NOTE ON STAFF
+   RENDER NOTE
    ============================================================ */
 function renderNote(note) {
   const y = yForStep(note.step);
   const cx = 300;
 
-  // Note head
   noteHead.setAttribute("cx", cx);
   noteHead.setAttribute("cy", y);
   noteHead.setAttribute("transform", `rotate(-20 ${cx} ${y})`);
 
-  // Stem direction: up if note is on/below middle line (y >= 156)
   const stemUp = y >= 156;
   const stemX = stemUp ? cx + 15 : cx - 15;
   const stemY1 = y;
@@ -422,7 +685,6 @@ function renderNote(note) {
   noteStem.setAttribute("x2", stemX);
   noteStem.setAttribute("y2", stemY2);
 
-  // Ledger lines
   ledgerLines.innerHTML = "";
   const addLedger = (lineY) => {
     const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -432,14 +694,11 @@ function renderNote(note) {
     l.setAttribute("y2", lineY);
     ledgerLines.appendChild(l);
   };
-  // Middle C (step -2) sits below the staff on its own ledger line
-  if (note.step === -2) addLedger(240);
-  // A5 (step 10) above the staff would need one, but we stop at F5 so skip
+  if (note.step === -2 || note.step === -1) addLedger(240);
 
-  // Accidental
-  if (note.accidental === "sharp") {
+  if (note.accidental) {
     accidentalEl.style.display = "block";
-    accidentalEl.textContent = "♯";
+    accidentalEl.textContent = note.accidental === "sharp" ? "♯" : "♭";
     accidentalEl.setAttribute("x", cx - 38);
     accidentalEl.setAttribute("y", y + 14);
   } else {
@@ -453,11 +712,12 @@ function renderNote(note) {
 function pickNote() {
   let note;
   do {
-    note = ALL_NOTES[Math.floor(Math.random() * ALL_NOTES.length)];
-  } while (ALL_NOTES.length > 1 && currentNote &&
-           note.name === currentNote.name &&
-           note.octave === currentNote.octave &&
-           note.accidental === currentNote.accidental);
+    note = allNotes[Math.floor(Math.random() * allNotes.length)];
+  } while (allNotes.length > 1 && lastNote &&
+           note.name === lastNote.name &&
+           note.octave === lastNote.octave &&
+           note.accidental === lastNote.accidental);
+  lastNote = note;
   return note;
 }
 
@@ -479,17 +739,25 @@ function clearHighlights() {
 function onKeyPress(name, type) {
   if (locked || !currentNote) return;
 
-  // The correct answer is: same letter name, and accidental type must match
   const targetIsSharp = currentNote.accidental === "sharp";
-  const pressedIsSharp = type === "sharp";
+  const targetIsFlat = currentNote.accidental === "flat";
+  const targetAccidental = targetIsSharp ? "sharp" : targetIsFlat ? "flat" : "none";
+  const pressedAccidental = type === "sharp" ? "sharp" : "natural";
 
-  const isCorrect = (name === currentNote.name) && (targetIsSharp === pressedIsSharp);
+  let isCorrect = false;
+  if (targetAccidental === "none") {
+    isCorrect = (name === currentNote.name) && (pressedAccidental === "natural");
+  } else if (targetAccidental === "sharp") {
+    isCorrect = (name === currentNote.name) && (pressedAccidental === "sharp");
+  } else if (targetAccidental === "flat") {
+    // A flat can be pressed as either the flat key OR the natural key below it
+    // (e.g. Bb = A#)
+    isCorrect = (name === currentNote.name) && (pressedAccidental === "natural");
+  }
 
   attempts++;
-
-  // Find the pressed button for visual feedback
   const btn = document.querySelector(
-    `.key[data-note="${name}"][data-type="${type}"]`
+    `.key[data-note="${name}"][data-type="${pressedAccidental}"]`
   );
 
   if (isCorrect) {
@@ -499,9 +767,10 @@ function onKeyPress(name, type) {
     if (streak > bestStreak) bestStreak = streak;
     score += 10 + (streak >= 3 ? 5 : 0);
     if (btn) btn.classList.add("correct");
-    feedbackEl.textContent = `Correct!`;
+    feedbackEl.textContent = settings.displayCorrect === "on" ? `Correct!` : "\u00a0";
     feedbackEl.className = "feedback correct";
-    playTone(currentNote);
+    if (settings.sound === "on") playTone(currentNote);
+    if (settings.vibration === "on" && navigator.vibrate) navigator.vibrate(30);
     celebrate();
     updateStats();
     setTimeout(() => newRound(), 700);
@@ -511,6 +780,7 @@ function onKeyPress(name, type) {
     if (btn) btn.classList.add("wrong");
     feedbackEl.textContent = `Try again`;
     feedbackEl.className = "feedback wrong";
+    if (settings.vibration === "on" && navigator.vibrate) navigator.vibrate([10, 40, 10]);
     updateStats();
     setTimeout(() => { if (btn) btn.classList.remove("wrong"); }, 400);
   }
@@ -527,7 +797,7 @@ function updateStats() {
 }
 
 function formatTime(ms) {
-  const s = Math.floor(ms / 1000);
+  const s = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(s / 60);
   const r = s % 60;
   return m + ":" + String(r).padStart(2, "0");
@@ -537,8 +807,35 @@ function startTimer() {
   startTime = Date.now();
   if (timerHandle) clearInterval(timerHandle);
   timerHandle = setInterval(() => {
-    $("statTime").textContent = formatTime(Date.now() - startTime);
+    let elapsed;
+    if (settings.roundLength > 0) {
+      elapsed = settings.roundLength * 1000 - (Date.now() - startTime);
+      if (elapsed <= 0) {
+        clearInterval(timerHandle);
+        endGame();
+        return;
+      }
+    } else {
+      elapsed = Date.now() - startTime;
+    }
+    $("statTime").textContent = formatTime(elapsed);
   }, 250);
+}
+
+function endGame() {
+  locked = true;
+  const acc = attempts === 0 ? 0 : Math.round((correct / attempts) * 100);
+  showModal(
+    "Time's Up!",
+    `You got ${correct} correct out of ${attempts} attempts.`,
+    "⏱️",
+    `Accuracy: ${acc}% · Score: ${score}`
+  );
+  $("modalBtn").textContent = "Back to Settings";
+  $("modalBtn").onclick = () => {
+    $("modalOverlay").classList.remove("show");
+    showScreen("settingsScreen");
+  };
 }
 
 /* ============================================================
@@ -549,7 +846,9 @@ function playTone(note) {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const semitoneMap = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-    const semitone = semitoneMap[note.name] + (note.accidental === "sharp" ? 1 : 0);
+    let semitone = semitoneMap[note.name];
+    if (note.accidental === "sharp") semitone++;
+    if (note.accidental === "flat") semitone--;
     const midi = 12 * (note.octave + 1) + semitone;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
     const osc = audioCtx.createOscillator();
@@ -578,7 +877,6 @@ function celebrate() {
     document.body.appendChild(c);
     setTimeout(() => c.remove(), 2000);
   }
-
   if (streak === 5 || streak === 10 || streak === 20) {
     showModal(
       streak === 5 ? "Nice Start! 🔥" :
@@ -595,64 +893,4 @@ function celebrate() {
    ============================================================ */
 function showModal(title, body, big, sub) {
   $("modalTitle").textContent = title;
-  $("modalBody").textContent = body;
-  $("modalBig").textContent = big;
-  $("modalSub").textContent = sub || "";
-  $("modalOverlay").classList.add("show");
-}
-$("modalBtn").addEventListener("click", () => {
-  $("modalOverlay").classList.remove("show");
-});
-
-/* ============================================================
-   ABORT
-   ============================================================ */
-$("topbar").addEventListener("click", () => {
-  if (!confirm("Abort this session? Your progress will be lost.")) return;
-  correct = 0; attempts = 0; score = 0; streak = 0; bestStreak = 0;
-  updateStats();
-  startTimer();
-  newRound();
-});
-
-/* ============================================================
-   KEYBOARD SHORTCUTS
-   ============================================================ */
-const KEY_MAP = {
-  "a": { name: "C", type: "natural" },
-  "w": { name: "C", type: "sharp" },
-  "s": { name: "D", type: "natural" },
-  "e": { name: "D", type: "sharp" },
-  "d": { name: "E", type: "natural" },
-  "f": { name: "F", type: "natural" },
-  "t": { name: "F", type: "sharp" },
-  "g": { name: "G", type: "natural" },
-  "y": { name: "G", type: "sharp" },
-  "h": { name: "A", type: "natural" },
-  "u": { name: "A", type: "sharp" },
-  "j": { name: "B", type: "natural" },
-  "k": { name: "C", type: "sharp" }, // not used since we don't have C#5; kept for safety
-};
-
-document.addEventListener("keydown", (e) => {
-  if (e.repeat) return;
-  const k = KEY_MAP[e.key.toLowerCase()];
-  if (!k) return;
-  const btn = document.querySelector(`.key[data-note="${k.name}"][data-type="${k.type}"]`);
-  if (btn) {
-    btn.style.transform = "scale(0.96)";
-    setTimeout(() => btn.style.transform = "", 80);
-  }
-  onKeyPress(k.name, k.type);
-});
-
-/* ============================================================
-   INIT
-   ============================================================ */
-buildKeys();
-newRound();
-updateStats();
-startTimer();
-</script>
-</body>
-</html>
+  $("modalBody").text
