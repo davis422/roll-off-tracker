@@ -3,215 +3,182 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<title>Treble Clef Flashcards</title>
+<title>Note Trainer</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body {
     height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: linear-gradient(160deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
-    color: #e2e8f0;
-    overflow-x: hidden;
+    background: #ffffff;
+    color: #1f2937;
     user-select: none;
+    overflow: hidden;
   }
 
   .app {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 20px 16px 40px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    height: 100%;
+    max-width: 720px;
+    margin: 0 auto;
   }
 
-  /* ---------- HEADER ---------- */
-  header {
+  /* ---------- TOP BAR ---------- */
+  .topbar {
+    background: #b8dce8;
+    color: #0f172a;
+    text-align: center;
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 14px 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .topbar:active { background: #a3cfdd; }
+
+  /* ---------- STATS ROW ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 20px 10px 10px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .stat-val {
+    font-size: 1.8rem;
+    font-weight: 500;
+    color: #1f2937;
+    line-height: 1.1;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #9ca3af;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+
+  /* ---------- STAFF ---------- */
+  .staff-area {
+    flex: 1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .logo {
-    font-size: 1.15rem;
-    font-weight: 900;
-    color: #22c55e;
-    letter-spacing: 0.3px;
-  }
-  .logo span { color: #e2e8f0; font-weight: 700; }
-  .stats {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .stat {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 10px;
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-align: center;
-    min-width: 68px;
-  }
-  .stat b { display: block; font-size: 1rem; color: #22c55e; margin-top: 2px; }
-  .stat.wrong b { color: #ef4444; }
-  .stat.streak b { color: #fbbf24; }
-
-  /* ---------- STAFF CARD ---------- */
-  .card {
-    background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
-    border-radius: 20px;
-    padding: 18px 12px 10px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.6);
-    position: relative;
-    overflow: hidden;
-  }
-  .card::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 50% 0%, rgba(34,197,94,0.08), transparent 60%);
-    pointer-events: none;
+    justify-content: center;
+    padding: 10px;
+    min-height: 0;
   }
   svg.staff {
     width: 100%;
+    max-width: 520px;
     height: auto;
-    display: block;
-    touch-action: manipulation;
+  }
+
+  /* ---------- KEYS ---------- */
+  .keys-area {
+    padding: 10px 10px 20px;
+    flex-shrink: 0;
+  }
+
+  .keys-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .key {
+    background: #b8dce8;
+    border: none;
+    border-radius: 10px;
+    color: #0f172a;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.05s;
+    padding: 0;
+  }
+  .key:active {
+    transform: scale(0.96);
+    background: #a3cfdd;
+  }
+
+  /* Sharp keys (top row) — smaller, centered over pairs */
+  .key.sharp {
+    width: 54px;
+    height: 54px;
+  }
+  /* Natural keys (bottom row) — wider */
+  .key.natural {
+    width: 62px;
+    height: 62px;
+    font-size: 1.15rem;
+  }
+
+  /* Correct / wrong flashes */
+  .key.correct {
+    background: #22c55e !important;
+    color: white !important;
+  }
+  .key.wrong {
+    background: #ef4444 !important;
+    color: white !important;
   }
 
   /* ---------- FEEDBACK ---------- */
   .feedback {
     text-align: center;
-    font-size: 1rem;
-    font-weight: 800;
-    min-height: 26px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    min-height: 22px;
+    color: #9ca3af;
+    margin-bottom: 8px;
     transition: color 0.15s;
   }
-  .feedback.correct { color: #22c55e; }
-  .feedback.wrong { color: #ef4444; }
-  .feedback.idle { color: #64748b; }
+  .feedback.correct { color: #16a34a; }
+  .feedback.wrong { color: #dc2626; }
 
-  /* ---------- PIANO ---------- */
-  .piano-wrap {
-    background: #0b1220;
-    border-radius: 16px;
-    padding: 12px 10px 16px;
-    box-shadow: inset 0 0 0 1px #1e293b, 0 12px 24px rgba(0,0,0,0.4);
-  }
-  .piano {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    height: 130px;
-  }
-  .key {
-    position: relative;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-    transition: transform 0.05s, background 0.1s;
-  }
-  .key:active { transform: translateY(2px); }
-
-  .white {
-    width: 44px;
-    height: 100%;
-    background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-    border-radius: 0 0 6px 6px;
-    box-shadow: inset -1px 0 0 #cbd5e1, inset 0 -4px 0 #cbd5e1, 0 3px 0 #94a3b8;
-    color: #0f172a;
-    font-weight: 800;
-    font-size: 0.7rem;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-bottom: 6px;
-  }
-  .white:hover { background: linear-gradient(180deg, #f8fafc 0%, #dbeafe 100%); }
-  .white.correct { background: linear-gradient(180deg, #86efac 0%, #22c55e 100%) !important; color: #052e16; }
-  .white.wrong { background: linear-gradient(180deg, #fca5a5 0%, #ef4444 100%) !important; color: #450a0a; }
-
-  .black {
-    width: 28px;
-    height: 62%;
-    background: linear-gradient(180deg, #334155 0%, #0f172a 100%);
-    border-radius: 0 0 5px 5px;
-    box-shadow: inset -1px 0 0 #000, 0 3px 0 #000;
-    color: #94a3b8;
-    font-weight: 800;
-    font-size: 0.6rem;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-bottom: 4px;
-    z-index: 3;
-    margin-left: -14px;
-    margin-right: -14px;
-  }
-  .black:hover { background: linear-gradient(180deg, #475569 0%, #1e293b 100%); }
-  .black.correct { background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%) !important; color: #052e16; }
-  .black.wrong { background: linear-gradient(180deg, #f87171 0%, #dc2626 100%) !important; color: #450a0a; }
-
-  /* ---------- CONTROLS ---------- */
-  .controls {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .btn {
-    background: #1e293b;
-    color: #e2e8f0;
-    border: 1px solid #334155;
-    padding: 10px 18px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 0.85rem;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .btn:hover { background: #334155; border-color: #475569; }
-  .btn.primary { background: #16a34a; border-color: #16a34a; color: white; }
-  .btn.primary:hover { background: #15803d; border-color: #15803d; }
-  .btn.warn { background: #b91c1c; border-color: #b91c1c; color: white; }
-  .btn.warn:hover { background: #991b1b; border-color: #991b1b; }
-  .toggle {
-    display: flex;
+  /* ---------- MODAL ---------- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.85);
+    display: none;
     align-items: center;
-    gap: 8px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #94a3b8;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid #334155;
-    background: #1e293b;
-    cursor: pointer;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
   }
-  .toggle input { accent-color: #22c55e; width: 16px; height: 16px; }
-
-  /* ---------- HINT ---------- */
-  .hint {
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 18px;
+    padding: 28px 24px;
+    max-width: 340px;
+    width: 100%;
     text-align: center;
-    font-size: 0.75rem;
-    color: #64748b;
-    line-height: 1.5;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
   }
-  .hint kbd {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-bottom-width: 2px;
-    border-radius: 4px;
-    padding: 1px 6px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.7rem;
-    color: #e2e8f0;
-    margin: 0 2px;
+  .modal h2 { font-size: 1.4rem; font-weight: 900; margin-bottom: 10px; color: #16a34a; }
+  .modal p { font-size: 0.9rem; color: #475569; line-height: 1.5; margin-bottom: 8px; }
+  .modal .big { font-size: 2.4rem; margin: 12px 0; }
+  .modal .btn {
+    margin-top: 16px;
+    width: 100%;
+    padding: 12px;
+    background: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
   }
+  .modal .btn:hover { background: #15803d; }
 
-  /* ---------- CELEBRATION ---------- */
+  /* ---------- CONFETTI ---------- */
   .confetti {
     position: fixed;
     top: -10px;
@@ -227,114 +194,92 @@
     100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
   }
 
-  /* ---------- MODAL ---------- */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(15,23,42,0.85);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    padding: 20px;
-    backdrop-filter: blur(4px);
+  /* ---------- SMALL SCREENS ---------- */
+  @media (max-width: 480px) {
+    .key.sharp { width: 46px; height: 46px; font-size: 0.9rem; }
+    .key.natural { width: 52px; height: 52px; font-size: 1rem; }
+    .stat-val { font-size: 1.5rem; }
+    .stat-label { font-size: 0.62rem; }
   }
-  .modal-overlay.show { display: flex; }
-  .modal {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 18px;
-    padding: 28px 24px;
-    max-width: 360px;
-    width: 100%;
-    text-align: center;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
-  }
-  .modal h2 { font-size: 1.4rem; font-weight: 900; margin-bottom: 10px; color: #22c55e; }
-  .modal p { font-size: 0.9rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 8px; }
-  .modal .big { font-size: 2.4rem; font-weight: 900; color: #fbbf24; margin: 12px 0; }
-  .modal .btn { margin-top: 16px; width: 100%; padding: 12px; }
-
-  @media (max-width: 600px) {
-    .white { width: 38px; }
-    .black { width: 24px; margin-left: -12px; margin-right: -12px; }
-    .piano { height: 110px; }
-    .logo { font-size: 1rem; }
-    .stat { min-width: 58px; padding: 5px 9px; font-size: 0.68rem; }
-  }
-  @media (max-width: 420px) {
-    .white { width: 34px; }
-    .black { width: 22px; margin-left: -11px; margin-right: -11px; }
-    .piano { height: 100px; }
+  @media (max-width: 380px) {
+    .key.sharp { width: 42px; height: 42px; font-size: 0.82rem; }
+    .key.natural { width: 46px; height: 46px; font-size: 0.95rem; }
   }
 </style>
 </head>
 <body>
 <div class="app">
 
-  <header>
-    <div class="logo">🎹 <span>Treble Clef Flashcards</span></div>
-    <div class="stats">
-      <div class="stat">SCORE <b id="statScore">0</b></div>
-      <div class="stat wrong">WRONG <b id="statWrong">0</b></div>
-      <div class="stat streak">STREAK <b id="statStreak">0</b></div>
-      <div class="stat">BEST <b id="statBest">0</b></div>
-    </div>
-  </header>
+  <!-- TOP BAR -->
+  <div class="topbar" id="topbar">ABORT</div>
 
-  <!-- STAFF CARD -->
-  <div class="card">
-    <svg class="staff" viewBox="0 0 500 260" preserveAspectRatio="xMidYMid meet">
+  <!-- STATS -->
+  <div class="stats">
+    <div>
+      <div class="stat-val" id="statTime">0:00</div>
+      <div class="stat-label">TIME</div>
+    </div>
+    <div>
+      <div class="stat-val" id="statCorrect">0</div>
+      <div class="stat-label">CORRECT</div>
+    </div>
+    <div>
+      <div class="stat-val" id="statAcc">0%</div>
+      <div class="stat-label">ACCURACY</div>
+    </div>
+    <div>
+      <div class="stat-val" id="statScore">0</div>
+      <div class="stat-label">SCORE</div>
+    </div>
+  </div>
+
+  <!-- STAFF -->
+  <div class="staff-area">
+    <svg class="staff" viewBox="0 0 500 300" preserveAspectRatio="xMidYMid meet">
       <!-- Staff lines -->
-      <g stroke="#0f172a" stroke-width="1.6" stroke-linecap="round">
-        <line x1="60" y1="90"  x2="440" y2="90"  />
-        <line x1="60" y1="115" x2="440" y2="115" />
-        <line x1="60" y1="140" x2="440" y2="140" />
-        <line x1="60" y1="165" x2="440" y2="165" />
-        <line x1="60" y1="190" x2="440" y2="190" />
+      <g stroke="#1f2937" stroke-width="2" stroke-linecap="round">
+        <line x1="80" y1="100" x2="470" y2="100" />
+        <line x1="80" y1="128" x2="470" y2="128" />
+        <line x1="80" y1="156" x2="470" y2="156" />
+        <line x1="80" y1="184" x2="470" y2="184" />
+        <line x1="80" y1="212" x2="470" y2="212" />
       </g>
 
-      <!-- Treble clef -->
-      <text x="78" y="186" font-size="140" font-family="Georgia, serif" fill="#0f172a" text-anchor="middle">𝄞</text>
+      <!-- Treble clef (unicode glyph, scaled nicely) -->
+      <text x="115" y="215" font-size="180" font-family="Georgia, 'Times New Roman', serif"
+            fill="#1f2937" text-anchor="middle">𝄞</text>
 
-      <!-- Ledger lines will be drawn here dynamically -->
-      <g id="ledgerLines" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"></g>
+      <!-- Ledger lines container -->
+      <g id="ledgerLines" stroke="#1f2937" stroke-width="2" stroke-linecap="round"></g>
 
       <!-- The note -->
       <g id="noteGroup">
-        <ellipse id="noteHead" cx="270" cy="140" rx="13" ry="9.5"
-                 fill="#0f172a" transform="rotate(-20 270 140)"/>
-        <line id="noteStem" x1="283" y1="140" x2="283" y2="90"
-              stroke="#0f172a" stroke-width="2.4" stroke-linecap="round"/>
+        <ellipse id="noteHead" cx="300" cy="156" rx="15" ry="11"
+                 fill="#1f2937" transform="rotate(-20 300 156)"/>
+        <line id="noteStem" x1="315" y1="156" x2="315" y2="90"
+              stroke="#1f2937" stroke-width="3" stroke-linecap="round"/>
       </g>
 
-      <!-- Accidental (sharp/flat) — hidden by default -->
-      <text id="accidental" x="248" y="150" font-size="34" font-weight="700"
-            fill="#0f172a" text-anchor="middle" style="display:none;">♯</text>
+      <!-- Accidental (sharp) -->
+      <text id="accidental" x="272" y="168" font-size="40" font-weight="700"
+            fill="#1f2937" text-anchor="middle" style="display:none;">♯</text>
     </svg>
   </div>
 
-  <div class="feedback idle" id="feedback">Tap the correct key below</div>
+  <div class="feedback" id="feedback">&nbsp;</div>
 
-  <!-- PIANO -->
-  <div class="piano-wrap">
-    <div class="piano" id="piano"></div>
+  <!-- KEYS -->
+  <div class="keys-area">
+    <!-- Top row: sharps only (positioned with spacers to sit between naturals) -->
+    <div class="keys-row" id="sharpRow">
+      <!-- Filled by JS -->
+    </div>
+    <!-- Bottom row: naturals -->
+    <div class="keys-row" id="naturalRow">
+      <!-- Filled by JS -->
+    </div>
   </div>
 
-  <!-- CONTROLS -->
-  <div class="controls">
-    <button class="btn primary" id="btnNext">🎲 Skip Note</button>
-    <button class="btn" id="btnReveal">👀 Show Answer</button>
-    <button class="btn warn" id="btnReset">↺ Reset Score</button>
-    <label class="toggle">
-      <input type="checkbox" id="chkRange" />
-      Show only C4–C5
-    </label>
-  </div>
-
-  <div class="hint">
-    Keyboard shortcuts: <kbd>a</kbd> <kbd>w</kbd> <kbd>s</kbd> <kbd>e</kbd> <kbd>d</kbd> <kbd>f</kbd> <kbd>t</kbd> <kbd>g</kbd> <kbd>y</kbd> <kbd>h</kbd> <kbd>u</kbd> <kbd>j</kbd> <kbd>k</kbd> · <kbd>space</kbd> skip
-  </div>
 </div>
 
 <!-- MODAL -->
@@ -344,91 +289,62 @@
     <p id="modalBody">You nailed 10 in a row.</p>
     <div class="big" id="modalBig">🔥</div>
     <p id="modalSub" style="font-size:0.8rem; color:#94a3b8;"></p>
-    <button class="btn primary" id="modalBtn">Keep Going</button>
+    <button class="btn" id="modalBtn">Keep Going</button>
   </div>
 </div>
 
 <script>
 /* ============================================================
    NOTE DEFINITIONS
-   Treble clef notes from C4 (middle C) up to A5.
-   Each note has:
-     name   — display name (e.g. "C")
-     octave — the octave number
-     key    — piano key id (e.g. "C4")
-     y      — vertical position on the staff (viewBox units)
-     sharp  — if true, draws a sharp symbol
-   Middle C is at y = 215 (below the staff) with a ledger line.
+   Steps: 0 = E4 (bottom line), 1 = F4, ... 8 = F5
+   Middle C (C4) is step -2 with a ledger line below the staff.
+   Each staff line/space = 1 step = 28/2 = 14px on the viewBox.
    ============================================================ */
-const STAFF = { top: 90, gap: 25 }; // top line y=90, each line 25 apart
 
-// helper: get y for a diatonic step (0 = bottom line E4)
-// Each step = half a staff gap (12.5 units)
+// Map a step to a y-coordinate on the staff
+// Bottom line (E4) = y 212; each diatonic step = 14 units
 function yForStep(step) {
-  // step 0 => E4 (bottom line) => y=190
-  return 190 - step * (STAFF.gap / 2);
+  return 212 - step * 14;
 }
 
-const NOTES = [
-  // name, octave, sharp, step (0 = E4 bottom line)
-  { name: "C", octave: 4, sharp: false, step: -2 }, // middle C (ledger below)
-  { name: "D", octave: 4, sharp: false, step: -1 },
-  { name: "E", octave: 4, sharp: false, step: 0  },
-  { name: "F", octave: 4, sharp: false, step: 1  },
-  { name: "G", octave: 4, sharp: false, step: 2  },
-  { name: "A", octave: 4, sharp: false, step: 3  },
-  { name: "B", octave: 4, sharp: false, step: 4  },
-  { name: "C", octave: 5, sharp: false, step: 5  },
-  { name: "D", octave: 5, sharp: false, step: 6  },
-  { name: "E", octave: 5, sharp: false, step: 7  },
-  { name: "F", octave: 5, sharp: false, step: 8  },
-  { name: "G", octave: 5, sharp: false, step: 9  },
-  { name: "A", octave: 5, sharp: false, step: 10 },
+// All natural notes C4..C5 plus we'll add sharps
+const NATURAL_NOTES = [
+  { name: "C", octave: 4, step: -2, accidental: null },
+  { name: "D", octave: 4, step: -1, accidental: null },
+  { name: "E", octave: 4, step: 0,  accidental: null },
+  { name: "F", octave: 4, step: 1,  accidental: null },
+  { name: "G", octave: 4, step: 2,  accidental: null },
+  { name: "A", octave: 4, step: 3,  accidental: null },
+  { name: "B", octave: 4, step: 4,  accidental: null },
+  { name: "C", octave: 5, step: 5,  accidental: null },
+  { name: "D", octave: 5, step: 6,  accidental: null },
+  { name: "E", octave: 5, step: 7,  accidental: null },
+  { name: "F", octave: 5, step: 8,  accidental: null },
 ];
 
-// range to filter (C4 to C5 = steps -2 through 5)
-const RANGE_LOW = { name: "C", octave: 4 };
-const RANGE_HIGH = { name: "C", octave: 5 };
-
-function inRange(note) {
-  const idx = NOTES.indexOf(note);
-  const lo = NOTES.findIndex(n => n.name === RANGE_LOW.name && n.octave === RANGE_LOW.octave);
-  const hi = NOTES.findIndex(n => n.name === RANGE_HIGH.name && n.octave === RANGE_HIGH.octave);
-  return idx >= lo && idx <= hi;
-}
-
-/* ============================================================
-   PIANO KEYS
-   Layout: 8 white keys (C4..C5), with black keys between.
-   For simplicity we build one octave + the top C5.
-   ============================================================ */
-const PIANO = [
-  // white keys in order
-  { id: "C4",  label: "C",  type: "white", note: { name: "C", octave: 4 } },
-  { id: "D4",  label: "D",  type: "white", note: { name: "D", octave: 4 } },
-  { id: "E4",  label: "E",  type: "white", note: { name: "E", octave: 4 } },
-  { id: "F4",  label: "F",  type: "white", note: { name: "F", octave: 4 } },
-  { id: "G4",  label: "G",  type: "white", note: { name: "G", octave: 4 } },
-  { id: "A4",  label: "A",  type: "white", note: { name: "A", octave: 4 } },
-  { id: "B4",  label: "B",  type: "white", note: { name: "B", octave: 4 } },
-  { id: "C5",  label: "C",  type: "white", note: { name: "C", octave: 5 } },
-  // black keys inserted after specific whites
-  { id: "C#4", label: "C♯", type: "black", after: "C4", note: { name: "C", octave: 4, sharp: true } },
-  { id: "D#4", label: "D♯", type: "black", after: "D4", note: { name: "D", octave: 4, sharp: true } },
-  { id: "F#4", label: "F♯", type: "black", after: "F4", note: { name: "F", octave: 4, sharp: true } },
-  { id: "G#4", label: "G♯", type: "black", after: "G4", note: { name: "G", octave: 4, sharp: true } },
-  { id: "A#4", label: "A♯", type: "black", after: "A4", note: { name: "A", octave: 4, sharp: true } },
+// Sharps sit on the same step as their lower natural, with an accidental
+const SHARP_NOTES = [
+  { name: "C", octave: 4, step: -2, accidental: "sharp" }, // C#4
+  { name: "D", octave: 4, step: -1, accidental: "sharp" }, // D#4
+  { name: "F", octave: 4, step: 1,  accidental: "sharp" }, // F#4
+  { name: "G", octave: 4, step: 2,  accidental: "sharp" }, // G#4
+  { name: "A", octave: 4, step: 3,  accidental: "sharp" }, // A#4
 ];
+
+const ALL_NOTES = [...NATURAL_NOTES, ...SHARP_NOTES];
 
 /* ============================================================
    STATE
    ============================================================ */
 let currentNote = null;
-let score = 0, wrong = 0, streak = 0, best = 0;
-let locked = false;         // stop accepting input after correct
-let showingAnswer = false;
-let rangeOnly = false;
-let lastNote = null;
+let correct = 0;
+let attempts = 0;
+let score = 0;
+let streak = 0;
+let bestStreak = 0;
+let locked = false;
+let startTime = Date.now();
+let timerHandle = null;
 
 /* ============================================================
    DOM
@@ -436,88 +352,96 @@ let lastNote = null;
 const $ = id => document.getElementById(id);
 const noteHead = $("noteHead");
 const noteStem = $("noteStem");
-const noteGroup = $("noteGroup");
 const ledgerLines = $("ledgerLines");
 const accidentalEl = $("accidental");
 const feedbackEl = $("feedback");
-const pianoEl = $("piano");
-const chkRange = $("chkRange");
 
 /* ============================================================
-   PIANO RENDERING
+   BUILD KEY ROWS
+   Bottom row: C D E F G A B
+   Top row: C# D#    F# G# A#
+   (The gap after D# is intentional, matching a real piano layout.)
    ============================================================ */
-function buildPiano() {
-  pianoEl.innerHTML = "";
-  const whiteKeys = PIANO.filter(k => k.type === "white");
-  const blackKeys = PIANO.filter(k => k.type === "black");
+function buildKeys() {
+  const naturalRow = $("naturalRow");
+  const sharpRow = $("sharpRow");
 
-  // Create a wrapper to hold whites side by side
-  whiteKeys.forEach(k => {
+  const naturals = ["C", "D", "E", "F", "G", "A", "B"];
+  const sharps = ["C#", "D#", "—", "F#", "G#", "A#"]; // "—" is a spacer
+
+  // Natural keys
+  naturals.forEach(n => {
     const btn = document.createElement("button");
-    btn.className = "key white";
-    btn.dataset.id = k.id;
-    btn.textContent = k.label;
-    btn.addEventListener("click", () => handleAnswer(k, btn));
-    pianoEl.appendChild(btn);
+    btn.className = "key natural";
+    btn.textContent = n;
+    btn.dataset.note = n;
+    btn.dataset.type = "natural";
+    btn.addEventListener("click", () => onKeyPress(n, "natural"));
+    naturalRow.appendChild(btn);
   });
 
-  // Insert blacks by positioning them absolutely-ish using margins
-  // We do a second pass: place them right after their "after" white key
-  blackKeys.forEach(k => {
-    const afterEl = pianoEl.querySelector(`[data-id="${k.after}"]`);
-    if (!afterEl) return;
+  // Sharp keys with a spacer
+  sharps.forEach(s => {
+    if (s === "—") {
+      const spacer = document.createElement("div");
+      spacer.style.width = "62px";
+      spacer.style.height = "54px";
+      spacer.style.visibility = "hidden";
+      sharpRow.appendChild(spacer);
+      return;
+    }
     const btn = document.createElement("button");
-    btn.className = "key black";
-    btn.dataset.id = k.id;
-    btn.textContent = k.label;
-    btn.addEventListener("click", () => handleAnswer(k, btn));
-    afterEl.insertAdjacentElement("afterend", btn);
+    btn.className = "key sharp";
+    btn.textContent = s;
+    btn.dataset.note = s.replace("#", "");
+    btn.dataset.type = "sharp";
+    btn.addEventListener("click", () => onKeyPress(s.replace("#", ""), "sharp"));
+    sharpRow.appendChild(btn);
   });
 }
 
 /* ============================================================
-   SVG NOTE RENDERING
+   RENDER NOTE ON STAFF
    ============================================================ */
 function renderNote(note) {
   const y = yForStep(note.step);
-  const cx = 270;
+  const cx = 300;
 
   // Note head
   noteHead.setAttribute("cx", cx);
   noteHead.setAttribute("cy", y);
   noteHead.setAttribute("transform", `rotate(-20 ${cx} ${y})`);
 
-  // Stem: up if below middle line (y > 140), down if above
-  const stemUp = y > 140;
-  const stemX = stemUp ? cx + 13 : cx - 13;
+  // Stem direction: up if note is on/below middle line (y >= 156)
+  const stemUp = y >= 156;
+  const stemX = stemUp ? cx + 15 : cx - 15;
   const stemY1 = y;
-  const stemY2 = stemUp ? y - 55 : y + 55;
+  const stemY2 = stemUp ? y - 70 : y + 70;
   noteStem.setAttribute("x1", stemX);
   noteStem.setAttribute("y1", stemY1);
   noteStem.setAttribute("x2", stemX);
   noteStem.setAttribute("y2", stemY2);
 
-  // Ledger lines (middle C and above/below staff)
+  // Ledger lines
   ledgerLines.innerHTML = "";
   const addLedger = (lineY) => {
     const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    l.setAttribute("x1", cx - 22);
+    l.setAttribute("x1", cx - 26);
     l.setAttribute("y1", lineY);
-    l.setAttribute("x2", cx + 22);
+    l.setAttribute("x2", cx + 26);
     l.setAttribute("y2", lineY);
     ledgerLines.appendChild(l);
   };
-  // Middle C at step -2 => y = 215; ledger line under it
-  if (note.step === -2) addLedger(215);
-  // A5 at step 10 => y = 65; ledger line above
-  if (note.step === 10) addLedger(65);
+  // Middle C (step -2) sits below the staff on its own ledger line
+  if (note.step === -2) addLedger(240);
+  // A5 (step 10) above the staff would need one, but we stop at F5 so skip
 
   // Accidental
-  if (note.sharp) {
+  if (note.accidental === "sharp") {
     accidentalEl.style.display = "block";
     accidentalEl.textContent = "♯";
-    accidentalEl.setAttribute("x", cx - 32);
-    accidentalEl.setAttribute("y", y + 12);
+    accidentalEl.setAttribute("x", cx - 38);
+    accidentalEl.setAttribute("y", y + 14);
   } else {
     accidentalEl.style.display = "none";
   }
@@ -526,87 +450,209 @@ function renderNote(note) {
 /* ============================================================
    GAME LOGIC
    ============================================================ */
-function notesPool() {
-  return rangeOnly ? NOTES.filter(inRange) : NOTES;
-}
-
-function pickRandomNote() {
-  const pool = notesPool();
+function pickNote() {
   let note;
   do {
-    note = pool[Math.floor(Math.random() * pool.length)];
-  } while (pool.length > 1 && lastNote &&
-           note.name === lastNote.name && note.octave === lastNote.octave);
-  lastNote = note;
+    note = ALL_NOTES[Math.floor(Math.random() * ALL_NOTES.length)];
+  } while (ALL_NOTES.length > 1 && currentNote &&
+           note.name === currentNote.name &&
+           note.octave === currentNote.octave &&
+           note.accidental === currentNote.accidental);
   return note;
 }
 
 function newRound() {
-  currentNote = pickRandomNote();
+  currentNote = pickNote();
   locked = false;
-  showingAnswer = false;
   renderNote(currentNote);
-  feedbackEl.textContent = "Tap the correct key below";
-  feedbackEl.className = "feedback idle";
-  clearKeyHighlights();
+  feedbackEl.textContent = "\u00a0";
+  feedbackEl.className = "feedback";
+  clearHighlights();
 }
 
-function clearKeyHighlights() {
+function clearHighlights() {
   document.querySelectorAll(".key").forEach(k => {
     k.classList.remove("correct", "wrong");
   });
 }
 
-function handleAnswer(keyData, btnEl) {
-  if (locked) return;
-  const note = keyData.note;
+function onKeyPress(name, type) {
+  if (locked || !currentNote) return;
 
-  // Match only naturals for now (ignore sharps unless we add them)
-  if (!currentNote) return;
+  // The correct answer is: same letter name, and accidental type must match
+  const targetIsSharp = currentNote.accidental === "sharp";
+  const pressedIsSharp = type === "sharp";
 
-  const isCorrect =
-    note.name === currentNote.name &&
-    note.octave === currentNote.octave &&
-    (note.sharp || false) === (currentNote.sharp || false);
+  const isCorrect = (name === currentNote.name) && (targetIsSharp === pressedIsSharp);
+
+  attempts++;
+
+  // Find the pressed button for visual feedback
+  const btn = document.querySelector(
+    `.key[data-note="${name}"][data-type="${type}"]`
+  );
 
   if (isCorrect) {
     locked = true;
-    score++;
+    correct++;
     streak++;
-    if (streak > best) best = streak;
-    updateStats();
-    btnEl.classList.add("correct");
-    feedbackEl.textContent = `✅ Correct! That's ${currentNote.name}${currentNote.octave}`;
+    if (streak > bestStreak) bestStreak = streak;
+    score += 10 + (streak >= 3 ? 5 : 0);
+    if (btn) btn.classList.add("correct");
+    feedbackEl.textContent = `Correct!`;
     feedbackEl.className = "feedback correct";
     playTone(currentNote);
     celebrate();
-    setTimeout(() => {
-      newRound();
-    }, 900);
-  } else {
-    wrong++;
-    streak = 0;
     updateStats();
-    btnEl.classList.add("wrong");
-    feedbackEl.textContent = `❌ Not quite — try again`;
+    setTimeout(() => newRound(), 700);
+  } else {
+    streak = 0;
+    score = Math.max(0, score - 3);
+    if (btn) btn.classList.add("wrong");
+    feedbackEl.textContent = `Try again`;
     feedbackEl.className = "feedback wrong";
-    // Remove wrong highlight after a moment
-    setTimeout(() => btnEl.classList.remove("wrong"), 400);
+    updateStats();
+    setTimeout(() => { if (btn) btn.classList.remove("wrong"); }, 400);
   }
 }
 
+/* ============================================================
+   STATS
+   ============================================================ */
 function updateStats() {
+  const acc = attempts === 0 ? 0 : Math.round((correct / attempts) * 100);
+  $("statCorrect").textContent = correct;
+  $("statAcc").textContent = acc + "%";
   $("statScore").textContent = score;
-  $("statWrong").textContent = wrong;
-  $("statStreak").textContent = streak;
-  $("statBest").textContent = best;
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return m + ":" + String(r).padStart(2, "0");
+}
+
+function startTimer() {
+  startTime = Date.now();
+  if (timerHandle) clearInterval(timerHandle);
+  timerHandle = setInterval(() => {
+    $("statTime").textContent = formatTime(Date.now() - startTime);
+  }, 250);
 }
 
 /* ============================================================
-   SOUND (simple WebAudio beep so it feels like a piano)
+   SOUND
    ============================================================ */
 let audioCtx = null;
 function playTone(note) {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const semitoneMap = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 1
+    const semitoneMap = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+    const semitone = semitoneMap[note.name] + (note.accidental === "sharp" ? 1 : 0);
+    const midi = 12 * (note.octave + 1) + semitone;
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+  } catch (e) {}
+}
+
+/* ============================================================
+   CELEBRATION
+   ============================================================ */
+function celebrate() {
+  const colors = ["#22c55e", "#fbbf24", "#3b82f6", "#ef4444", "#a855f7"];
+  for (let i = 0; i < 15; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDelay = (Math.random() * 0.25) + "s";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 2000);
+  }
+
+  if (streak === 5 || streak === 10 || streak === 20) {
+    showModal(
+      streak === 5 ? "Nice Start! 🔥" :
+      streak === 10 ? "On Fire! 🚀" : "Legendary! 🏆",
+      `You got ${streak} correct in a row!`,
+      streak === 5 ? "5️⃣" : streak === 10 ? "🔟" : "💯",
+      "Keep the streak alive!"
+    );
+  }
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+function showModal(title, body, big, sub) {
+  $("modalTitle").textContent = title;
+  $("modalBody").textContent = body;
+  $("modalBig").textContent = big;
+  $("modalSub").textContent = sub || "";
+  $("modalOverlay").classList.add("show");
+}
+$("modalBtn").addEventListener("click", () => {
+  $("modalOverlay").classList.remove("show");
+});
+
+/* ============================================================
+   ABORT
+   ============================================================ */
+$("topbar").addEventListener("click", () => {
+  if (!confirm("Abort this session? Your progress will be lost.")) return;
+  correct = 0; attempts = 0; score = 0; streak = 0; bestStreak = 0;
+  updateStats();
+  startTimer();
+  newRound();
+});
+
+/* ============================================================
+   KEYBOARD SHORTCUTS
+   ============================================================ */
+const KEY_MAP = {
+  "a": { name: "C", type: "natural" },
+  "w": { name: "C", type: "sharp" },
+  "s": { name: "D", type: "natural" },
+  "e": { name: "D", type: "sharp" },
+  "d": { name: "E", type: "natural" },
+  "f": { name: "F", type: "natural" },
+  "t": { name: "F", type: "sharp" },
+  "g": { name: "G", type: "natural" },
+  "y": { name: "G", type: "sharp" },
+  "h": { name: "A", type: "natural" },
+  "u": { name: "A", type: "sharp" },
+  "j": { name: "B", type: "natural" },
+  "k": { name: "C", type: "sharp" }, // not used since we don't have C#5; kept for safety
+};
+
+document.addEventListener("keydown", (e) => {
+  if (e.repeat) return;
+  const k = KEY_MAP[e.key.toLowerCase()];
+  if (!k) return;
+  const btn = document.querySelector(`.key[data-note="${k.name}"][data-type="${k.type}"]`);
+  if (btn) {
+    btn.style.transform = "scale(0.96)";
+    setTimeout(() => btn.style.transform = "", 80);
+  }
+  onKeyPress(k.name, k.type);
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+buildKeys();
+newRound();
+updateStats();
+startTimer();
+</script>
+</body>
+</html>
