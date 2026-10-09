@@ -16,10 +16,9 @@
   .stat b{display:block;font-size:1.4rem}
   .stat span{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 
-  /* Practice HUD */
   .practice-hud{display:none;gap:10px;margin-bottom:14px;flex-wrap:wrap;justify-content:center}
   .practice-hud.on{display:flex}
-  .pstat{background:#1a2030;border:1px solid #2c3purple;border:1px solid #2c3550;border-radius:12px;padding:8px 16px;text-align:center;min-width:96px}
+  .pstat{background:#1a2030;border:1px solid #2c3550;border-radius:12px;padding:8px 16px;text-align:center;min-width:96px}
   .pstat b{display:block;font-size:1.4rem;font-variant-numeric:tabular-nums}
   .pstat span{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
   .pstat.live b{color:var(--gold)}
@@ -68,7 +67,6 @@
     <div class="stat"><b id="acc">–</b><span>Accuracy</span></div>
   </div>
 
-  <!-- Practice mode HUD -->
   <div class="practice-hud" id="practiceHud">
     <div class="pstat live"><b id="pLive">0 ms</b><span>Live</span></div>
     <div class="pstat best"><b id="pBest">–</b><span>Session Best</span></div>
@@ -106,17 +104,19 @@
 (function(){
   // ---- Note data: diatonic index 0 = C4 ... 12 = A5 ----
   var NAMES = ['C','D','E','F','G','A','B'];
+  // Display order for letter buttons: A..G
+  var BUTTON_ORDER = ['A','B','C','D','E','F','G'];
   var MIN = 0, MAX = 12;                       // C4 .. A5
   function noteName(i){ return NAMES[i % 7]; }
   function octave(i){ return 4 + Math.floor(i / 7); }
 
   // ---- State ----
-  var current = null, locked = false;           // NOTE: removed `last` (no-repeat guard)
+  var current = null, locked = false;
   var s = { score:0, streak:0, best:0, tries:0 };
   try { var saved = JSON.parse(localStorage.getItem('trebleFlash')||'null'); if(saved) s = Object.assign(s, saved); } catch(e){}
   function save(){ try{ localStorage.setItem('trebleFlash', JSON.stringify(s)); }catch(e){} }
 
-  // ---- Timing (Practice mode) ----
+  // ---- Timing ----
   var t = { on:false, start:0, liveId:0, times:[], best:null, avg:null, count:0 };
   try { var savedT = JSON.parse(localStorage.getItem('trebleFlashTiming')||'null'); if(savedT) Object.assign(t, savedT, {on:false, liveId:0}); } catch(e){}
   function saveTiming(){
@@ -127,7 +127,7 @@
   var mode = 'piano';
 
   // ---- Staff drawing ----
-  var LINE_Y = [60,76,92,108,124]; // F5 .. E4
+  var LINE_Y = [60,76,92,108,124];
   var HALF = 8;
   function yFor(i){ return 124 - (i - 2) * HALF; }
 
@@ -138,7 +138,6 @@
     h += '<text x="30" y="136" font-size="104" fill="#222" font-family="\'Noto Music\',\'Segoe UI Symbol\',\'Apple Symbols\',serif">\uD834\uDD1E</text>';
     if (i !== null){
       var y = yFor(i), x = 250;
-      // ledger lines
       if (i <= 0) for (var l = 0; l >= i; l -= 2) h += ledger(x, yFor(l));
       if (i >= 12) for (var u = 12; u <= i; u += 2) h += ledger(x, yFor(u));
       var up = i < 6;
@@ -152,7 +151,7 @@
   }
   function ledger(x,y){ return '<line x1="'+(x-22)+'" x2="'+(x+22)+'" y1="'+y+'" y2="'+y+'" stroke="#222" stroke-width="1.6"/>'; }
 
-  // ---- Piano keyboard (C4 .. A5 white keys, black keys between) ----
+  // ---- Piano keyboard ----
   function buildPiano(){
     var p = $('piano'), n = MAX - MIN + 1, w = 100 / n, h = '';
     for (var i = MIN; i <= MAX; i++){
@@ -179,34 +178,124 @@
     });
   }
 
-  // ---- Letter buttons ----
+  // ---- Letter buttons (A..G order) ----
   function buildLetters(){
     var l = $('letters');
-    l.innerHTML = NAMES.map(function(n){ return '<button data-n="'+n+'">'+n+'</button>'; }).join('');
+    l.innerHTML = BUTTON_ORDER.map(function(n){ return '<button data-n="'+n+'">'+n+'</button>'; }).join('');
     l.addEventListener('click', function(e){
       var b = e.target.closest('button'); if(!b) return;
       answerLetter(b.dataset.n, b);
     });
   }
 
-  // ---- Audio ----
+  // ---- Audio: piano-ish synth ----
   var ctx = null;
-  function freq(i){ // semitone from C4 for naturals
+  var masterGain = null;
+  function ensureAudio(){
+    if (!ctx){
+      try{
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = ctx.createGain();
+        masterGain.gain.value = 0.9;
+        masterGain.connect(ctx.destination);
+      }catch(e){ return false; }
+    }
+    if (ctx.state === 'suspended'){ try{ ctx.resume(); }catch(e){} }
+    return true;
+  }
+  function freq(i){
     var semis = [0,2,4,5,7,9,11];
     var st = semis[i % 7] + 12 * Math.floor(i / 7);
     return 261.63 * Math.pow(2, st / 12);
   }
-  function beep(f, dur, type, vol){
+
+  // Piano-ish note: a few detuned harmonics with individual decay envelopes
+  // + a short noise burst for the "hammer" attack.
+  function playPiano(i, dur){
     if (!$('sound').checked) return;
-    try{
-      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-      var o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = type || 'triangle'; o.frequency.value = f;
-      g.gain.setValueAtTime(vol || 0.25, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(); o.stop(ctx.currentTime + dur);
-    }catch(e){}
+    if (!ensureAudio()) return;
+    dur = dur || 1.6;
+    var f = freq(i);
+    var now = ctx.currentTime;
+
+    // Note output bus
+    var bus = ctx.createGain();
+    bus.gain.value = 0.28;
+
+    // Gentle lowpass so upper harmonics aren't harsh
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = Math.min(6000, f * 8);
+    lp.Q.value = 0.6;
+
+    bus.connect(lp);
+    lp.connect(masterGain);
+
+    // Harmonics: [multiple, gain, decayScale]
+    // Fundamental + a few upper partials with faster decay = piano-like
+    var partials = [
+      { m: 1, g: 1.00, d: 1.00 },
+      { m: 2, g: 0.42, d: 0.65 },
+      { m: 3, g: 0.22, d: 0.50 },
+      { m: 4, g: 0.12, d: 0.40 },
+      { m: 5, g: 0.07, d: 0.32 },
+      { m: 6, g: 0.04, d: 0.26 }
+    ];
+    partials.forEach(function(p){
+      var o = ctx.createOscillator();
+      o.type = 'sine';
+      // tiny detune per partial for warmth
+      o.frequency.value = f * p.m * (1 + (Math.random() - 0.5) * 0.002);
+      var g = ctx.createGain();
+      var peak = p.g * 0.5;
+      var dec = dur * p.d;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(peak, now + 0.004);   // fast attack
+      g.gain.exponentialRampToValueAtTime(0.0008, now + dec);
+      o.connect(g);
+      g.connect(bus);
+      o.start(now);
+      o.stop(now + dec + 0.05);
+    });
+
+    // "Hammer" click: very short filtered noise burst
+    var clickLen = 0.045;
+    var buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * clickLen), ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var n = 0; n < data.length; n++){
+      var env = Math.pow(1 - n / data.length, 3);
+      data[n] = (Math.random() * 2 - 1) * env * 0.5;
+    }
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    var bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = Math.min(4500, f * 6);
+    bp.Q.value = 0.8;
+    var cg = ctx.createGain();
+    cg.gain.value = 0.18;
+    src.connect(bp); bp.connect(cg); cg.connect(masterGain);
+    src.start(now);
+  }
+
+  // Soft wrong-answer thud (no more harsh sawtooth)
+  function playWrong(){
+    if (!$('sound').checked) return;
+    if (!ensureAudio()) return;
+    var now = ctx.currentTime;
+    var o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(180, now);
+    o.frequency.exponentialRampToValueAtTime(90, now + 0.18);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.linearRampToValueAtTime(0.16, now + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0008, now + 0.22);
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 700;
+    o.connect(g); g.connect(lp); lp.connect(masterGain);
+    o.start(now); o.stop(now + 0.25);
   }
 
   // ---- Practice / timing helpers ----
@@ -229,7 +318,7 @@
     t.liveId = setInterval(function(){
       var el = nowMs() - t.start;
       $('pLive').textContent = Math.round(el) + ' ms';
-    }, 17); // ~60fps live readout
+    }, 17);
   }
   function stopTimer(){
     if (!t.on) return null;
@@ -243,10 +332,8 @@
     t.times.push(ms);
     if (t.times.length > 200) t.times.shift();
     t.count++;
-    // session best
     var isPB = (t.best == null) || (ms < t.best);
     if (isPB) t.best = ms;
-    // avg
     var sum = 0; for (var i=0;i<t.times.length;i++) sum += t.times[i];
     t.avg = sum / t.times.length;
     saveTiming();
@@ -256,7 +343,6 @@
 
   // ---- Game logic ----
   function next(){
-    // NOTE: no-repeat guard removed — same note can appear back-to-back
     var i = MIN + Math.floor(Math.random() * (MAX - MIN + 1));
     current = i; locked = false;
     drawStaff(i);
@@ -287,7 +373,7 @@
     $('msg').innerHTML = '✓ ' + noteName(current) + octave(current) + '!'
       + (t.on ? ' <span style="color:var(--gold)">' + fmt(t.times[t.times.length-1]) + '</span>' : '')
       + pbHtml;
-    beep(freq(current), 0.6, 'triangle');
+    playPiano(current, 1.6);
     setTimeout(next, t.on ? 700 : 650);
   }
   function wrong(el, silent){
@@ -297,8 +383,7 @@
     var c = $('card'); c.className = 'card'; void c.offsetWidth; c.className = 'card bad';
     $('msg').style.color = 'var(--bad)';
     $('msg').textContent = silent ? 'Only white keys here — try again' : 'Not quite — try again';
-    beep(140, 0.25, 'sawtooth', 0.12);
-    // Timer keeps running on wrong answers — the clock is the point.
+    playWrong();
   }
   function answer(i, el){
     if (locked) return;
@@ -326,7 +411,6 @@
     $('practiceHud').classList.toggle('on', t.on);
     if (t.on){
       updatePracticeHud();
-      // restart clock for the note currently on screen
       startTimer();
     } else {
       clearInterval(t.liveId); t.liveId = 0;
@@ -346,7 +430,6 @@
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     var k = e.key.toUpperCase();
     if (NAMES.indexOf(k) < 0) return;
-    // find the matching button/key to flash
     var el = mode === 'buttons' ? document.querySelector('#letters button[data-n="'+k+'"]') : null;
     if (mode === 'piano'){
       var cands = [].slice.call(document.querySelectorAll('.wk')).filter(function(x){ return noteName(+x.dataset.i) === k; });
@@ -354,6 +437,9 @@
     }
     answerLetter(k, el);
   });
+
+  // Unlock audio on first user gesture (mobile browsers require this)
+  document.addEventListener('pointerdown', function once(){ ensureAudio(); document.removeEventListener('pointerdown', once); }, { once:true });
 
   // ---- Init ----
   buildPiano(); buildLetters(); stats(); updatePracticeHud(); next();
