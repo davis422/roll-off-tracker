@@ -30,7 +30,7 @@
   .settings-scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 20px 30px;
+    padding: 20px 20px 40px;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -46,7 +46,7 @@
     letter-spacing: 1px;
     cursor: pointer;
     margin-bottom: 24px;
-    transition: background 0.15s;
+    transition: background 0.15s, transform 0.05s;
     font-family: inherit;
   }
   .start-btn:active { background: #a3cfdd; transform: scale(0.99); }
@@ -59,9 +59,7 @@
     color: #0f172a;
   }
 
-  .setting-group {
-    margin-bottom: 22px;
-  }
+  .setting-group { margin-bottom: 22px; }
 
   .setting-label {
     text-align: center;
@@ -102,18 +100,10 @@
     color: #0f172a;
     font-weight: 700;
   }
-  .option-btn.full {
-    flex: 0 1 48%;
-  }
-  .option-btn.narrow {
-    flex: 0 1 calc(25% - 6px);
-    min-width: 60px;
-  }
+  .option-btn.full { flex: 0 1 48%; }
+  .option-btn.narrow { flex: 0 1 calc(25% - 6px); min-width: 60px; }
 
-  .lang-select {
-    display: flex;
-    justify-content: center;
-  }
+  .lang-select { display: flex; justify-content: center; }
   .lang-select select {
     background: #ffffff;
     border: 2px solid #0f172a;
@@ -206,6 +196,7 @@
   .key.natural { width: 62px; height: 62px; font-size: 1.15rem; }
   .key.correct { background: #22c55e !important; color: white !important; }
   .key.wrong { background: #ef4444 !important; color: white !important; }
+  .key-spacer { width: 62px; height: 54px; visibility: hidden; }
 
   .feedback {
     text-align: center;
@@ -258,9 +249,6 @@
     font-family: inherit;
   }
 
-  /* ============================================================
-     CONFETTI
-     ============================================================ */
   .confetti {
     position: fixed;
     top: -10px;
@@ -279,6 +267,7 @@
   @media (max-width: 480px) {
     .key.sharp { width: 46px; height: 46px; font-size: 0.9rem; }
     .key.natural { width: 52px; height: 52px; font-size: 1rem; }
+    .key-spacer { width: 52px; height: 46px; }
     .stat-val { font-size: 1.5rem; }
     .stat-label { font-size: 0.62rem; }
     .option-btn { font-size: 0.85rem; padding: 12px 6px; }
@@ -287,6 +276,7 @@
   @media (max-width: 380px) {
     .key.sharp { width: 42px; height: 42px; font-size: 0.82rem; }
     .key.natural { width: 46px; height: 46px; font-size: 0.95rem; }
+    .key-spacer { width: 46px; height: 42px; }
   }
 </style>
 </head>
@@ -301,7 +291,6 @@
 
     <h1 class="settings-title">Settings</h1>
 
-    <!-- ROUND LENGTH -->
     <div class="setting-group">
       <div class="setting-label">Round Length</div>
       <div class="option-row" data-setting="roundLength">
@@ -312,7 +301,6 @@
       </div>
     </div>
 
-    <!-- NOTE INPUT -->
     <div class="setting-group">
       <div class="setting-label">Note Input</div>
       <div class="option-row" data-setting="noteInput">
@@ -322,7 +310,6 @@
       </div>
     </div>
 
-    <!-- CLEF -->
     <div class="setting-group">
       <div class="setting-label">Clef</div>
       <div class="option-row" data-setting="clef">
@@ -333,7 +320,6 @@
       </div>
     </div>
 
-    <!-- DIFFICULTY -->
     <div class="setting-group">
       <div class="setting-label">Difficulty</div>
       <div class="option-row" data-setting="difficulty">
@@ -343,7 +329,6 @@
       </div>
     </div>
 
-    <!-- ACCIDENTALS -->
     <div class="setting-group">
       <div class="setting-label">Accidentals</div>
       <div class="option-row" data-setting="accidentals">
@@ -354,7 +339,6 @@
       </div>
     </div>
 
-    <!-- SOUND -->
     <div class="setting-group">
       <div class="setting-label">Sound</div>
       <div class="option-row" data-setting="sound">
@@ -363,7 +347,6 @@
       </div>
     </div>
 
-    <!-- VIBRATION -->
     <div class="setting-group">
       <div class="setting-label">Vibration</div>
       <div class="option-row" data-setting="vibration">
@@ -372,7 +355,6 @@
       </div>
     </div>
 
-    <!-- DISPLAY CORRECT NOTE -->
     <div class="setting-group">
       <div class="setting-label">Display Correct Note</div>
       <div class="option-row" data-setting="displayCorrect">
@@ -381,7 +363,6 @@
       </div>
     </div>
 
-    <!-- LANGUAGE -->
     <div class="setting-group">
       <div class="setting-label">Language</div>
       <div class="lang-select">
@@ -463,7 +444,7 @@
    SETTINGS STATE
    ============================================================ */
 const settings = {
-  roundLength: 300,     // seconds; 0 = infinite
+  roundLength: 300,
   noteInput: "buttons",
   clef: "treble",
   difficulty: "normal",
@@ -471,28 +452,30 @@ const settings = {
   sound: "on",
   vibration: "on",
   displayCorrect: "on",
-  language: "EN",
+  language: "EN"
 };
 
 /* ============================================================
-   SETTINGS UI — attach click handlers
+   SETTINGS UI WIRING
    ============================================================ */
-document.querySelectorAll(".option-row").forEach(row => {
-  const key = row.dataset.setting;
-  row.querySelectorAll(".option-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      row.querySelectorAll(".option-btn").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
-      let val = btn.dataset.value;
-      if (key === "roundLength") val = parseInt(val, 10);
-      settings[key] = val;
+function initSettings() {
+  document.querySelectorAll(".option-row").forEach(row => {
+    const key = row.dataset.setting;
+    row.querySelectorAll(".option-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        row.querySelectorAll(".option-btn").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        let val = btn.dataset.value;
+        if (key === "roundLength") val = parseInt(val, 10);
+        settings[key] = val;
+      });
     });
   });
-});
 
-document.getElementById("langSelect").addEventListener("change", (e) => {
-  settings.language = e.target.value;
-});
+  document.getElementById("langSelect").addEventListener("change", (e) => {
+    settings.language = e.target.value;
+  });
+}
 
 /* ============================================================
    SCREEN SWITCHING
@@ -502,52 +485,43 @@ function showScreen(id) {
   document.getElementById(id).classList.add("active");
 }
 
-document.getElementById("startBtn").addEventListener("click", () => {
-  showScreen("gameScreen");
-  startGame();
-});
-
 /* ============================================================
-   NOTE DEFINITIONS PER CLEF
-   Each clef has its own set of "steps" on the staff.
+   HELPERS
    ============================================================ */
+function $(id) { return document.getElementById(id); }
 
-// Helper: y for a given diatonic step, where 0 = bottom line
 function yForStep(step) {
   return 212 - step * 14;
 }
 
-// Note name → diatonic step offset from C
-const LETTER_STEP = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+/* ============================================================
+   NOTE GENERATION
+   ============================================================ */
+const LETTER_ORDER = ["C", "D", "E", "F", "G", "A", "B"];
 
-// Natural notes relative to the bottom staff line for each clef
-// Treble: bottom line = E4, so E4 has step 0.
-// Bass:   bottom line = G2, so G2 has step 0.
-// Alto:   bottom line = F3, so F3 has step 0.
-// Tenor:  bottom line = D3, so D3 has step 0.
+// Bottom line for each clef
 const CLEF_BOTTOM = {
   treble: { letter: "E", octave: 4 },
   bass:   { letter: "G", octave: 2 },
   alto:   { letter: "F", octave: 3 },
-  tenor:  { letter: "D", octave: 3 },
+  tenor:  { letter: "D", octave: 3 }
 };
 
-// Build a list of natural notes spanning ~2 octaves from the bottom line
 function buildNotesForClef(clef, difficulty) {
-  const order = ["C", "D", "E", "F", "G", "A", "B"];
   const bottom = CLEF_BOTTOM[clef];
-  let idx = order.indexOf(bottom.letter);
+  let idx = LETTER_ORDER.indexOf(bottom.letter);
   let octave = bottom.octave;
-  const notes = [];
-  // Range: easy = 1 octave (8 notes), normal = ~1.5 octaves, hard = 2 octaves
+
   const rangeMap = { easy: 8, normal: 12, hard: 15 };
   const total = rangeMap[difficulty] || 12;
+
+  const notes = [];
   for (let step = 0; step < total; step++) {
     notes.push({
-      name: order[idx],
+      name: LETTER_ORDER[idx],
       octave: octave,
       step: step,
-      accidental: null,
+      accidental: null
     });
     idx++;
     if (idx >= 7) { idx = 0; octave++; }
@@ -555,13 +529,11 @@ function buildNotesForClef(clef, difficulty) {
   return notes;
 }
 
-// Add sharp or flat variants
 function expandAccidentals(naturalNotes, accidentalSetting) {
   if (accidentalSetting === "none") return naturalNotes;
   const expanded = [];
   naturalNotes.forEach(n => {
     expanded.push(n);
-    // Don't add sharp to B or E (they'd become C and F)
     const noSharp = (n.name === "B" || n.name === "E");
     const noFlat = (n.name === "C" || n.name === "F");
     if ((accidentalSetting === "sharp" || accidentalSetting === "both") && !noSharp) {
@@ -586,14 +558,12 @@ let bestStreak = 0;
 let locked = false;
 let startTime = 0;
 let timerHandle = null;
-let roundEndsAt = 0;
 let allNotes = [];
 let lastNote = null;
 
 /* ============================================================
    DOM REFS
    ============================================================ */
-const $ = id => document.getElementById(id);
 const noteHead = $("noteHead");
 const noteStem = $("noteStem");
 const ledgerLines = $("ledgerLines");
@@ -603,12 +573,11 @@ const staffLinesEl = $("staffLines");
 const clefGlyph = $("clefGlyph");
 
 /* ============================================================
-   DRAW STAFF (adjusts for clef if desired — treble only for now)
+   DRAW STAFF
    ============================================================ */
 function drawStaff() {
   staffLinesEl.innerHTML = "";
-  const ys = [100, 128, 156, 184, 212];
-  ys.forEach(y => {
+  [100, 128, 156, 184, 212].forEach(y => {
     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("x1", 80);
     line.setAttribute("y1", y);
@@ -617,7 +586,6 @@ function drawStaff() {
     staffLinesEl.appendChild(line);
   });
 
-  // Swap clef glyph based on settings
   const glyphMap = { treble: "𝄞", bass: "𝄢", alto: "𝄡", tenor: "𝄡" };
   const yMap = { treble: 215, bass: 178, alto: 198, tenor: 198 };
   clefGlyph.textContent = glyphMap[settings.clef] || "𝄞";
@@ -634,7 +602,7 @@ function buildKeys() {
   sharpRow.innerHTML = "";
 
   const naturals = ["C", "D", "E", "F", "G", "A", "B"];
-  const sharps = ["C#", "D#", "—", "F#", "G#", "A#"];
+  const sharps = ["C#", "D#", "SPACER", "F#", "G#", "A#"];
 
   naturals.forEach(n => {
     const btn = document.createElement("button");
@@ -647,11 +615,9 @@ function buildKeys() {
   });
 
   sharps.forEach(s => {
-    if (s === "—") {
+    if (s === "SPACER") {
       const spacer = document.createElement("div");
-      spacer.style.width = "62px";
-      spacer.style.height = "54px";
-      spacer.style.visibility = "hidden";
+      spacer.className = "key-spacer";
       sharpRow.appendChild(spacer);
       return;
     }
@@ -666,7 +632,7 @@ function buildKeys() {
 }
 
 /* ============================================================
-   RENDER NOTE
+   RENDER NOTE ON STAFF
    ============================================================ */
 function renderNote(note) {
   const y = yForStep(note.step);
@@ -694,7 +660,8 @@ function renderNote(note) {
     l.setAttribute("y2", lineY);
     ledgerLines.appendChild(l);
   };
-  if (note.step === -2 || note.step === -1) addLedger(240);
+  if (note.step === -1 || note.step === -2) addLedger(240);
+  if (note.step >= 9) addLedger(72);
 
   if (note.accidental) {
     accidentalEl.style.display = "block";
@@ -707,13 +674,15 @@ function renderNote(note) {
 }
 
 /* ============================================================
-   GAME LOGIC
+   GAME ROUNDS
    ============================================================ */
 function pickNote() {
   let note;
+  let tries = 0;
   do {
     note = allNotes[Math.floor(Math.random() * allNotes.length)];
-  } while (allNotes.length > 1 && lastNote &&
+    tries++;
+  } while (allNotes.length > 1 && lastNote && tries < 20 &&
            note.name === lastNote.name &&
            note.octave === lastNote.octave &&
            note.accidental === lastNote.accidental);
@@ -736,28 +705,31 @@ function clearHighlights() {
   });
 }
 
+/* ============================================================
+   KEYPRESS HANDLER
+   ============================================================ */
 function onKeyPress(name, type) {
   if (locked || !currentNote) return;
 
-  const targetIsSharp = currentNote.accidental === "sharp";
-  const targetIsFlat = currentNote.accidental === "flat";
-  const targetAccidental = targetIsSharp ? "sharp" : targetIsFlat ? "flat" : "none";
-  const pressedAccidental = type === "sharp" ? "sharp" : "natural";
-
+  const target = currentNote.accidental; // null, "sharp", or "flat"
   let isCorrect = false;
-  if (targetAccidental === "none") {
-    isCorrect = (name === currentNote.name) && (pressedAccidental === "natural");
-  } else if (targetAccidental === "sharp") {
-    isCorrect = (name === currentNote.name) && (pressedAccidental === "sharp");
-  } else if (targetAccidental === "flat") {
-    // A flat can be pressed as either the flat key OR the natural key below it
-    // (e.g. Bb = A#)
-    isCorrect = (name === currentNote.name) && (pressedAccidental === "natural");
+
+  if (target === null) {
+    isCorrect = (name === currentNote.name) && (type === "natural");
+  } else if (target === "sharp") {
+    isCorrect = (name === currentNote.name) && (type === "sharp");
+  } else if (target === "flat") {
+    // Flats are entered by pressing the natural key below (e.g. Bb → A#)
+    // Find previous natural letter
+    const idx = LETTER_ORDER.indexOf(currentNote.name);
+    const prevIdx = (idx - 1 + 7) % 7;
+    const prevName = LETTER_ORDER[prevIdx];
+    isCorrect = (name === prevName) && (type === "sharp");
   }
 
   attempts++;
   const btn = document.querySelector(
-    `.key[data-note="${name}"][data-type="${pressedAccidental}"]`
+    `.key[data-note="${name}"][data-type="${type}"]`
   );
 
   if (isCorrect) {
@@ -767,18 +739,18 @@ function onKeyPress(name, type) {
     if (streak > bestStreak) bestStreak = streak;
     score += 10 + (streak >= 3 ? 5 : 0);
     if (btn) btn.classList.add("correct");
-    feedbackEl.textContent = settings.displayCorrect === "on" ? `Correct!` : "\u00a0";
+    feedbackEl.textContent = settings.displayCorrect === "on" ? "Correct!" : "\u00a0";
     feedbackEl.className = "feedback correct";
     if (settings.sound === "on") playTone(currentNote);
     if (settings.vibration === "on" && navigator.vibrate) navigator.vibrate(30);
     celebrate();
     updateStats();
-    setTimeout(() => newRound(), 700);
+    setTimeout(newRound, 700);
   } else {
     streak = 0;
     score = Math.max(0, score - 3);
     if (btn) btn.classList.add("wrong");
-    feedbackEl.textContent = `Try again`;
+    feedbackEl.textContent = "Try again";
     feedbackEl.className = "feedback wrong";
     if (settings.vibration === "on" && navigator.vibrate) navigator.vibrate([10, 40, 10]);
     updateStats();
@@ -787,7 +759,7 @@ function onKeyPress(name, type) {
 }
 
 /* ============================================================
-   STATS
+   STATS / TIMER
    ============================================================ */
 function updateStats() {
   const acc = attempts === 0 ? 0 : Math.round((correct / attempts) * 100);
@@ -807,18 +779,17 @@ function startTimer() {
   startTime = Date.now();
   if (timerHandle) clearInterval(timerHandle);
   timerHandle = setInterval(() => {
-    let elapsed;
     if (settings.roundLength > 0) {
-      elapsed = settings.roundLength * 1000 - (Date.now() - startTime);
+      const elapsed = settings.roundLength * 1000 - (Date.now() - startTime);
       if (elapsed <= 0) {
         clearInterval(timerHandle);
         endGame();
         return;
       }
+      $("statTime").textContent = formatTime(elapsed);
     } else {
-      elapsed = Date.now() - startTime;
+      $("statTime").textContent = formatTime(Date.now() - startTime);
     }
-    $("statTime").textContent = formatTime(elapsed);
   }, 250);
 }
 
@@ -831,9 +802,11 @@ function endGame() {
     "⏱️",
     `Accuracy: ${acc}% · Score: ${score}`
   );
-  $("modalBtn").textContent = "Back to Settings";
-  $("modalBtn").onclick = () => {
+  const btn = $("modalBtn");
+  btn.textContent = "Back to Settings";
+  btn.onclick = () => {
     $("modalOverlay").classList.remove("show");
+    if (timerHandle) clearInterval(timerHandle);
     showScreen("settingsScreen");
   };
 }
@@ -860,7 +833,7 @@ function playTone(note) {
     osc.connect(gain).connect(audioCtx.destination);
     osc.start();
     osc.stop(audioCtx.currentTime + 0.5);
-  } catch (e) {}
+  } catch (e) { /* silent */ }
 }
 
 /* ============================================================
@@ -893,4 +866,43 @@ function celebrate() {
    ============================================================ */
 function showModal(title, body, big, sub) {
   $("modalTitle").textContent = title;
-  $("modalBody").text
+  $("modalBody").textContent = body;
+  $("modalBig").textContent = big;
+  $("modalSub").textContent = sub || "";
+  $("modalOverlay").classList.add("show");
+  // Reset the button to a simple close action when it's a streak milestone
+  const btn = $("modalBtn");
+  if (btn.textContent === "Back to Settings") {
+    // leave as is, endGame already set it
+  } else {
+    btn.textContent = "Keep Going";
+    btn.onclick = () => $("modalOverlay").classList.remove("show");
+  }
+}
+
+/* ============================================================
+   START GAME
+   ============================================================ */
+function startGame() {
+  // Reset stats
+  correct = 0;
+  attempts = 0;
+  score = 0;
+  streak = 0;
+  bestStreak = 0;
+  locked = false;
+  lastNote = null;
+
+  updateStats();
+  drawStaff();
+  buildKeys();
+
+  // Build note pool from current settings
+  const naturals = buildNotesForClef(settings.clef, settings.difficulty);
+  allNotes = expandAccidentals(naturals, settings.accidentals);
+
+  newRound();
+  startTimer();
+}
+
+/* =
