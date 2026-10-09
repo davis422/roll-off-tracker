@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Treble Clef Flash Cards</title>
 <style>
-  :root{--bg:#14161c;--card:#fdfaf3;--ink:#1d1d22;--accent:#4f7cff;--good:#2ecc71;--bad:#e74c3c;--muted:#8b90a0}
+  :root{--bg:#14161c;--card:#fdfaf3;--ink:#1d1d22;--accent:#4f7cff;--good:#2ecc71;--bad:#e74c3c;--muted:#8b90a0;--gold:#f5c542}
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#232838,var(--bg));color:#eef0f6;
     font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px 12px}
@@ -15,17 +15,29 @@
   .stat{background:#1f2330;border-radius:12px;padding:8px 16px;text-align:center;min-width:80px}
   .stat b{display:block;font-size:1.4rem}
   .stat span{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+  /* Practice HUD */
+  .practice-hud{display:none;gap:10px;margin-bottom:14px;flex-wrap:wrap;justify-content:center}
+  .practice-hud.on{display:flex}
+  .pstat{background:#1a2030;border:1px solid #2c3purple;border:1px solid #2c3550;border-radius:12px;padding:8px 16px;text-align:center;min-width:96px}
+  .pstat b{display:block;font-size:1.4rem;font-variant-numeric:tabular-nums}
+  .pstat span{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .pstat.live b{color:var(--gold)}
+  .pstat.best b{color:var(--good)}
+  .pstat.avg b{color:var(--accent)}
+
   .card{background:var(--card);border-radius:20px;width:100%;max-width:560px;padding:10px;box-shadow:0 12px 40px #0008;transition:box-shadow .2s,transform .2s}
   .card.good{box-shadow:0 0 0 4px var(--good),0 12px 40px #0008}
   .card.bad{box-shadow:0 0 0 4px var(--bad),0 12px 40px #0008;animation:shake .35s}
   @keyframes shake{25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
   svg{width:100%;height:auto;display:block}
-  .msg{height:28px;margin:10px 0;font-weight:600;font-size:1.1rem}
+  .msg{height:28px;margin:10px 0;font-weight:600;font-size:1.1rem;font-variant-numeric:tabular-nums}
   .controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;justify-content:center;align-items:center}
   .seg{display:flex;background:#1f2330;border-radius:10px;overflow:hidden}
   .seg button{background:none;border:0;color:var(--muted);padding:9px 16px;font-size:.9rem;cursor:pointer}
   .seg button.on{background:var(--accent);color:#fff}
   label{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
+  label.practice-label{color:var(--gold);font-weight:600}
   .piano{position:relative;width:100%;max-width:720px;height:170px;user-select:none;touch-action:manipulation}
   .wk{position:absolute;top:0;height:100%;background:#fff;border:1px solid #333;border-radius:0 0 8px 8px;cursor:pointer;
     display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;color:#aaa;font-size:.7rem;transition:background .1s}
@@ -42,6 +54,7 @@
   .hint{color:var(--muted);font-size:.8rem;margin-top:14px;text-align:center}
   .skip{background:none;border:1px solid #333a50;color:var(--muted);border-radius:10px;padding:8px 14px;cursor:pointer}
   .skip:hover{color:#fff;border-color:#fff}
+  .pb-badge{display:inline-block;margin-left:6px;font-size:.85rem;color:var(--gold);font-weight:700}
 </style>
 </head>
 <body>
@@ -55,6 +68,14 @@
     <div class="stat"><b id="acc">–</b><span>Accuracy</span></div>
   </div>
 
+  <!-- Practice mode HUD -->
+  <div class="practice-hud" id="practiceHud">
+    <div class="pstat live"><b id="pLive">0 ms</b><span>Live</span></div>
+    <div class="pstat best"><b id="pBest">–</b><span>Session Best</span></div>
+    <div class="pstat avg"><b id="pAvg">–</b><span>Session Avg</span></div>
+    <div class="pstat"><b id="pCount">0</b><span>Timed</span></div>
+  </div>
+
   <div class="controls">
     <div class="seg" id="modeSeg">
       <button data-mode="piano" class="on">🎹 Piano</button>
@@ -63,6 +84,7 @@
     <label id="octaveLabel"><input type="checkbox" id="anyOctave"> Any octave counts</label>
     <label><input type="checkbox" id="sound" checked> Sound</label>
     <label><input type="checkbox" id="showNames"> Show key labels</label>
+    <label class="practice-label"><input type="checkbox" id="practice"> ⏱️ Practice mode</label>
   </div>
 
   <div class="card" id="card">
@@ -76,6 +98,7 @@
   <div class="controls" style="margin-top:16px">
     <button class="skip" id="skip">Skip ⏭</button>
     <button class="skip" id="reset">Reset stats</button>
+    <button class="skip" id="resetTiming">Reset timing</button>
   </div>
   <div class="hint">Tip: press <b>A–G</b> on your computer keyboard to answer too.</div>
 
@@ -88,10 +111,17 @@
   function octave(i){ return 4 + Math.floor(i / 7); }
 
   // ---- State ----
-  var current = null, last = -1, locked = false;
+  var current = null, locked = false;           // NOTE: removed `last` (no-repeat guard)
   var s = { score:0, streak:0, best:0, tries:0 };
   try { var saved = JSON.parse(localStorage.getItem('trebleFlash')||'null'); if(saved) s = Object.assign(s, saved); } catch(e){}
   function save(){ try{ localStorage.setItem('trebleFlash', JSON.stringify(s)); }catch(e){} }
+
+  // ---- Timing (Practice mode) ----
+  var t = { on:false, start:0, liveId:0, times:[], best:null, avg:null, count:0 };
+  try { var savedT = JSON.parse(localStorage.getItem('trebleFlashTiming')||'null'); if(savedT) Object.assign(t, savedT, {on:false, liveId:0}); } catch(e){}
+  function saveTiming(){
+    try{ localStorage.setItem('trebleFlashTiming', JSON.stringify({ best:t.best, avg:t.avg, count:t.count, times:t.times.slice(-50) })); }catch(e){}
+  }
 
   var $ = function(id){ return document.getElementById(id); };
   var mode = 'piano';
@@ -179,13 +209,60 @@
     }catch(e){}
   }
 
+  // ---- Practice / timing helpers ----
+  function nowMs(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function fmt(ms){
+    if (ms == null || isNaN(ms)) return '–';
+    if (ms < 1000) return Math.round(ms) + ' ms';
+    return (ms/1000).toFixed(2) + ' s';
+  }
+  function updatePracticeHud(){
+    $('pBest').textContent  = fmt(t.best);
+    $('pAvg').textContent   = fmt(t.avg);
+    $('pCount').textContent = t.count;
+  }
+  function startTimer(){
+    if (!t.on) return;
+    t.start = nowMs();
+    $('pLive').textContent = '0 ms';
+    clearInterval(t.liveId);
+    t.liveId = setInterval(function(){
+      var el = nowMs() - t.start;
+      $('pLive').textContent = Math.round(el) + ' ms';
+    }, 17); // ~60fps live readout
+  }
+  function stopTimer(){
+    if (!t.on) return null;
+    clearInterval(t.liveId); t.liveId = 0;
+    var elapsed = nowMs() - t.start;
+    $('pLive').textContent = Math.round(elapsed) + ' ms';
+    return elapsed;
+  }
+  function recordTime(ms){
+    if (ms == null) return {isPB:false};
+    t.times.push(ms);
+    if (t.times.length > 200) t.times.shift();
+    t.count++;
+    // session best
+    var isPB = (t.best == null) || (ms < t.best);
+    if (isPB) t.best = ms;
+    // avg
+    var sum = 0; for (var i=0;i<t.times.length;i++) sum += t.times[i];
+    t.avg = sum / t.times.length;
+    saveTiming();
+    updatePracticeHud();
+    return {isPB:isPB};
+  }
+
   // ---- Game logic ----
   function next(){
-    var i; do { i = MIN + Math.floor(Math.random() * (MAX - MIN + 1)); } while (i === last);
-    last = current = i; locked = false;
+    // NOTE: no-repeat guard removed — same note can appear back-to-back
+    var i = MIN + Math.floor(Math.random() * (MAX - MIN + 1));
+    current = i; locked = false;
     drawStaff(i);
     $('msg').textContent = ''; $('msg').style.color = '';
     $('card').className = 'card';
+    if (t.on) startTimer();
   }
   function stats(){
     $('score').textContent = s.score; $('streak').textContent = s.streak; $('best').textContent = s.best;
@@ -198,10 +275,20 @@
     locked = true; s.score++; s.tries++; s.streak++; if (s.streak > s.best) s.best = s.streak;
     stats(); flash(el, 'flash-good');
     $('card').className = 'card good';
+
+    var pbHtml = '';
+    if (t.on){
+      var elapsed = stopTimer();
+      var res = recordTime(elapsed);
+      if (res.isPB && t.count > 1) pbHtml = ' <span class="pb-badge">⚡ PB</span>';
+    }
+
     $('msg').style.color = 'var(--good)';
-    $('msg').textContent = '✓ ' + noteName(current) + octave(current) + '!';
+    $('msg').innerHTML = '✓ ' + noteName(current) + octave(current) + '!'
+      + (t.on ? ' <span style="color:var(--gold)">' + fmt(t.times[t.times.length-1]) + '</span>' : '')
+      + pbHtml;
     beep(freq(current), 0.6, 'triangle');
-    setTimeout(next, 650);
+    setTimeout(next, t.on ? 700 : 650);
   }
   function wrong(el, silent){
     if (locked) return;
@@ -211,6 +298,7 @@
     $('msg').style.color = 'var(--bad)';
     $('msg').textContent = silent ? 'Only white keys here — try again' : 'Not quite — try again';
     beep(140, 0.25, 'sawtooth', 0.12);
+    // Timer keeps running on wrong answers — the clock is the point.
   }
   function answer(i, el){
     if (locked) return;
@@ -232,8 +320,27 @@
     $('octaveLabel').style.display = mode === 'piano' ? '' : 'none';
   });
   $('showNames').addEventListener('change', updateLabels);
+
+  $('practice').addEventListener('change', function(e){
+    t.on = e.target.checked;
+    $('practiceHud').classList.toggle('on', t.on);
+    if (t.on){
+      updatePracticeHud();
+      // restart clock for the note currently on screen
+      startTimer();
+    } else {
+      clearInterval(t.liveId); t.liveId = 0;
+      $('pLive').textContent = '0 ms';
+    }
+  });
+
   $('skip').addEventListener('click', function(){ s.streak = 0; stats(); next(); });
   $('reset').addEventListener('click', function(){ s = {score:0,streak:0,best:0,tries:0}; stats(); });
+  $('resetTiming').addEventListener('click', function(){
+    t.times = []; t.best = null; t.avg = null; t.count = 0;
+    saveTiming(); updatePracticeHud();
+    if (t.on) startTimer();
+  });
 
   document.addEventListener('keydown', function(e){
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -249,7 +356,7 @@
   });
 
   // ---- Init ----
-  buildPiano(); buildLetters(); stats(); next();
+  buildPiano(); buildLetters(); stats(); updatePracticeHud(); next();
 })();
 </script>
 </body>
